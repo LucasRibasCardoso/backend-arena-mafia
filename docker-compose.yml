@@ -1,0 +1,44 @@
+services:
+  # Serviço do Banco de Dados
+  postgres:
+    image: postgres:16-alpine
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - arena-mafia-network
+
+  # Serviço da sua aplicação Spring Boot
+  backend-app:
+    build: .
+    image: backend-arena-mafia
+    ports:
+      - "8080:8080"
+    environment:
+      # Variáveis que serão injetadas no container.
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - arena-mafia-network
+
+volumes:
+  postgres_data:
+
+networks:
+  arena-mafia-network:
+    driver: bridge

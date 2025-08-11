@@ -35,6 +35,8 @@ services:
         condition: service_healthy
     networks:
       - arena-mafia-network
+    profiles:
+      - full_stack
 
 volumes:
   postgres_data:

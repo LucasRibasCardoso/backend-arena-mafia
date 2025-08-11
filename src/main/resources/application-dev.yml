@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${DATABASE_URL:jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1}
-    username: ${DATABASE_USERNAME:sa}
-    password: ${DATABASE_PASSWORD:}
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
 
   h2:
     console:
@@ -20,8 +20,6 @@ spring:
 
   flyway:
     enabled: true
-    # Limpa o schema antes de aplicar as migra��es (�timo para H2 em mem�ria,
-    # garante um estado limpo a cada reinicializa��o)
     repair-on-error: true
     locations: classpath:db/migration
 

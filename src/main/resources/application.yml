@@ -2,4 +2,4 @@ spring:
   application:
     name: Backend Arena Mafia
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE}
+    active: ${SPRING_PROFILES_ACTIVE:dev}

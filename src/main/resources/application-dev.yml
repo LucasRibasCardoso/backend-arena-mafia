@@ -21,7 +21,9 @@ spring:
   flyway:
     enabled: true
     repair-on-error: true
-    locations: classpath:db/migration
+    locations:
+      - classpath:db/migration
+      - classpath:db/migration-dev
 
 logging:
   level:

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/auth")
-public class AuthController implements AuthControllerDocs {
+public class AuthController {
 
   private final LoginUseCase loginUseCase;
 
@@ -18,7 +18,6 @@ public class AuthController implements AuthControllerDocs {
   }
 
   @PostMapping("/login")
-  @Override
   public ResponseEntity<TokenResponseDto> login(
       @RequestBody @Valid LoginRequestDto loginRequestDto) {
     TokenResponseDto tokenResponse = loginUseCase.login(loginRequestDto);

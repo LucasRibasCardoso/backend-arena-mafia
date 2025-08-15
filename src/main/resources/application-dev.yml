@@ -29,14 +29,11 @@ spring:
       - classpath:db/migration
       - classpath:db/migration-dev
 
+springdoc:
+    swagger-ui:
+      url: /openapi.yml
+
 logging:
   level:
     root: info
     org.hibernate.type.descriptor.sql: trace
-
-spring-doc:
-  paths-to-match:
-    - /api/auth/**
-    - /api/v1/**/**
-  swagger-ui:
-    use-root-path: true

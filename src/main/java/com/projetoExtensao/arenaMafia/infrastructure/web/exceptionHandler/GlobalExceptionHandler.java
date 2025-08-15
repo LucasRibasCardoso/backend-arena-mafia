@@ -21,11 +21,10 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponseDto> handlerException(
       HttpServletRequest request, Exception e) {
-    e.printStackTrace();
     ErrorResponseDto errorResponseDto =
         ErrorResponseDto.forGeneralError(
             HttpStatus.INTERNAL_SERVER_ERROR.value(),
-            "Erro interno do servidor. Por favor, tente novamente mais tarde..",
+            "Erro interno do servidor. Por favor, tente novamente mais tarde.",
             request.getRequestURI());
 
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponseDto);

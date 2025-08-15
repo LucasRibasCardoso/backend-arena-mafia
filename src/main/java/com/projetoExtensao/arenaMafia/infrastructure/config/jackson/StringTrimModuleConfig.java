@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.infrastructure.config;
+package com.projetoExtensao.arenaMafia.infrastructure.config.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -12,7 +12,7 @@ public class StringTrimModuleConfig extends SimpleModule {
     super("StringTrimModule");
     addDeserializer(
         String.class,
-        new StdDeserializer<String>(String.class) {
+        new StdDeserializer<>(String.class) {
           @Override
           public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             String value = p.getValueAsString();

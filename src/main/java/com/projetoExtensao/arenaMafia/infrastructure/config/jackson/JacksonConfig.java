@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.infrastructure.config;
+package com.projetoExtensao.arenaMafia.infrastructure.config.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -8,8 +8,10 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
+@Configuration
 public class JacksonConfig {
 
   private static final String DATE_FORMAT = "dd/MM/yyyy";

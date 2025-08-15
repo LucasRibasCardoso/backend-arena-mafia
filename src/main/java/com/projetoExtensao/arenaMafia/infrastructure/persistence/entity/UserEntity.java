@@ -2,7 +2,6 @@ package com.projetoExtensao.arenaMafia.infrastructure.persistence.entity;
 
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
 

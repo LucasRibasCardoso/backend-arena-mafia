@@ -19,8 +19,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<ErrorResponseDto> handlerException(
-      HttpServletRequest request) {
+  public ResponseEntity<ErrorResponseDto> handlerException(HttpServletRequest request) {
     ErrorResponseDto errorResponseDto =
         ErrorResponseDto.forGeneralError(
             HttpStatus.INTERNAL_SERVER_ERROR.value(),

@@ -1,12 +1,11 @@
 package com.projetoExtensao.arenaMafia.infrastructure.security;
 
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import java.util.Collection;
+import java.util.Collections;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-import java.util.Collections;
 
 public class UserDetailsAdapter implements UserDetails {
 

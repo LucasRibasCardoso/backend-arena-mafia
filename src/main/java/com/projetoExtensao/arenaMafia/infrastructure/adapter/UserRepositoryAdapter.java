@@ -2,13 +2,12 @@ package com.projetoExtensao.arenaMafia.infrastructure.adapter;
 
 import com.projetoExtensao.arenaMafia.application.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper.UserMapper;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEntity;
+import com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper.UserMapper;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.stereotype.Repository;
 
 @Repository
 public class UserRepositoryAdapter implements UserRepositoryPort {

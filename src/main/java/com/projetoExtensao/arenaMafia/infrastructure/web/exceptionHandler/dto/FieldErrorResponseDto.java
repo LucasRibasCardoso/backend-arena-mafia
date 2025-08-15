@@ -1,6 +1,5 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto;
 
-
 /**
  * DTO que encapsula o erro de um campo de validação específico.
  *

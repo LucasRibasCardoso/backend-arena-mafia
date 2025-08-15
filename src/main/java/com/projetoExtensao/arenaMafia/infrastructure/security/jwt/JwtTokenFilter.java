@@ -15,8 +15,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
   private final JwtTokenProvider tokenProvider;
 
-  public JwtTokenFilter(
-      JwtTokenProvider tokenProvider) {
+  public JwtTokenFilter(JwtTokenProvider tokenProvider) {
 
     this.tokenProvider = tokenProvider;
   }

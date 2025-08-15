@@ -1,7 +1,6 @@
 package com.projetoExtensao.arenaMafia.application.repository;
 
 import com.projetoExtensao.arenaMafia.domain.model.User;
-
 import java.util.Optional;
 import java.util.UUID;
 

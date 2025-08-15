@@ -4,20 +4,17 @@ import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.CustomAuthenti
 import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.JwtTokenFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-@EnableWebSecurity
 @Configuration
 public class SecurityConfig {
 
@@ -31,14 +28,10 @@ public class SecurityConfig {
   }
 
   @Bean
+  @Order(2)
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-    http
-        // Habilita a permissão de frames da mesma origem
-        .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
-
-        // Desabilita a autenticação básica HTTP
-        .httpBasic(AbstractHttpConfigurer::disable)
+    http.securityMatcher("/api/**")
         .csrf(CsrfConfigurer::disable)
 
         // Define a política de sessão como stateless
@@ -49,14 +42,9 @@ public class SecurityConfig {
         .exceptionHandling(
             exception -> exception.authenticationEntryPoint(authenticationEntryPoint))
 
-        //
+        // Configura as requisições HTTP
         .authorizeHttpRequests(
-            auth ->
-                auth.requestMatchers(
-                        "/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/h2-console/**")
-                    .permitAll()
-                    .anyRequest()
-                    .denyAll())
+            auth -> auth.requestMatchers("/api/auth/**").permitAll().anyRequest().authenticated())
 
         // Adiciona o filtro JWT antes do filtro de autenticação de username e senha
         .addFilterBefore(tokenFilter, UsernamePasswordAuthenticationFilter.class);

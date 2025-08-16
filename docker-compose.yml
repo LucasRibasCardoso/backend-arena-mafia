@@ -30,6 +30,9 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_USERNAME=${DATABASE_USERNAME}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - SWAGGER_API_DOCS_ENABLED=${SWAGGER_API_DOCS_ENABLED}
     depends_on:
       postgres:
         condition: service_healthy

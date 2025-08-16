@@ -30,6 +30,8 @@ spring:
       - classpath:db/migration-dev
 
 springdoc:
+    api-docs:
+      enabled: ${SWAGGER_API_DOCS_ENABLED:true}
     swagger-ui:
       url: /openapi.yml
 

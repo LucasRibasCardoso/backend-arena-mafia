@@ -4,11 +4,12 @@ import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.CustomAuthenti
 import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.JwtTokenFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,7 +17,18 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
+
+  private static final String[] PUBLIC_ENDPOINTS = {
+    "/v3/api-docs/**",
+    "/swagger-ui/**",
+    "/swagger-ui.html",
+    "/openapi.yml",
+    "/webjars/**",
+    "/h2-console/**",
+    "/api/auth/**",
+  };
 
   private final CustomAuthenticationEntryPointHandler authenticationEntryPoint;
   private final JwtTokenFilter tokenFilter;
@@ -28,11 +40,14 @@ public class SecurityConfig {
   }
 
   @Bean
-  @Order(2)
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-    http.securityMatcher("/api/**")
+    http
+        // Desabilita o CSRF
         .csrf(CsrfConfigurer::disable)
+
+        // Habilita o H2 Console para ser exibido em um iframe
+        .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
 
         // Define a política de sessão como stateless
         .sessionManagement(
@@ -44,7 +59,7 @@ public class SecurityConfig {
 
         // Configura as requisições HTTP
         .authorizeHttpRequests(
-            auth -> auth.requestMatchers("/api/auth/**").permitAll().anyRequest().authenticated())
+            auth -> auth.requestMatchers(PUBLIC_ENDPOINTS).permitAll().anyRequest().authenticated())
 
         // Adiciona o filtro JWT antes do filtro de autenticação de username e senha
         .addFilterBefore(tokenFilter, UsernamePasswordAuthenticationFilter.class);

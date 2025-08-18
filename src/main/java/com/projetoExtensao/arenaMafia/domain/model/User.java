@@ -85,6 +85,14 @@ public class User {
     return this.role == RoleEnum.ROLE_ADMIN;
   }
 
+  public boolean isManager() {
+    return this.role == RoleEnum.ROLE_MANAGER;
+  }
+
+  public boolean isUser() {
+    return this.role == RoleEnum.ROLE_USER;
+  }
+
   // --- Validações de Negócio ---
   public void validateUsername(String username) {
     if (username == null || username.isBlank()) {

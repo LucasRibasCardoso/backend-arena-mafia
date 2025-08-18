@@ -2,6 +2,7 @@ package com.projetoExtensao.arenaMafia.infrastructure.security;
 
 import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.CustomAuthenticationEntryPointHandler;
 import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.JwtTokenFilter;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,16 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-  private static final String[] PUBLIC_ENDPOINTS = {
-    "/v3/api-docs/**",
-    "/swagger-ui/**",
-    "/swagger-ui.html",
-    "/openapi.yml",
-    "/webjars/**",
-    "/h2-console/**",
-    "/api/auth/**",
-  };
 
   private final CustomAuthenticationEntryPointHandler authenticationEntryPoint;
   private final JwtTokenFilter tokenFilter;
@@ -59,7 +50,29 @@ public class SecurityConfig {
 
         // Configura as requisições HTTP
         .authorizeHttpRequests(
-            auth -> auth.requestMatchers(PUBLIC_ENDPOINTS).permitAll().anyRequest().authenticated())
+            auth ->
+                auth
+                    // Endpoints públicos para desenvolvimento
+                    .requestMatchers(
+                        "/h2-console/**",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/webjars/**",
+                        "/openapi.yml")
+                    .permitAll()
+
+                    // Endpoints públicos para autenticação e cadastro
+                    .requestMatchers("/api/auth/**")
+                    .permitAll()
+
+                    // Restringe o acesso a endpoints de monitoramento
+                    .requestMatchers(EndpointRequest.toAnyEndpoint())
+                    .hasRole("ADMIN")
+
+                    // Exige autenticação para todas as outras requisições
+                    .anyRequest()
+                    .authenticated())
 
         // Adiciona o filtro JWT antes do filtro de autenticação de username e senha
         .addFilterBefore(tokenFilter, UsernamePasswordAuthenticationFilter.class);

@@ -3,26 +3,22 @@ spring:
     url: ${DATABASE_URL}
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
-  security:
-    jwt:
-      secret-key: ${JWT_SECRET_KEY}
-      expirationMs: ${JWT_EXPIRATION_MS:3600000} # 1 hora em milissegundos
-  jpa:
-    hibernate:
-      ddl-auto: validate # Flyway gerencia o schema
+
   flyway:
-    enabled: true
     locations: classpath:db/migration
     clean-disabled: true
     out-of-order: false
     baseline-on-migrate: false
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+
 springdoc:
   api-docs:
-    enabled: ${SWAGGER_API_DOCS_ENABLED:false}
-  swagger-ui:
-    url: /openapi.yml
-
-logging:
-  level:
-    root: info
+    enabled: false

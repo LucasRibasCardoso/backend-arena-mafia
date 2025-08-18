@@ -182,7 +182,6 @@ components:
             path: "/api/some/endpoint"
             fieldErrors: null
 
-
     ErrorResponseConflict:
       description: "Conflito de recursos ou estado."
       content:

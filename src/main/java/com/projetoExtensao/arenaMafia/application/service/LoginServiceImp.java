@@ -17,6 +17,6 @@ public class LoginServiceImp implements LoginUseCase {
   @Override
   public TokenResponseDto login(LoginRequestDto loginRequestDto) {
     User user = authPort.authenticate(loginRequestDto.username(), loginRequestDto.password());
-    return authPort.createAccessToken(user.getUsername(), user.getRole());
+    return authPort.getTokens(user.getUsername(), user.getRole());
   }
 }

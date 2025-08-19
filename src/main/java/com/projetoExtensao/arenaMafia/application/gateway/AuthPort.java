@@ -7,7 +7,7 @@ import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.TokenResponseD
 public interface AuthPort {
   User authenticate(String username, String password);
 
-  TokenResponseDto createAccessToken(String username, RoleEnum role);
+  TokenResponseDto getTokens(String username, RoleEnum role);
 
   TokenResponseDto getRefreshToken(String username, RoleEnum role);
 }

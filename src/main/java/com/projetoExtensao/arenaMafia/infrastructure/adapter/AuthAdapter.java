@@ -32,7 +32,7 @@ public class AuthAdapter implements AuthPort {
   }
 
   @Override
-  public TokenResponseDto createAccessToken(String username, RoleEnum role) {
+  public TokenResponseDto getTokens(String username, RoleEnum role) {
     return jwtTokenProvider.getTokens(username, role);
   }
 

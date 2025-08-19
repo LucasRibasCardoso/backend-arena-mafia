@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.unit.user;
+package com.projetoExtensao.arenaMafia.unit.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
 
-@DisplayName("Testes da entidade User")
+@DisplayName("Testes para entidade User")
 public class UserTest {
 
   // Dados padrões para entidade User
@@ -63,7 +63,7 @@ public class UserTest {
   class FailureScenarios {
 
     @ParameterizedTest(name = "Deve lançar exceção para username: \"{0}\"")
-    @MethodSource("com.projetoExtensao.arenaMafia.unit.user.UserTest#invalidUsernameProvider")
+    @MethodSource("com.projetoExtensao.arenaMafia.unit.model.UserTest#invalidUsernameProvider")
     @DisplayName("Deve lançar DomainValidationException para usernames inválidos")
     void create_shouldThrowExceptionForInvalidUsernames(
         String invalidUsername, String expectMessage) {

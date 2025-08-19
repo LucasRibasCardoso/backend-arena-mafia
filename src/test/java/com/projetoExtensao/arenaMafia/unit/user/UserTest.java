@@ -36,7 +36,7 @@ public class UserTest {
   }
 
   @Nested
-  @DisplayName("Cenário de sucesso ao criar um usuário")
+  @DisplayName("Sucesso ao criar um usuário")
   class SuccessScenarios {
     @Test
     @DisplayName("Deve criar um usuário com todos os valores padrão e dados de entrada corretos")
@@ -59,7 +59,7 @@ public class UserTest {
   }
 
   @Nested
-  @DisplayName("Cenários de falha ao criar um usuário inválido")
+  @DisplayName("Falhas ao tentar criar um usuário inválido")
   class FailureScenarios {
 
     @ParameterizedTest(name = "Deve lançar exceção para username: \"{0}\"")
@@ -76,7 +76,7 @@ public class UserTest {
   }
 
   @Nested
-  @DisplayName("Comportamentos de gerenciamento da conta")
+  @DisplayName("Gerenciamento da conta")
   class AccountManagementTests {
     @Test
     @DisplayName("Deve ativar a conta do usuário")
@@ -131,7 +131,7 @@ public class UserTest {
   }
 
   @Nested
-  @DisplayName("Verificar permissões de usuários")
+  @DisplayName("Permissões de usuários")
   class UserRoleTest {
 
     private User createUserWithRole(RoleEnum role) {

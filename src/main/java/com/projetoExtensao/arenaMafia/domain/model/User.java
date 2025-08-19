@@ -1,6 +1,5 @@
 package com.projetoExtensao.arenaMafia.domain.model;
 
-import com.projetoExtensao.arenaMafia.domain.exception.AccountAlreadyEnabledException;
 import com.projetoExtensao.arenaMafia.domain.exception.DomainValidationException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import java.time.LocalDateTime;
@@ -64,20 +63,20 @@ public class User {
   // --- Métodos de Negócio ---
 
   // Ativa a conta do usuário.
-  public void activate() {
+  public void activateAccount() {
     if (this.enabled) {
-      throw new AccountAlreadyEnabledException("Atenção: Conta já está ativada.");
+      throw new DomainValidationException("Atenção: Conta já está ativada.");
     }
     this.enabled = true;
   }
 
   // Bloqueia a conta do usuário.
-  public void lock() {
+  public void lockAccount() {
     this.accountNonLocked = false;
   }
 
   // Desbloqueia a conta do usuário.
-  public void unlock() {
+  public void unlockAccount() {
     this.accountNonLocked = true;
   }
 
@@ -97,6 +96,9 @@ public class User {
   public void validateUsername(String username) {
     if (username == null || username.isBlank()) {
       throw new DomainValidationException("O nome de usuário não pode ser nulo ou vazio.");
+    }
+    if (username.chars().anyMatch(Character::isWhitespace)) {
+      throw new DomainValidationException("O nome de usuário não pode conter espaços.");
     }
     if (username.length() < 4 || username.length() > 50) {
       throw new DomainValidationException("O nome de usuário deve ter entre 4 e 50 caracteres.");

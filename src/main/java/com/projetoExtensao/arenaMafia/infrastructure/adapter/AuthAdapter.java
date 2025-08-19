@@ -33,11 +33,11 @@ public class AuthAdapter implements AuthPort {
 
   @Override
   public TokenResponseDto createAccessToken(String username, RoleEnum role) {
-    return jwtTokenProvider.createAccessToken(username, role);
+    return jwtTokenProvider.getTokens(username, role);
   }
 
   @Override
   public TokenResponseDto getRefreshToken(String username, RoleEnum role) {
-    return jwtTokenProvider.createAccessToken(username, role);
+    return jwtTokenProvider.getTokens(username, role);
   }
 }

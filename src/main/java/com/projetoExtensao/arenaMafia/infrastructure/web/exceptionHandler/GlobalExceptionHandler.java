@@ -1,6 +1,5 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler;
 
-import com.projetoExtensao.arenaMafia.domain.exception.AccountAlreadyEnabledException;
 import com.projetoExtensao.arenaMafia.domain.exception.DomainValidationException;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.FieldErrorResponseDto;
@@ -83,17 +82,6 @@ public class GlobalExceptionHandler {
             request.getRequestURI());
 
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponseDto);
-  }
-
-  @ExceptionHandler(AccountAlreadyEnabledException.class)
-  public ResponseEntity<ErrorResponseDto> handleAccountAlreadyEnabledException(
-      AccountAlreadyEnabledException e, HttpServletRequest request) {
-
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(
-            HttpStatus.BAD_REQUEST.value(), e.getMessage(), request.getRequestURI());
-
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDto);
   }
 
   @ExceptionHandler(BadCredentialsException.class)

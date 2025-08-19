@@ -42,12 +42,12 @@ public class JwtTokenProvider {
   }
 
   @PostConstruct
-  protected void init() {
+  public void init() {
     secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
     algorithm = Algorithm.HMAC256(secretKey.getBytes());
   }
 
-  public TokenResponseDto createAccessToken(String username, RoleEnum role) {
+  public TokenResponseDto getTokens(String username, RoleEnum role) {
     Instant now = Instant.now();
     Instant expirationAt = now.plusSeconds(expirationMs / 1000);
     String accessToken = getAccessToken(username, role, now, expirationAt);
@@ -61,7 +61,7 @@ public class JwtTokenProvider {
         refreshToken);
   }
 
-  public TokenResponseDto createRefreshToken(String refreshToken) {
+  public TokenResponseDto updateTokens(String refreshToken) {
     if (tokenContainsBearer(refreshToken)) {
       refreshToken = refreshToken.substring("Bearer ".length());
     }
@@ -70,7 +70,7 @@ public class JwtTokenProvider {
     String username = decodedJWT.getSubject();
     RoleEnum role = decodedJWT.getClaim("role").as(RoleEnum.class);
 
-    return createAccessToken(username, role);
+    return getTokens(username, role);
   }
 
   public Authentication getAuthentication(String token) {

@@ -6,11 +6,11 @@ import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.LoginRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.TokenResponseDto;
 
-public class LoginUseServiceImp implements LoginUseCase {
+public class LoginServiceImp implements LoginUseCase {
 
   private final AuthPort authPort;
 
-  public LoginUseServiceImp(AuthPort authPort) {
+  public LoginServiceImp(AuthPort authPort) {
     this.authPort = authPort;
   }
 

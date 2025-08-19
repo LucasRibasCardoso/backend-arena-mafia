@@ -40,7 +40,7 @@ public class UserTest {
   class SuccessScenarios {
     @Test
     @DisplayName("Deve criar um usuário com todos os valores padrão e dados de entrada corretos")
-    public void create_shouldCreateUserWithCorrectDefaults() {
+    void create_shouldCreateUserWithCorrectDefaults() {
       // Act
       User newUser = User.create(username, fullName, phone, passwordHash);
 
@@ -80,7 +80,7 @@ public class UserTest {
   class AccountManagementTests {
     @Test
     @DisplayName("Deve ativar a conta do usuário")
-    public void enable_shouldEnableUserAccount() {
+    void enable_shouldEnableUserAccount() {
       // Arrange
       User user = User.create(username, fullName, phone, passwordHash);
 
@@ -93,7 +93,7 @@ public class UserTest {
 
     @Test
     @DisplayName("Deve lançar um erro ao tentar ativar a conta de um usuário já ativo")
-    public void enable_shouldThrowErrorWhenAccountAlreadyEnabled() {
+    void enable_shouldThrowErrorWhenAccountAlreadyEnabled() {
       // Arrange
       User user = User.create(username, fullName, phone, passwordHash);
       user.activateAccount();
@@ -104,7 +104,7 @@ public class UserTest {
 
     @Test
     @DisplayName("Deve bloquear a conta do usuário")
-    public void lock_shouldLockUserAccount() {
+    void lock_shouldLockUserAccount() {
       // Arrange
       User user = User.create(username, fullName, phone, passwordHash);
 
@@ -117,7 +117,7 @@ public class UserTest {
 
     @Test
     @DisplayName("Deve desbloquear a conta do usuário")
-    public void unlock_shouldUnlockUserAccount() {
+    void unlock_shouldUnlockUserAccount() {
       // Arrange
       User user = User.create(username, fullName, phone, passwordHash);
       user.lockAccount();
@@ -150,7 +150,7 @@ public class UserTest {
     @ParameterizedTest
     @EnumSource(RoleEnum.class)
     @DisplayName("isAdmin() deve retornar true apenas para usuários com a permissão ADMIN")
-    public void isAdmin_shouldReturnTrueForAdminRole(RoleEnum roleToTest) {
+    void isAdmin_shouldReturnTrueForAdminRole(RoleEnum roleToTest) {
       // Arrange
       User user = createUserWithRole(roleToTest);
 

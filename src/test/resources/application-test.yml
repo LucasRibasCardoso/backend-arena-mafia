@@ -1,9 +1,4 @@
 spring:
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
 
   jpa:
     hibernate:
@@ -12,3 +7,9 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+  security:
+    jwt:
+      secret-key: 551VM4LcN284uYnv3MjDckhe9IQ6ta7/0jNwrvNqRz0=
+      expirationMs: 3600000 # 1 hour
+      issuer: "arena-mafia-api"

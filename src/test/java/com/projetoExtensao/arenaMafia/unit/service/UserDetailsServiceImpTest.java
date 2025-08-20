@@ -9,7 +9,6 @@ import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.security.UserDetailsAdapter;
 import com.projetoExtensao.arenaMafia.infrastructure.security.UserDetailsServiceImpl;
 import java.util.Optional;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
-@Disabled("Testes para UserDetailsServiceImp")
+@DisplayName("Testes unitários para UserDetailsServiceImp")
 public class UserDetailsServiceImpTest {
 
   @Mock private UserRepositoryPort userRepositoryPort;

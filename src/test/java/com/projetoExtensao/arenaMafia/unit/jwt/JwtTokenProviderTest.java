@@ -28,7 +28,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Testes para JwtTokenProvider")
+@DisplayName("Testes unitários para JwtTokenProvider")
 public class JwtTokenProviderTest {
 
   @Mock private UserDetailsService userDetailsService;

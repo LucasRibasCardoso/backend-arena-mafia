@@ -20,7 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Testes para LoginService")
+@DisplayName("Testes unitários para LoginService")
 public class LoginServiceImpTest {
 
   @Mock private AuthPort authPort;

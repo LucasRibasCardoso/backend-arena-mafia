@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
 
-@DisplayName("Testes para entidade User")
+@DisplayName("Testes unitários para entidade User")
 public class UserTest {
 
   // Dados padrões para entidade User

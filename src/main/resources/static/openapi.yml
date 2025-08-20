@@ -240,7 +240,5 @@ paths:
           $ref: "#/components/responses/ErrorResponseBadRequest"
         "401":
           $ref: "#/components/responses/ErrorResponseUnauthorized"
-        "404":
-          $ref: "#/components/responses/ErrorResponseNotFound"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"

@@ -7,5 +7,8 @@ spring:
 
   jpa:
     hibernate:
-      # cria o schema do banco no início dos testes e o destrói no final.
-      ddl-auto: create-drop
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration

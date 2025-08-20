@@ -9,6 +9,7 @@ spring:
     jwt:
       secret-key: ${JWT_SECRET_KEY}
       expirationMs: ${JWT_EXPIRATION_MS:3600000} # 1 hora
+      issuer: "arena-mafia-api"
 
   jpa:
     hibernate:

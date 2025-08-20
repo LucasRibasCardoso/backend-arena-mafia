@@ -33,6 +33,9 @@ public class JwtTokenProvider {
   @Value("${spring.security.jwt.expirationMs}")
   private Long expirationMs;
 
+  @Value("${spring.security.jwt.issuer}")
+  private String issuerUrl;
+
   private Algorithm algorithm;
 
   private final UserDetailsService userDetailsService;
@@ -99,7 +102,6 @@ public class JwtTokenProvider {
   }
 
   private String getAccessToken(String username, RoleEnum role, Instant now, Instant expirationAt) {
-    String issuerUrl = ServletUriComponentsBuilder.fromCurrentContextPath().toUriString();
     return JWT.create()
         .withClaim("role", role.name())
         .withIssuedAt(now)

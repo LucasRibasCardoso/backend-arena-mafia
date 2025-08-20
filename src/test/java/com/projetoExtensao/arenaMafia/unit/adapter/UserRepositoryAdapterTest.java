@@ -1,7 +1,6 @@
 package com.projetoExtensao.arenaMafia.unit.adapter;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
 import com.projetoExtensao.arenaMafia.domain.model.User;
@@ -52,7 +51,7 @@ public class UserRepositoryAdapterTest {
       User result = userRepositoryAdapter.save(userToSave);
 
       // Assert
-      assertNotNull(result);
+      assertThat(result).isNotNull();
       assertThat(result.getId()).isEqualTo(userToSave.getId());
       assertThat(result.getUsername()).isEqualTo(userToSave.getUsername());
       assertThat(result.getFullName()).isEqualTo(userToSave.getFullName());
@@ -84,7 +83,7 @@ public class UserRepositoryAdapterTest {
       Optional<User> result = userRepositoryAdapter.findByUsername(username);
 
       // Assert
-      assertNotNull(result);
+      assertThat(result).isNotNull();
       assertThat(result).isPresent();
       assertThat(result.get().getUsername()).isEqualTo(username);
 
@@ -104,7 +103,7 @@ public class UserRepositoryAdapterTest {
       var result = userRepositoryAdapter.findByUsername(username);
 
       // Assert
-      assertNotNull(result);
+      assertThat(result).isNotNull();
       assertThat(result).isEmpty();
 
       verify(userJpaRepository, times(1)).findByUsername(username);
@@ -131,7 +130,7 @@ public class UserRepositoryAdapterTest {
       Optional<User> result = userRepositoryAdapter.findById(userId);
 
       // Assert
-      assertNotNull(result);
+      assertThat(result).isNotNull();
       assertThat(result).isPresent();
       assertThat(result.get().getId()).isEqualTo(userId);
       assertThat(result.get().getUsername()).isEqualTo(userMapped.getUsername());
@@ -152,7 +151,7 @@ public class UserRepositoryAdapterTest {
       var result = userRepositoryAdapter.findById(userId);
 
       // Assert
-      assertNotNull(result);
+      assertThat(result).isNotNull();
       assertThat(result).isEmpty();
 
       verify(userJpaRepository, times(1)).findById(userId);

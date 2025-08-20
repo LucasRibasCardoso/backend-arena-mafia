@@ -45,7 +45,7 @@ public class UserTest {
       User newUser = User.create(username, fullName, phone, passwordHash);
 
       // Assert
-      assertNotNull(newUser);
+      assertThat(newUser).isNotNull();
       assertThat(newUser.getUsername()).isEqualTo(username);
       assertThat(newUser.getFullName()).isEqualTo(fullName);
       assertThat(newUser.getPhone()).isEqualTo(phone);

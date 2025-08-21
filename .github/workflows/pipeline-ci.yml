@@ -59,7 +59,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_WORKFLOW_TOKEN }}
 
       # Gera as tags da imagem de forma inteligente
       - name: Extrair metadados para Docker

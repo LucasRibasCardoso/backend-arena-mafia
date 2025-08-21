@@ -1,0 +1,25 @@
+name: Reusable Test Runner
+on:
+  workflow_call:
+    inputs:
+      maven_command:
+        description: 'O comando Maven a ser executado'
+        required: true
+        type: string
+
+jobs:
+  run-maven-command:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código-fonte
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Executar o comando Maven especificado
+        run: ${{ inputs.maven_command }}

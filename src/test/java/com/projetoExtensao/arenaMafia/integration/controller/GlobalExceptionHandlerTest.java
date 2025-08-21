@@ -79,12 +79,14 @@ public class GlobalExceptionHandlerTest {
         .perform(
             post(BASE_URL + "/validation")
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
-                .content("{\"fieldTestUsername\":\"\"}")) // {"fieldTestUsername": ""}
+                .content("{\"fieldTestUsername\":\"usr\"}")) // username muito curto
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.message").value("Erro de validação nos campos informados."))
         .andExpect(jsonPath("$.path").value(BASE_URL + "/validation"))
         .andExpect(jsonPath("$.fieldErrors[0].fieldName").value("fieldTestUsername"))
-        .andExpect(jsonPath("$.fieldErrors[0].message").value("O usuario é obrigatório"));
+        .andExpect(
+            jsonPath("$.fieldErrors[0].message")
+                .value("O campo usuário deve ter entre 4 e 50 caracteres"));
   }
 }

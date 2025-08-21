@@ -44,8 +44,7 @@ public class LoginServiceImpTest {
             "refresh_token");
 
     when(authPort.authenticate(username, password)).thenReturn(user);
-    when(authPort.getTokens(user.getUsername(), user.getRole()))
-        .thenReturn(tokenResponseDto);
+    when(authPort.getTokens(user.getUsername(), user.getRole())).thenReturn(tokenResponseDto);
 
     // Act
     TokenResponseDto tokenResponse = loginServiceImp.login(loginRequestDto);

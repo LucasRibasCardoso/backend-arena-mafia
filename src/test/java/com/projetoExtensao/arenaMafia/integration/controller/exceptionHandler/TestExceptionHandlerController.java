@@ -31,7 +31,8 @@ public class TestExceptionHandlerController {
   @GetMapping("/data-integrity")
   public void throwDataIntegrity() {
     // Em um teste real, você pode mockar um serviço para lançar isso
-    throw new DataIntegrityViolationException("Erro de integridade de dados. Verifique os dados informados.");
+    throw new DataIntegrityViolationException(
+        "Erro de integridade de dados. Verifique os dados informados.");
   }
 
   @GetMapping("/access-denied")

@@ -35,9 +35,4 @@ public class AuthAdapter implements AuthPort {
   public TokenResponseDto getTokens(String username, RoleEnum role) {
     return jwtTokenProvider.getTokens(username, role);
   }
-
-  @Override
-  public TokenResponseDto getRefreshToken(String username, RoleEnum role) {
-    return jwtTokenProvider.getTokens(username, role);
-  }
 }

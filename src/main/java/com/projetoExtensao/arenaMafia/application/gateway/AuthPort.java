@@ -8,6 +8,4 @@ public interface AuthPort {
   User authenticate(String username, String password);
 
   TokenResponseDto getTokens(String username, RoleEnum role);
-
-  TokenResponseDto getRefreshToken(String username, RoleEnum role);
 }

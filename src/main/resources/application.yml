@@ -1,5 +1,24 @@
 spring:
   application:
     name: Backend Arena Mafia
+
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY}
+      expirationMs: ${JWT_EXPIRATION_MS:3600000} # 1 hora
+      issuer: "arena-mafia-api"
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enable: true
+
+# Configuração dos Logs
+logging:
+  level:
+    root: info

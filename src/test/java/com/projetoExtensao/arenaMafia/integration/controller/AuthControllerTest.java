@@ -19,7 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@DisplayName("Testes de Integração para a Autenticação")
+@DisplayName("Testes de Integração para AuthController")
 public class AuthControllerTest extends TestIntegrationBaseConfig {
 
   @Autowired private UserRepositoryPort userRepository;

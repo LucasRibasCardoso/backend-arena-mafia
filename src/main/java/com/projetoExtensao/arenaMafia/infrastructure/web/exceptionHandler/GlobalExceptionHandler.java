@@ -5,11 +5,13 @@ import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.Er
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.FieldErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -32,14 +34,18 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorResponseDto> handleValidationException(
       MethodArgumentNotValidException e, HttpServletRequest request) {
 
-    // Obtém os erros de validação dos campos
     List<FieldErrorResponseDto> fieldErrors =
         e.getBindingResult().getFieldErrors().stream()
-            .map(
-                fieldError ->
-                    new FieldErrorResponseDto(
-                        fieldError.getField(), fieldError.getDefaultMessage()))
-            .toList();
+            .collect(
+                Collectors.toMap(
+                    FieldError::getField, // Key: field name
+                    FieldError::getDefaultMessage, // Value: error message
+                    (existingValue, newValue) -> existingValue) // mantém o valor existente
+                )
+            .entrySet() // Converte o Map em um SET de FieldErrorResponseDto
+            .stream()
+            .map(entry -> new FieldErrorResponseDto(entry.getKey(), entry.getValue()))
+            .toList(); // Converte o SET de Map.Entry em uma lista de FieldErrorResponseDto
 
     ErrorResponseDto errorResponseDto =
         ErrorResponseDto.forValidationErrors(

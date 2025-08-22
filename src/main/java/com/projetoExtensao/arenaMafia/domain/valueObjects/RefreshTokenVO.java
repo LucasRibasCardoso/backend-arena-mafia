@@ -1,6 +1,8 @@
 package com.projetoExtensao.arenaMafia.domain.valueObjects;
 
 import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenInvalidFormat;
+
 import java.util.UUID;
 
 public record RefreshTokenVO(UUID value) {
@@ -17,7 +19,7 @@ public record RefreshTokenVO(UUID value) {
     try {
       return new RefreshTokenVO(UUID.fromString(token));
     } catch (IllegalArgumentException e) {
-      throw new DomainValidationException("Formato inválido para o refresh token.");
+      throw new RefreshTokenInvalidFormat("Formato inválido para o refresh token.");
     }
   }
 

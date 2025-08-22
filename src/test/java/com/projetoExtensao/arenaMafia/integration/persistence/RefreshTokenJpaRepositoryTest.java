@@ -7,7 +7,6 @@ import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.RefreshTokenEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.RefreshTokenJpaRepository;
-import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -26,8 +25,6 @@ public class RefreshTokenJpaRepositoryTest {
   @Autowired private TestEntityManager testEntityManager;
 
   @Autowired private RefreshTokenJpaRepository refreshTokenJpaRepository;
-
-  @Autowired private UserJpaRepository userJpaRepository;
 
   @Nested
   @DisplayName("Testes para o método findByToken")

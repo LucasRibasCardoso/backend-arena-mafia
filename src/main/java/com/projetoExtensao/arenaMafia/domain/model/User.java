@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.domain.model;
 
-import com.projetoExtensao.arenaMafia.domain.exception.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import java.time.Instant;
 import java.util.UUID;

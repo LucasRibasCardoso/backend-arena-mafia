@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.domain.valueObjects;
 
-import com.projetoExtensao.arenaMafia.domain.exception.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
 import java.util.UUID;
 
 public record RefreshTokenVO(UUID value) {

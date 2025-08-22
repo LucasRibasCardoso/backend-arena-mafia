@@ -35,13 +35,12 @@ public class JwtTokenProviderTest {
   @InjectMocks private JwtTokenProvider tokenProvider;
 
   private String secretKey;
-  private Long expirationMs;
   private String username;
 
   @BeforeEach
   public void setUp() {
     secretKey = "I5fbSc1fDSiV0jRABD2hwVqn/RZweuO96QHRM+BmyoY=";
-    expirationMs = 3600000L; // 1 hour in milliseconds
+    Long expirationMs = 3600000L; // 1 hour in milliseconds
     username = "testUser";
 
     // Cria um mock para HttpServletRequest

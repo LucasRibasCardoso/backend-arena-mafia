@@ -1,8 +1,7 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler;
 
-import com.projetoExtensao.arenaMafia.domain.exception.DomainValidationException;
-import com.projetoExtensao.arenaMafia.domain.exception.RefreshTokenExpiredException;
-import com.projetoExtensao.arenaMafia.domain.exception.RefreshTokenNotFoundException;
+import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.BadRefreshTokenException;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.FieldErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -69,17 +68,6 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponseDto);
   }
 
-  @ExceptionHandler(DomainValidationException.class)
-  public ResponseEntity<ErrorResponseDto> handleDomainValidationException(
-      DomainValidationException e, HttpServletRequest request) {
-
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(
-            HttpStatus.BAD_REQUEST.value(), e.getMessage(), request.getRequestURI());
-
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDto);
-  }
-
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<ErrorResponseDto> handleAccessDeniedException(HttpServletRequest request) {
 
@@ -105,23 +93,26 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponseDto);
   }
 
-  @ExceptionHandler(RefreshTokenExpiredException.class)
-  public ResponseEntity<ErrorResponseDto> handleRefreshTokenExpiredException(
-      RefreshTokenExpiredException e, HttpServletRequest request) {
+  @ExceptionHandler(BadRefreshTokenException.class)
+  public ResponseEntity<ErrorResponseDto> handleBadRefreshTokenException(
+      HttpServletRequest request) {
+
+    String message = "Token de atualização inválido ou expirado. Por favor, faça login novamente.";
     ErrorResponseDto errorResponseDto =
         ErrorResponseDto.forGeneralError(
-            HttpStatus.UNAUTHORIZED.value(), e.getMessage(), request.getRequestURI());
+            HttpStatus.UNAUTHORIZED.value(), message, request.getRequestURI());
 
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponseDto);
   }
 
-  @ExceptionHandler(RefreshTokenNotFoundException.class)
-  public ResponseEntity<ErrorResponseDto> handleRefreshTokenNotFoundException(
-      RefreshTokenNotFoundException e, HttpServletRequest request) {
+  @ExceptionHandler(DomainValidationException.class)
+  public ResponseEntity<ErrorResponseDto> handleDomainValidationException(
+      DomainValidationException e, HttpServletRequest request) {
+
     ErrorResponseDto errorResponseDto =
         ErrorResponseDto.forGeneralError(
-            HttpStatus.NOT_FOUND.value(), e.getMessage(), request.getRequestURI());
+            HttpStatus.BAD_REQUEST.value(), e.getMessage(), request.getRequestURI());
 
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponseDto);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDto);
   }
 }

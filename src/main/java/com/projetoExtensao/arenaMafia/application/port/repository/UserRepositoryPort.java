@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.application.repository;
+package com.projetoExtensao.arenaMafia.application.port.repository;
 
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import java.util.Optional;

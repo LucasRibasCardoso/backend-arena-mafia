@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.security;
 
-import com.projetoExtensao.arenaMafia.application.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.application.port.repository.UserRepositoryPort;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-import com.projetoExtensao.arenaMafia.application.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.application.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.security.UserDetailsAdapter;
 import com.projetoExtensao.arenaMafia.infrastructure.security.UserDetailsServiceImpl;

@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -131,7 +131,7 @@ public class UserJpaRepositoryTest {
     userEntity.setPhone(phone);
     userEntity.setPasswordHash("hashedPassword");
     userEntity.setRole(RoleEnum.ROLE_USER);
-    userEntity.setCreatedAt(LocalDateTime.now());
+    userEntity.setCreatedAt(Instant.now());
     userEntity.setAccountNonLocked(true);
     userEntity.setEnabled(true);
     return entityManager.persistAndFlush(userEntity);

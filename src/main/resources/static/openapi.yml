@@ -18,7 +18,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: "Token de autenticação JWT"
+      description: "Token de autenticação JWT obtido no login."
 
   schemas:
     FieldErrorResponseDto:
@@ -69,12 +69,12 @@ components:
         username: {
           type: string,
           description: "Nome de usuário.",
-          example: "usuario123"
+          example: "testuser"
         }
         password: {
           type: string,
           description: "Senha do usuário.",
-          example: "senhaSegura"
+          example: "123456"
         }
       required: [ username, password ]
 
@@ -86,29 +86,12 @@ components:
           description: "Nome de usuário autenticado.",
           example: "usuario123"
         }
-        createdAt: {
-          type: string,
-          format: date-time,
-          description: "Data e hora de criação do token.",
-          example: "2025-08-15T13:55:00Z"
-        }
-        expiresAt: {
-          type: string,
-          format: date-time,
-          description: "Data e hora de expiração do token.",
-          example: "2025-08-15T14:55:00Z"
-        }
         accessToken: {
           type: string,
           description: "JWT de acesso.",
           example: "eyJhbGci..."
         }
-        refreshToken: {
-          type: string,
-          description: "JWT de refresh.",
-          example: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4"
-        }
-      required: [ username, createdAt, expiresAt, accessToken, refreshToken ]
+      required: [ username, accessToken ]
 
   responses:
     # Respostas de erro
@@ -152,7 +135,7 @@ components:
           example:
             timestamp: "2025-08-15T13:55:00Z"
             status: 401
-            message: "Usuário ou senha inválidos."
+            message: "Mensagem de erro detalhada."
             path: "/api/some/endpoint"
             fieldErrors: null
 
@@ -191,7 +174,7 @@ components:
           example:
             timestamp: "2025-08-15T13:55:00Z"
             status: 409
-            message: "Usuário já existe."
+            message: "Recurso já existe."
             path: "/api/some/endpoint"
             fieldErrors: null
 
@@ -208,7 +191,6 @@ components:
             path: "/api/some/endpoint"
             fieldErrors: null
 
-    # Respostas de Sucesso
     TokenResponse:
       description: "Usuário autenticado com sucesso."
       content:
@@ -220,7 +202,7 @@ components:
 paths:
   /api/auth/login:
     post:
-      security: [ ]
+      operationId: login
       tags:
         - Autenticação
       summary: "Autenticação de Usuário"
@@ -235,9 +217,54 @@ paths:
               $ref: "#/components/schemas/LoginRequestDto"
       responses:
         "200":
-          $ref: "#/components/responses/TokenResponse"
+          description: "Usuário autenticado com sucesso."
+          headers:
+            Set-Cookie:
+              description: "Cookie HttpOnly contendo o token de refresh."
+              schema:
+                type: string
+                example: "refreshToken=99ed48e3-0076-4b39-a2ed-f02f5335673e...;"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponseDto"
         "400":
           $ref: "#/components/responses/ErrorResponseBadRequest"
+        "401":
+          $ref: "#/components/responses/ErrorResponseUnauthorized"
+        "500":
+          $ref: "#/components/responses/ErrorResponseInternalServerError"
+
+  /api/auth/refresh-token:
+    post:
+      operationId: refreshToken
+      tags:
+        - Autenticação
+      summary: "Renovação de Token de Acesso"
+      description: |
+        Endpoint para renovar o token de acesso usando o token de refresh.
+        O token de refresh deve ser enviado como um cookie HttpOnly.
+      parameters:
+        - in: cookie
+          name: refreshToken
+          required: true
+          description: "O refresh token é recebido no momento do login. O navegador o anexa automaticamente à requisição."
+          schema:
+            type: string
+            example: "99ed48e3-0076-4b39-a2ed-f02f5335673e.."
+      responses:
+        "200":
+          description: "Token de acesso renovado com sucesso. Um novo refresh token é retornado no cookie para aumentar a segurança (rotação de tokens)."
+          headers:
+            Set-Cookie:
+              description: "Cookie HttpOnly contendo o **novo** token de refresh."
+              schema:
+                type: string
+                example: "refreshToken=a1b2c3d4-e5f6-7890-1234-567890abcdef...;"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponseDto"
         "401":
           $ref: "#/components/responses/ErrorResponseUnauthorized"
         "500":

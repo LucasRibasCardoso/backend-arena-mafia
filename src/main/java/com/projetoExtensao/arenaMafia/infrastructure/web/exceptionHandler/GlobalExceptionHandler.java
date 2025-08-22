@@ -1,6 +1,8 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler;
 
 import com.projetoExtensao.arenaMafia.domain.exception.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.exception.RefreshTokenExpiredException;
+import com.projetoExtensao.arenaMafia.domain.exception.RefreshTokenNotFoundException;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.FieldErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -101,5 +103,25 @@ public class GlobalExceptionHandler {
             request.getRequestURI());
 
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponseDto);
+  }
+
+  @ExceptionHandler(RefreshTokenExpiredException.class)
+  public ResponseEntity<ErrorResponseDto> handleRefreshTokenExpiredException(
+      RefreshTokenExpiredException e, HttpServletRequest request) {
+    ErrorResponseDto errorResponseDto =
+        ErrorResponseDto.forGeneralError(
+            HttpStatus.UNAUTHORIZED.value(), e.getMessage(), request.getRequestURI());
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponseDto);
+  }
+
+  @ExceptionHandler(RefreshTokenNotFoundException.class)
+  public ResponseEntity<ErrorResponseDto> handleRefreshTokenNotFoundException(
+      RefreshTokenNotFoundException e, HttpServletRequest request) {
+    ErrorResponseDto errorResponseDto =
+        ErrorResponseDto.forGeneralError(
+            HttpStatus.NOT_FOUND.value(), e.getMessage(), request.getRequestURI());
+
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponseDto);
   }
 }

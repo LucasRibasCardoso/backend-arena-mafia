@@ -8,25 +8,22 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-  @Mapping(target = "id", source = "id")
   @Mapping(target = "username", source = "username")
-  @Mapping(target = "fullName", source = "fullName")
-  @Mapping(target = "phone", source = "phone")
-  @Mapping(target = "passwordHash", source = "passwordHash")
-  @Mapping(target = "accountNonLocked", source = "accountNonLocked")
-  @Mapping(target = "enabled", source = "enabled")
-  @Mapping(target = "role", source = "role")
-  @Mapping(target = "createdAt", source = "createdAt")
-  User toDomain(UserEntity userEntity);
-
-  @Mapping(target = "id", source = "id")
-  @Mapping(target = "username", source = "username")
-  @Mapping(target = "fullName", source = "fullName")
-  @Mapping(target = "phone", source = "phone")
-  @Mapping(target = "passwordHash", source = "passwordHash")
-  @Mapping(target = "accountNonLocked", source = "accountNonLocked")
-  @Mapping(target = "enabled", source = "enabled")
-  @Mapping(target = "role", source = "role")
-  @Mapping(target = "createdAt", source = "createdAt")
   UserEntity toEntity(User user);
+
+  default User toDomain(UserEntity entity) {
+    if (entity == null) {
+      return null;
+    }
+    return User.reconstitute(
+        entity.getId(),
+        entity.getUsername(),
+        entity.getFullName(),
+        entity.getPhone(),
+        entity.getPasswordHash(),
+        entity.isAccountNonLocked(),
+        entity.isEnabled(),
+        entity.getRole(),
+        entity.getCreatedAt());
+  }
 }

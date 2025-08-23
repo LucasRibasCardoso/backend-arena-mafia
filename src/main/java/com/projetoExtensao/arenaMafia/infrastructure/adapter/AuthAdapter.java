@@ -1,11 +1,13 @@
 package com.projetoExtensao.arenaMafia.infrastructure.adapter;
 
-import com.projetoExtensao.arenaMafia.application.gateway.AuthPort;
+import com.projetoExtensao.arenaMafia.application.port.gateway.AuthPort;
+import com.projetoExtensao.arenaMafia.application.port.gateway.AuthResult;
+import com.projetoExtensao.arenaMafia.application.port.repository.RefreshTokenRepositoryPort;
+import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.infrastructure.security.UserDetailsAdapter;
 import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.JwtTokenProvider;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.TokenResponseDto;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,13 +16,20 @@ import org.springframework.stereotype.Component;
 @Component
 public class AuthAdapter implements AuthPort {
 
+  @Value("${spring.security.jwt.refresh-token-expiration-days}")
+  private Long refreshTokenExpirationDays;
+
   private final AuthenticationManager authenticationManager;
   private final JwtTokenProvider jwtTokenProvider;
+  private final RefreshTokenRepositoryPort refreshTokenRepositoryPort;
 
   public AuthAdapter(
-      AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
+      AuthenticationManager authenticationManager,
+      JwtTokenProvider jwtTokenProvider,
+      RefreshTokenRepositoryPort refreshTokenRepositoryPort) {
     this.authenticationManager = authenticationManager;
     this.jwtTokenProvider = jwtTokenProvider;
+    this.refreshTokenRepositoryPort = refreshTokenRepositoryPort;
   }
 
   @Override
@@ -32,12 +41,24 @@ public class AuthAdapter implements AuthPort {
   }
 
   @Override
-  public TokenResponseDto getTokens(String username, RoleEnum role) {
-    return jwtTokenProvider.getTokens(username, role);
+  public AuthResult generateTokens(User user) {
+    refreshTokenRepositoryPort.deleteByUser(user);
+    String accessToken = generateAccessToken(user);
+    String refreshToken = generateRefreshToken(user);
+    return new AuthResult(user.getUsername(), accessToken, refreshToken);
   }
 
-  @Override
-  public TokenResponseDto getRefreshToken(String username, RoleEnum role) {
-    return jwtTokenProvider.getTokens(username, role);
+  private String generateRefreshToken(User user) {
+    // Gera um novo RefreshToken
+    RefreshToken refreshToken = RefreshToken.create(refreshTokenExpirationDays, user);
+
+    // Salva o RefreshToken no banco de dados
+    RefreshToken savedRefreshToken = refreshTokenRepositoryPort.save(refreshToken);
+
+    return savedRefreshToken.getToken().toString();
+  }
+
+  private String generateAccessToken(User user) {
+    return jwtTokenProvider.generateAccessToken(user.getUsername(), user.getRole());
   }
 }

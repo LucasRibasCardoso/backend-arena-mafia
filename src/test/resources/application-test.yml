@@ -12,4 +12,5 @@ spring:
     jwt:
       secret-key: 551VM4LcN284uYnv3MjDckhe9IQ6ta7/0jNwrvNqRz0=
       expirationMs: 3600000 # 1 hour
+      refresh-token-expiration-days: 7 # 7 days
       issuer: "arena-mafia-api"

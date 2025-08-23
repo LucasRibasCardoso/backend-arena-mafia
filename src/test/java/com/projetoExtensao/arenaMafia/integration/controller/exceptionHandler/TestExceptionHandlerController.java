@@ -1,6 +1,9 @@
 package com.projetoExtensao.arenaMafia.integration.controller.exceptionHandler;
 
-import com.projetoExtensao.arenaMafia.domain.exception.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenExpiredException;
+import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenInvalidFormatException;
+import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
@@ -43,5 +46,20 @@ public class TestExceptionHandlerController {
   @GetMapping("/badCredentials")
   public void throwBadCredentials() {
     throw new BadCredentialsException("Credenciais inválidas");
+  }
+
+  @GetMapping("/refresh-token-expired")
+  public void throwBadRefreshToken() {
+    throw new RefreshTokenExpiredException("Refresh token expirado");
+  }
+
+  @GetMapping("/refresh-not-found")
+  public void throwNotFoundRefreshToken() {
+    throw new RefreshTokenNotFoundException("Refresh token expirado");
+  }
+
+  @GetMapping("/invalid-format-refresh-token")
+  public void throwInvalidFormatRefreshToken() {
+    throw new RefreshTokenInvalidFormatException("Formato inválido do refresh token");
   }
 }

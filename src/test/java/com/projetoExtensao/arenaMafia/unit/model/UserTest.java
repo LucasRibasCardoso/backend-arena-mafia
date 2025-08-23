@@ -4,10 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.projetoExtensao.arenaMafia.domain.exception.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +56,38 @@ public class UserTest {
       assertNotNull(newUser.getId());
       assertNotNull(newUser.getCreatedAt());
     }
+
+    @Test
+    void reconstitute_shouldReconstructUserFromExistingData() {
+      // Arrange
+      UUID id = UUID.randomUUID();
+      Instant createdAt = Instant.now();
+
+      // Act
+      User user =
+          User.reconstitute(
+              id,
+              username,
+              fullName,
+              phone,
+              passwordHash,
+              true,
+              false,
+              RoleEnum.ROLE_USER,
+              createdAt);
+
+      // Assert
+      assertThat(user).isNotNull();
+      assertThat(user.getId()).isEqualTo(id);
+      assertThat(user.getUsername()).isEqualTo(username);
+      assertThat(user.getFullName()).isEqualTo(fullName);
+      assertThat(user.getPhone()).isEqualTo(phone);
+      assertThat(user.getPasswordHash()).isEqualTo(passwordHash);
+      assertThat(user.getRole()).isEqualTo(RoleEnum.ROLE_USER);
+      assertThat(user.isEnabled()).isFalse();
+      assertThat(user.isAccountNonLocked()).isTrue();
+      assertThat(user.getCreatedAt()).isEqualTo(createdAt);
+    }
   }
 
   @Nested
@@ -64,12 +96,40 @@ public class UserTest {
 
     @ParameterizedTest(name = "Deve lançar exceção para username: \"{0}\"")
     @MethodSource("com.projetoExtensao.arenaMafia.unit.model.UserTest#invalidUsernameProvider")
-    @DisplayName("Deve lançar DomainValidationException para usernames inválidos")
+    @DisplayName(
+        "Deve lançar DomainValidationException para usernames inválidos ao tentar criar um usuário")
     void create_shouldThrowExceptionForInvalidUsernames(
         String invalidUsername, String expectMessage) {
 
       // Arrange & Act & Assert
       assertThatThrownBy(() -> User.create(invalidUsername, fullName, phone, passwordHash))
+          .isInstanceOf(DomainValidationException.class)
+          .hasMessage(expectMessage);
+    }
+
+    @ParameterizedTest(name = "Deve lançar uma exceção para fullName: \"{0}\"")
+    @MethodSource("com.projetoExtensao.arenaMafia.unit.model.UserTest#invalidUsernameProvider")
+    @DisplayName(
+        "Deve lançar DomainValidationException para usernames inválidos ao tentar reconstituir um usuário")
+    void reconstitute_shouldThrowExceptionForInvalidFullName(
+        String invalidUsername, String expectMessage) {
+      // Arrange
+      UUID id = UUID.randomUUID();
+      Instant createdAt = Instant.now();
+
+      // Act & Assert
+      assertThatThrownBy(
+              () ->
+                  User.reconstitute(
+                      id,
+                      invalidUsername,
+                      fullName,
+                      phone,
+                      passwordHash,
+                      true,
+                      false,
+                      RoleEnum.ROLE_USER,
+                      createdAt))
           .isInstanceOf(DomainValidationException.class)
           .hasMessage(expectMessage);
     }
@@ -135,16 +195,16 @@ public class UserTest {
   class UserRoleTest {
 
     private User createUserWithRole(RoleEnum role) {
-      return new User(
+      return User.reconstitute(
           UUID.randomUUID(),
           username,
           fullName,
           phone,
           passwordHash,
-          false, // accountNonLocked
-          false, // enabled
+          false,
+          true,
           role,
-          LocalDateTime.now());
+          Instant.now());
     }
 
     @ParameterizedTest

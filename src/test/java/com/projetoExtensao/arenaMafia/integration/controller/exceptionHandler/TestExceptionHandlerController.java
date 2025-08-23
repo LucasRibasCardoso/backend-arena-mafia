@@ -2,7 +2,7 @@ package com.projetoExtensao.arenaMafia.integration.controller.exceptionHandler;
 
 import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
 import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenExpiredException;
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenInvalidFormat;
+import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenInvalidFormatException;
 import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -60,6 +60,6 @@ public class TestExceptionHandlerController {
 
   @GetMapping("/invalid-format-refresh-token")
   public void throwInvalidFormatRefreshToken() {
-    throw new RefreshTokenInvalidFormat("Formato inválido do refresh token");
+    throw new RefreshTokenInvalidFormatException("Formato inválido do refresh token");
   }
 }

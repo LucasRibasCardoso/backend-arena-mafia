@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.unit.service;
+package com.projetoExtensao.arenaMafia.unit.useCase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

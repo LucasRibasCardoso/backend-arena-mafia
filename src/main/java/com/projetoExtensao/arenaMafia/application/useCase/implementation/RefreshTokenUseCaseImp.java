@@ -38,7 +38,7 @@ public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
     // Verifica se o RefreshToken está expirado
     if (refreshToken.isExpired()) {
       refreshTokenRepository.delete(refreshToken);
-      throw new RefreshTokenExpiredException("Refresh token está expirado.");
+      throw new RefreshTokenExpiredException("Refresh token expirado. Faça login novamente.");
     }
 
     return authPort.generateTokens(refreshToken.getUser());

@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.projetoExtensao.arenaMafia.application.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
+import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.LoginRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.TokenResponseDto;
@@ -14,6 +16,8 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.Cookie;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,12 +45,6 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
             .setBasePath("/api/auth")
             .setContentType(MediaType.APPLICATION_JSON_VALUE)
             .build();
-
-    // Cria um usuário de teste no banco de dados
-    String passwordEncoded = passwordEncoder.encode("123456");
-    User user = User.create("testUser", "Test User", "5547912345678", passwordEncoded);
-    user.activateAccount();
-    userRepository.save(user);
   }
 
   @AfterEach
@@ -63,6 +61,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     @DisplayName("Deve retornar 200 OK para login com credenciais válidas")
     void login_shouldReturn200ForValidLogin() {
       // Arrange
+      createAndPersistUser(AccountStatus.ACTIVE);
       LoginRequestDto request = new LoginRequestDto("testUser", "123456");
 
       // Act
@@ -118,6 +117,59 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       assertThat(response.timestamp()).isNotNull();
       assertThat(response.path()).isEqualTo("/api/auth/login");
     }
+
+    @Test
+    @DisplayName("Deve retornar 403 Forbidden para usuário com status PENDING_VERIFICATION")
+    void login_shouldReturn403ForUserWithPendingVerificationStatus() {
+      // Arrange
+      createAndPersistUser(AccountStatus.PENDING_VERIFICATION);
+      LoginRequestDto request = new LoginRequestDto("testUser", "123456");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/login")
+              .then()
+              .statusCode(403)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response).isNotNull();
+      assertThat(response.status()).isEqualTo(403);
+      assertThat(response.message()).isEqualTo("Sua conta ainda não foi verificada.");
+      assertThat(response.path()).isEqualTo("/api/auth/login");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 403 Forbidden para usuário com status LOCKED")
+    void login_shouldReturn403ForUserWithLockedStatus() {
+      // Arrange
+      createAndPersistUser(AccountStatus.LOCKED);
+      LoginRequestDto request = new LoginRequestDto("testUser", "123456");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/login")
+              .then()
+              .statusCode(403)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response).isNotNull();
+      assertThat(response.status()).isEqualTo(403);
+      assertThat(response.message())
+          .isEqualTo("Sua conta está bloqueada. Por favor, contate o suporte.");
+      assertThat(response.path()).isEqualTo("/api/auth/login");
+    }
   }
 
   @Nested
@@ -128,6 +180,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     @DisplayName("Deve retornar 200 OK com novos tokens ao usar um refreshToken válido")
     void refreshToken_shouldReturn200ForValidToken() {
       // Arrange
+      createAndPersistUser(AccountStatus.ACTIVE);
       LoginRequestDto loginRequest = new LoginRequestDto("testUser", "123456");
       Cookie initialRefreshTokenCookie =
           given()
@@ -196,5 +249,21 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       assertThat(errorResponse.timestamp()).isNotNull();
       assertThat(errorResponse.path()).isEqualTo("/api/auth/refresh-token");
     }
+  }
+
+  private void createAndPersistUser(AccountStatus status) {
+    String passwordEncoded = passwordEncoder.encode("123456");
+    User user =
+        User.reconstitute(
+            UUID.randomUUID(),
+            "testUser",
+            "Test User",
+            "5547912345678",
+            passwordEncoded,
+            status,
+            RoleEnum.ROLE_USER,
+            Instant.now());
+
+    userRepository.save(user);
   }
 }

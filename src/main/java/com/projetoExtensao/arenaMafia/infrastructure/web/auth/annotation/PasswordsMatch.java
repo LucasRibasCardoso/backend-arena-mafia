@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.infrastructure.web.user.annotation;
+package com.projetoExtensao.arenaMafia.infrastructure.web.auth.annotation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;

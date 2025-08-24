@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.adapter.RefreshTokenRepositoryAdapter;
+import com.projetoExtensao.arenaMafia.infrastructure.adapter.repository.RefreshTokenRepositoryAdapter;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.RefreshTokenEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper.RefreshTokenMapper;

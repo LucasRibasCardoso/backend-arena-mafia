@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.infrastructure.adapter;
+package com.projetoExtensao.arenaMafia.infrastructure.adapter.repository;
 
 import com.projetoExtensao.arenaMafia.application.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
@@ -31,6 +31,11 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
   @Transactional(readOnly = true)
   public boolean existsByUsername(String username) {
     return userJpaRepository.existsByUsername(username);
+  }
+
+  @Override
+  public boolean existsByUsernameOrPhone(String username, String phone) {
+    return userJpaRepository.existsByUsernameOrPhone(username, phone);
   }
 
   @Override

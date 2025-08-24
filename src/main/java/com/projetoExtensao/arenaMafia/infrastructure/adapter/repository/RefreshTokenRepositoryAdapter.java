@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.infrastructure.adapter;
+package com.projetoExtensao.arenaMafia.infrastructure.adapter.repository;
 
 import com.projetoExtensao.arenaMafia.application.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;

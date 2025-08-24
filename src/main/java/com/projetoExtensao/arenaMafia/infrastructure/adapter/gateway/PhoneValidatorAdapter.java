@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.infrastructure.adapter;
+package com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway;
 
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;

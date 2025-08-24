@@ -1,6 +1,6 @@
-package com.projetoExtensao.arenaMafia.infrastructure.web.user.dto;
+package com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto;
 
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.annotation.PasswordsMatch;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.annotation.PasswordsMatch;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

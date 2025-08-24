@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import com.projetoExtensao.arenaMafia.application.port.gateway.AuthResult;
+import com.projetoExtensao.arenaMafia.application.port.gateway.auth.AuthResult;
 import com.projetoExtensao.arenaMafia.application.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;

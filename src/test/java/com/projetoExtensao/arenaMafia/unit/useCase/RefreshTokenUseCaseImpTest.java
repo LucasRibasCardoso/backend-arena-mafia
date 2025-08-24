@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-import com.projetoExtensao.arenaMafia.application.port.gateway.AuthPort;
-import com.projetoExtensao.arenaMafia.application.port.gateway.AuthResult;
+import com.projetoExtensao.arenaMafia.application.port.gateway.auth.AuthPort;
+import com.projetoExtensao.arenaMafia.application.port.gateway.auth.AuthResult;
 import com.projetoExtensao.arenaMafia.application.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.useCase.implementation.RefreshTokenUseCaseImp;
 import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenExpiredException;

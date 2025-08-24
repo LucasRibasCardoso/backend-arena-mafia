@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.config.beans;
 
-import com.projetoExtensao.arenaMafia.application.port.gateway.AuthPort;
+import com.projetoExtensao.arenaMafia.application.port.gateway.auth.AuthPort;
 import com.projetoExtensao.arenaMafia.application.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.useCase.LoginUseCase;
 import com.projetoExtensao.arenaMafia.application.useCase.RefreshTokenUseCase;

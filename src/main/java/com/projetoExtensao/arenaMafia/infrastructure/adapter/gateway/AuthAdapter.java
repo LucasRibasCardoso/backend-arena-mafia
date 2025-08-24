@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.infrastructure.adapter;
+package com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway;
 
 import com.projetoExtensao.arenaMafia.application.port.gateway.auth.AuthPort;
 import com.projetoExtensao.arenaMafia.application.port.gateway.auth.AuthResult;
@@ -19,16 +19,16 @@ public class AuthAdapter implements AuthPort {
   @Value("${spring.security.jwt.refresh-token-expiration-days}")
   private Long refreshTokenExpirationDays;
 
-  private final AuthenticationManager authenticationManager;
   private final JwtTokenProvider jwtTokenProvider;
+  private final AuthenticationManager authenticationManager;
   private final RefreshTokenRepositoryPort refreshTokenRepositoryPort;
 
   public AuthAdapter(
-      AuthenticationManager authenticationManager,
       JwtTokenProvider jwtTokenProvider,
+      AuthenticationManager authenticationManager,
       RefreshTokenRepositoryPort refreshTokenRepositoryPort) {
-    this.authenticationManager = authenticationManager;
     this.jwtTokenProvider = jwtTokenProvider;
+    this.authenticationManager = authenticationManager;
     this.refreshTokenRepositoryPort = refreshTokenRepositoryPort;
   }
 

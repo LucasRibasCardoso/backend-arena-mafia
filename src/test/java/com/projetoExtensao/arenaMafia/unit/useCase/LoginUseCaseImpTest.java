@@ -27,7 +27,7 @@ public class LoginUseCaseImpTest {
 
   @Test
   @DisplayName("Deve chamar o AuthPort para autenticar o usuário e retornar o DTO com os tokens")
-  void login_shouldCallAuthPortAndReturnTokenDtoWhenSuccessful() {
+  void execute_shouldCallAuthPortAndReturnTokenDtoWhenSuccessful() {
     // Arrange
     String username = "username";
     String password = "password";
@@ -39,7 +39,7 @@ public class LoginUseCaseImpTest {
     when(authPort.generateTokens(user)).thenReturn(tokenResponseDto);
 
     // Act
-    AuthResult tokenResponse = loginUseCaseImp.login(loginRequestDto);
+    AuthResult tokenResponse = loginUseCaseImp.execute(loginRequestDto);
 
     // Assert
     assertThat(tokenResponse).isNotNull();
@@ -51,7 +51,7 @@ public class LoginUseCaseImpTest {
 
   @Test
   @DisplayName("Deve propagar uma BadCredentialsException quando a autenticação falhar")
-  void login_ShouldPropagateBadCredentialsExceptionWhenAuthenticationFails() {
+  void execute_ShouldPropagateBadCredentialsExceptionWhenAuthenticationFails() {
     // Arrange
     LoginRequestDto loginRequestDto = new LoginRequestDto("username", "passwordWrong");
 
@@ -61,7 +61,7 @@ public class LoginUseCaseImpTest {
                 "Credenciais inválidas. Por favor, verifique seu usuário e senha."));
 
     // Act & Assert
-    assertThatThrownBy(() -> loginUseCaseImp.login(loginRequestDto))
+    assertThatThrownBy(() -> loginUseCaseImp.execute(loginRequestDto))
         .isInstanceOf(BadCredentialsException.class)
         .hasMessage("Credenciais inválidas. Por favor, verifique seu usuário e senha.");
 

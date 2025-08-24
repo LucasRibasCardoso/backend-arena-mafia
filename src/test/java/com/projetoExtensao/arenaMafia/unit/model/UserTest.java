@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import java.time.Instant;
 import java.util.UUID;
@@ -71,8 +72,7 @@ public class UserTest {
               fullName,
               phone,
               passwordHash,
-              true,
-              false,
+              AccountStatus.ACTIVE,
               RoleEnum.ROLE_USER,
               createdAt);
 
@@ -84,7 +84,7 @@ public class UserTest {
       assertThat(user.getPhone()).isEqualTo(phone);
       assertThat(user.getPasswordHash()).isEqualTo(passwordHash);
       assertThat(user.getRole()).isEqualTo(RoleEnum.ROLE_USER);
-      assertThat(user.isEnabled()).isFalse();
+      assertThat(user.isEnabled()).isTrue();
       assertThat(user.isAccountNonLocked()).isTrue();
       assertThat(user.getCreatedAt()).isEqualTo(createdAt);
     }
@@ -126,8 +126,7 @@ public class UserTest {
                       fullName,
                       phone,
                       passwordHash,
-                      true,
-                      false,
+                      AccountStatus.ACTIVE,
                       RoleEnum.ROLE_USER,
                       createdAt))
           .isInstanceOf(DomainValidationException.class)
@@ -138,55 +137,179 @@ public class UserTest {
   @Nested
   @DisplayName("Gerenciamento da conta")
   class AccountManagementTests {
+
     @Test
-    @DisplayName("Deve ativar a conta do usuário")
-    void enable_shouldEnableUserAccount() {
+    @DisplayName("activateAccount() deve ativar a conta se o status for PENDING_VERIFICATION")
+    void activateAccount_shouldActivateAccountWhenPendingVerification() {
       // Arrange
       User user = User.create(username, fullName, phone, passwordHash);
+      assertThat(user.getStatus()).isEqualTo(AccountStatus.PENDING_VERIFICATION);
 
       // Act
       user.activateAccount();
 
       // Assert
-      assertThat(user.isEnabled()).isTrue();
+      assertThat(user.getStatus()).isEqualTo(AccountStatus.ACTIVE);
     }
 
-    @Test
-    @DisplayName("Deve lançar um erro ao tentar ativar a conta de um usuário já ativo")
-    void enable_shouldThrowErrorWhenAccountAlreadyEnabled() {
+    @ParameterizedTest
+    @EnumSource(
+        value = AccountStatus.class,
+        names = {"ACTIVE", "LOCKED"})
+    @DisplayName("activateAccount() deve lançar exceção para status inválidos")
+    void activateAccount_shouldThrowExceptionForInvalidStatus(AccountStatus invalidStatus) {
       // Arrange
-      User user = User.create(username, fullName, phone, passwordHash);
-      user.activateAccount();
+      User user =
+          User.reconstitute(
+              UUID.randomUUID(),
+              username,
+              fullName,
+              phone,
+              passwordHash,
+              invalidStatus,
+              RoleEnum.ROLE_USER,
+              Instant.now());
 
       // Act & Assert
-      assertThatThrownBy(user::activateAccount).hasMessage("Atenção: Conta já está ativada.");
+      assertThatThrownBy(user::activateAccount)
+          .isInstanceOf(DomainValidationException.class)
+          .hasMessage("Atenção: A conta já está ativada.");
     }
 
-    @Test
-    @DisplayName("Deve bloquear a conta do usuário")
-    void lock_shouldLockUserAccount() {
+    @ParameterizedTest
+    @EnumSource(
+        value = AccountStatus.class,
+        names = {"PENDING_VERIFICATION", "ACTIVE"})
+    @DisplayName("lockAccount() deve bloquear a conta de status PENDING_VERIFICATION ou ACTIVE")
+    void lockAccount_shouldLockAccountFromValidStates(AccountStatus initialState) {
       // Arrange
-      User user = User.create(username, fullName, phone, passwordHash);
+      User user =
+          User.reconstitute(
+              UUID.randomUUID(),
+              username,
+              fullName,
+              phone,
+              passwordHash,
+              initialState,
+              RoleEnum.ROLE_USER,
+              Instant.now());
 
       // Act
       user.lockAccount();
 
       // Assert
-      assertThat(user.isAccountNonLocked()).isFalse();
+      assertThat(user.getStatus()).isEqualTo(AccountStatus.LOCKED);
     }
 
     @Test
-    @DisplayName("Deve desbloquear a conta do usuário")
-    void unlock_shouldUnlockUserAccount() {
+    @DisplayName("lockAccount() deve lançar exceção se a conta já estiver bloqueada")
+    void lockAccount_shouldThrowExceptionWhenAlreadyLocked() {
       // Arrange
-      User user = User.create(username, fullName, phone, passwordHash);
-      user.lockAccount();
+      User user =
+          User.reconstitute(
+              UUID.randomUUID(),
+              username,
+              fullName,
+              phone,
+              passwordHash,
+              AccountStatus.LOCKED,
+              RoleEnum.ROLE_USER,
+              Instant.now());
+
+      // Act & Assert
+      assertThatThrownBy(user::lockAccount)
+          .isInstanceOf(DomainValidationException.class)
+          .hasMessage("Atenção: A conta já está bloqueada.");
+    }
+
+    @Test
+    @DisplayName("unlockAccount() deve ativar a conta se o status for LOCKED")
+    void unlockAccount_shouldActivateAccountWhenLocked() {
+      // Arrange
+      User user =
+          User.reconstitute(
+              UUID.randomUUID(),
+              username,
+              fullName,
+              phone,
+              passwordHash,
+              AccountStatus.LOCKED,
+              RoleEnum.ROLE_USER,
+              Instant.now());
 
       // Act
       user.unlockAccount();
 
       // Assert
-      assertThat(user.isAccountNonLocked()).isTrue();
+      assertThat(user.getStatus()).isEqualTo(AccountStatus.ACTIVE);
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+        value = AccountStatus.class,
+        names = {"ACTIVE", "PENDING_VERIFICATION"})
+    @DisplayName("unlockAccount() deve lançar exceção para status inválidos")
+    void unlockAccount_shouldThrowExceptionForInvalidStatus(AccountStatus invalidStatus) {
+      // Arrange
+      User user =
+          User.reconstitute(
+              UUID.randomUUID(),
+              username,
+              fullName,
+              phone,
+              passwordHash,
+              invalidStatus,
+              RoleEnum.ROLE_USER,
+              Instant.now());
+
+      // Act & Assert
+      assertThatThrownBy(user::unlockAccount)
+          .isInstanceOf(DomainValidationException.class)
+          .hasMessage("Atenção: A conta não está bloqueada.");
+    }
+  }
+
+  @Nested
+  @DisplayName("Verificação de status da conta")
+  class AccountStatusCheckTests {
+    private User createUserWithStatus(AccountStatus status) {
+      return User.reconstitute(
+          UUID.randomUUID(),
+          username,
+          fullName,
+          phone,
+          passwordHash,
+          status,
+          RoleEnum.ROLE_USER,
+          Instant.now());
+    }
+
+    @ParameterizedTest
+    @EnumSource(AccountStatus.class)
+    @DisplayName("isEnabled() deve retornar true apenas para o status ACTIVE")
+    void isEnabled_shouldReturnTrueOnlyForActiveStatus(AccountStatus statusToTest) {
+      // Arrange
+      User user = createUserWithStatus(statusToTest);
+
+      // Act
+      boolean result = user.isEnabled();
+
+      // Assert
+      assertThat(result).isEqualTo(statusToTest == AccountStatus.ACTIVE);
+    }
+
+    @ParameterizedTest
+    @EnumSource(AccountStatus.class)
+    @DisplayName("isAccountNonLocked() deve retornar true para status diferentes de LOCKED")
+    void isAccountNonLocked_shouldReturnTrueForNonLockedStatus(AccountStatus statusToTest) {
+      // Arrange
+      User user = createUserWithStatus(statusToTest);
+
+      // Act
+      boolean result = user.isAccountNonLocked();
+
+      // Assert
+      assertThat(result).isEqualTo(statusToTest != AccountStatus.LOCKED);
     }
   }
 
@@ -201,8 +324,7 @@ public class UserTest {
           fullName,
           phone,
           passwordHash,
-          false,
-          true,
+          AccountStatus.ACTIVE,
           role,
           Instant.now());
     }

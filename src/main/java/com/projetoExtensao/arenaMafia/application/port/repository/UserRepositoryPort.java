@@ -11,7 +11,5 @@ public interface UserRepositoryPort {
 
   Optional<User> findById(UUID id);
 
-  boolean existsByUsername(String username);
-
-  boolean existsByPhone(String phone);
+  boolean existsByUsernameOrPhone(String username, String phone);
 }

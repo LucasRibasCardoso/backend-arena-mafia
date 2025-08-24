@@ -34,7 +34,7 @@ public class AuthController {
       @RequestBody @Valid LoginRequestDto loginRequestDto) {
 
     // Realiza a autenticação do usuário e gera o conjunto de tokens
-    AuthResult authResult = loginUseCase.login(loginRequestDto);
+    AuthResult authResult = loginUseCase.execute(loginRequestDto);
 
     // Cria o cookie contendo o refresh token
     ResponseCookie refreshTokenCookie = createRefreshTokenCookie(authResult.refreshToken());
@@ -57,7 +57,7 @@ public class AuthController {
     RefreshTokenRequestDto refreshTokenRequest = new RefreshTokenRequestDto(oldRefreshToken);
 
     // Cria o novo conjunto de tokens
-    AuthResult authResult = refreshTokenUseCase.refreshToken(refreshTokenRequest);
+    AuthResult authResult = refreshTokenUseCase.execute(refreshTokenRequest);
 
     // Criamos o cookie contendo o novo refresh token
     ResponseCookie refreshTokenCookie = createRefreshTokenCookie(authResult.refreshToken());
@@ -71,6 +71,16 @@ public class AuthController {
         .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
         .body(tokenResponseDto);
   }
+
+  // TODO: Implementar endpoint verify
+
+  // TODO: Implementar endpoint resend-code
+
+  // TODO: Implementar endpoint reset-password
+
+  // TODO: Implementar endpoint forgotten-password
+
+  // TODO: Implementar logout
 
   private ResponseCookie createRefreshTokenCookie(String refreshToken) {
     return ResponseCookie.from("refreshToken", refreshToken)

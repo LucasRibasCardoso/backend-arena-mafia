@@ -11,8 +11,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/test/exceptions")
-public class TestExceptionHandlerController {
+@RequestMapping("/test/exceptions/global/")
+public class TestGlobalExceptionHandlerController {
 
   @PostMapping("/validation")
   public void throwMethodArgumentNotValid(@Valid @RequestBody TestDto dto) {
@@ -36,30 +36,5 @@ public class TestExceptionHandlerController {
     // Em um teste real, você pode mockar um serviço para lançar isso
     throw new DataIntegrityViolationException(
         "Erro de integridade de dados. Verifique os dados informados.");
-  }
-
-  @GetMapping("/access-denied")
-  public void throwAccessDenied() {
-    throw new AccessDeniedException("Acesso negado para acessar esse recurso");
-  }
-
-  @GetMapping("/badCredentials")
-  public void throwBadCredentials() {
-    throw new BadCredentialsException("Credenciais inválidas");
-  }
-
-  @GetMapping("/refresh-token-expired")
-  public void throwBadRefreshToken() {
-    throw new RefreshTokenExpiredException("Refresh token expirado");
-  }
-
-  @GetMapping("/refresh-not-found")
-  public void throwNotFoundRefreshToken() {
-    throw new RefreshTokenNotFoundException("Refresh token expirado");
-  }
-
-  @GetMapping("/invalid-format-refresh-token")
-  public void throwInvalidFormatRefreshToken() {
-    throw new RefreshTokenInvalidFormatException("Formato inválido do refresh token");
   }
 }

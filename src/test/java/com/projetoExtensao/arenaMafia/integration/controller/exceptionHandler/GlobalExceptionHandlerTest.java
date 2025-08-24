@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -19,7 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @DisplayName("Testes de integração para GlobalExceptionHandler")
 public class GlobalExceptionHandlerTest {
 
-  private static final String BASE_URL = "/test/exceptions";
+  private static final String BASE_URL = "/test/exceptions/global";
 
   @Autowired private MockMvc mockMvc;
 
@@ -50,19 +49,6 @@ public class GlobalExceptionHandlerTest {
   }
 
   @Test
-  @DisplayName("Deve capturar AccessDeniedException e retornar status 403")
-  void shouldThrowAccessDeniedException() throws Exception {
-    mockMvc
-        .perform(get(BASE_URL + "/access-denied"))
-        .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.status").value(403))
-        .andExpect(
-            jsonPath("$.message")
-                .value("Acesso negado. Você não tem permissão para acessar este recurso."))
-        .andExpect(jsonPath("$.path").value(BASE_URL + "/access-denied"));
-  }
-
-  @Test
   @DisplayName("Deve capturar MethodArgumentNotValidException e retornar status 400")
   void shouldThrowMethodArgumentNotValidExceptionWhenUsernameIsEmpty() throws Exception {
     mockMvc
@@ -89,51 +75,5 @@ public class GlobalExceptionHandlerTest {
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.message").value("Erro de domínio simulado."))
         .andExpect(jsonPath("$.path").value(BASE_URL + "/domain"));
-  }
-
-  @Nested
-  @DisplayName("Deve capturar BadRefreshTokenException e retornar status 401")
-  class BadRefreshTokenExceptionTests {
-    @Test
-    @DisplayName("Quando o refresh token estiver expirado")
-    void shouldThrowBadRefreshTokenExceptionWhenTokenIsExpired() throws Exception {
-      mockMvc
-          .perform(get(BASE_URL + "/refresh-token-expired"))
-          .andExpect(status().isUnauthorized())
-          .andExpect(jsonPath("$.status").value(401))
-          .andExpect(
-              jsonPath("$.message")
-                  .value(
-                      "Token de atualização inválido ou expirado. Por favor, faça login novamente."))
-          .andExpect(jsonPath("$.path").value(BASE_URL + "/refresh-token-expired"));
-    }
-
-    @Test
-    @DisplayName("Quando o refresh token não for encontrado")
-    void shouldThrowNotFoundRefreshTokenExceptionWhenTokenIsNotFound() throws Exception {
-      mockMvc
-          .perform(get(BASE_URL + "/refresh-not-found"))
-          .andExpect(status().isUnauthorized())
-          .andExpect(jsonPath("$.status").value(401))
-          .andExpect(
-              jsonPath("$.message")
-                  .value(
-                      "Token de atualização inválido ou expirado. Por favor, faça login novamente."))
-          .andExpect(jsonPath("$.path").value(BASE_URL + "/refresh-not-found"));
-    }
-
-    @Test
-    @DisplayName("Quando o refresh token for um formato inválido")
-    void shouldThrowBadRefreshTokenExceptionWhenTokenIsInvalidFormat() throws Exception {
-      mockMvc
-          .perform(get(BASE_URL + "/invalid-format-refresh-token"))
-          .andExpect(status().isUnauthorized())
-          .andExpect(jsonPath("$.status").value(401))
-          .andExpect(
-              jsonPath("$.message")
-                  .value(
-                      "Token de atualização inválido ou expirado. Por favor, faça login novamente."))
-          .andExpect(jsonPath("$.path").value(BASE_URL + "/invalid-format-refresh-token"));
-    }
   }
 }

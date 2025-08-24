@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway;
 
-import com.projetoExtensao.arenaMafia.application.port.gateway.PasswordEncoderPort;
+import com.projetoExtensao.arenaMafia.application.port.gateway.auth.PasswordEncoderPort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 

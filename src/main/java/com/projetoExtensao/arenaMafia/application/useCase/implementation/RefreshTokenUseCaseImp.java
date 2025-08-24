@@ -24,7 +24,7 @@ public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
 
   @Override
   @Transactional
-  public AuthResult refreshToken(RefreshTokenRequestDto refreshTokenRequestDto) {
+  public AuthResult execute(RefreshTokenRequestDto refreshTokenRequestDto) {
     // Transforma uma string em um objeto RefreshTokenVO
     RefreshTokenVO refreshTokenVO =
         RefreshTokenVO.fromString(refreshTokenRequestDto.refreshToken());

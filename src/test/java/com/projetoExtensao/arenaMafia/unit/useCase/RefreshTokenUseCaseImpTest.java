@@ -48,7 +48,7 @@ public class RefreshTokenUseCaseImpTest {
 
   @Test
   @DisplayName("Deve renovar os tokens com sucesso para um refresh token válido")
-  void refreshToken_shouldSucceedForValidToken() {
+  void execute_shouldReturnTokens() {
     // Arrange
     RefreshToken validRefreshToken = RefreshToken.create(30L, testUser);
     AuthResult expectedAuthResult =
@@ -59,7 +59,7 @@ public class RefreshTokenUseCaseImpTest {
     when(authPort.generateTokens(testUser)).thenReturn(expectedAuthResult);
 
     // Act
-    AuthResult actualAuthResult = refreshTokenUseCase.refreshToken(requestDto);
+    AuthResult actualAuthResult = refreshTokenUseCase.execute(requestDto);
 
     // Assert
     assertThat(actualAuthResult).isNotNull();
@@ -71,12 +71,12 @@ public class RefreshTokenUseCaseImpTest {
 
   @Test
   @DisplayName("Deve lançar RefreshTokenNotFoundException quando o token não for encontrado")
-  void refreshToken_shouldThrowNotFoundExceptionWhenTokenIsMissing() {
+  void execute_shouldThrowRefreshTokenNotFoundExceptionWhenTokenIsMissing() {
     // Arrange
     when(refreshTokenRepository.findByToken(refreshTokenVO)).thenReturn(Optional.empty());
 
     // Act & Assert
-    assertThatThrownBy(() -> refreshTokenUseCase.refreshToken(requestDto))
+    assertThatThrownBy(() -> refreshTokenUseCase.execute(requestDto))
         .isInstanceOf(RefreshTokenNotFoundException.class)
         .hasMessage("Refresh token não encontrado.");
 
@@ -85,7 +85,7 @@ public class RefreshTokenUseCaseImpTest {
 
   @Test
   @DisplayName("Deve lançar RefreshTokenExpiredException quando o token estiver expirado")
-  void refreshToken_shouldThrowExpiredExceptionForExpiredToken() {
+  void execute_shouldThrowRefreshTokenExpiredExceptionWhenTokenExpired() {
     // Arrange
     RefreshToken expiredRefreshToken = RefreshToken.create(-1L, testUser);
 
@@ -93,7 +93,7 @@ public class RefreshTokenUseCaseImpTest {
         .thenReturn(Optional.of(expiredRefreshToken));
 
     // Act & Assert
-    assertThatThrownBy(() -> refreshTokenUseCase.refreshToken(requestDto))
+    assertThatThrownBy(() -> refreshTokenUseCase.execute(requestDto))
         .isInstanceOf(RefreshTokenExpiredException.class)
         .hasMessage("Refresh token expirado. Faça login novamente.");
 
@@ -104,12 +104,12 @@ public class RefreshTokenUseCaseImpTest {
   @Test
   @DisplayName(
       "Deve lançar RefreshTokenInvalidFormatException quando o token tiver formato inválido")
-  void refreshToken_shouldThrowInvalidFormatExceptionForMalformedToken() {
+  void execute_shouldThrowRefreshTokenInvalidFormatExceptionWhenTokenFormatInvalid() {
     // Arrange
     RefreshTokenRequestDto invalidRequestDto = new RefreshTokenRequestDto("invalid-token");
 
     // Act & Assert
-    assertThatThrownBy(() -> refreshTokenUseCase.refreshToken(invalidRequestDto))
+    assertThatThrownBy(() -> refreshTokenUseCase.execute(invalidRequestDto))
         .isInstanceOf(RefreshTokenInvalidFormatException.class)
         .hasMessage("Formato inválido para o refresh token.");
 

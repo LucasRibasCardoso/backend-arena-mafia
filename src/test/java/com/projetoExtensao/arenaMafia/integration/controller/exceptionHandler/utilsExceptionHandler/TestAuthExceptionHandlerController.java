@@ -61,4 +61,9 @@ public class TestAuthExceptionHandlerController {
   public void throwAccountNotVerified() {
     throw new AccountNotVerifiedException("Sua conta ainda não foi verificada.");
   }
+
+  @GetMapping("/bad-phone-number")
+  public void throwBadPhoneNumber() {
+    throw new BadPhoneNumberException("Número de telefone inválido");
+  }
 }

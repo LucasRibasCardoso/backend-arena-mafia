@@ -135,5 +135,18 @@ public class AuthExceptionHandlerTest {
                   .value("Está conta não está ativa."))
           .andExpect(jsonPath("$.path").value(BASE_URL + "/disabled-account"));
     }
+
+    @Test
+    @DisplayName("Deve capturar BadPhoneNumberException e retornar status 400")
+    void shouldThrowBadPhoneNumberExceptionWhenPhoneNumberIsInvalid() throws Exception {
+      mockMvc
+          .perform(get(BASE_URL + "/bad-phone-number"))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.status").value(400))
+          .andExpect(
+              jsonPath("$.message")
+                  .value("Número de telefone inválido."))
+          .andExpect(jsonPath("$.path").value(BASE_URL + "/bad-phone-number"));
+    }
   }
 }

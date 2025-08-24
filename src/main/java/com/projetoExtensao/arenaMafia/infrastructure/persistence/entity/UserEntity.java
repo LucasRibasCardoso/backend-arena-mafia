@@ -1,5 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.persistence.entity;
 
+import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import jakarta.persistence.*;
 import java.time.Instant;
@@ -23,11 +24,9 @@ public class UserEntity {
   @Column(name = "password_hash", nullable = false)
   private String passwordHash;
 
-  @Column(name = "account_non_locked", nullable = false)
-  private boolean accountNonLocked;
-
-  @Column(nullable = false)
-  private boolean enabled;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 30)
+  private AccountStatus status;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
@@ -80,20 +79,12 @@ public class UserEntity {
     this.passwordHash = passwordHash;
   }
 
-  public boolean isAccountNonLocked() {
-    return accountNonLocked;
+  public AccountStatus getStatus() {
+    return status;
   }
 
-  public void setAccountNonLocked(boolean accountNonLocked) {
-    this.accountNonLocked = accountNonLocked;
-  }
-
-  public boolean isEnabled() {
-    return enabled;
-  }
-
-  public void setEnabled(boolean enabled) {
-    this.enabled = enabled;
+  public void setStatus(AccountStatus status) {
+    this.status = status;
   }
 
   public RoleEnum getRole() {

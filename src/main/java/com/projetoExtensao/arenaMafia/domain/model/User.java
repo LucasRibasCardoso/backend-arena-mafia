@@ -1,6 +1,7 @@
 package com.projetoExtensao.arenaMafia.domain.model;
 
 import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import java.time.Instant;
 import java.util.UUID;
@@ -15,8 +16,7 @@ public class User {
   private final RoleEnum role;
   private final Instant createdAt;
 
-  private boolean accountNonLocked;
-  private boolean enabled;
+  private AccountStatus status;
 
   /**
    * Factory Method para criar uma instância de User. Por padrão um usuário será criado com a role
@@ -33,9 +33,10 @@ public class User {
 
     UUID newId = UUID.randomUUID();
     Instant now = Instant.now();
+    AccountStatus status = AccountStatus.PENDING_VERIFICATION;
 
     return new User(
-        newId, username, fullName, phone, passwordHash, true, false, RoleEnum.ROLE_USER, now);
+        newId, username, fullName, phone, passwordHash, status, RoleEnum.ROLE_USER, now);
   }
 
   /**
@@ -47,8 +48,7 @@ public class User {
    * @param fullName o nome completo do usuário
    * @param phone o telefone do usuário
    * @param passwordHash o hash da senha do usuário
-   * @param accountNonLocked se a conta está bloqueada
-   * @param enabled se a conta está ativada
+   * @param status o status da conta do usuário
    * @param role a role do usuário
    * @param createdAt a data de criação do usuário
    * @return uma instância de User
@@ -59,13 +59,11 @@ public class User {
       String fullName,
       String phone,
       String passwordHash,
-      boolean accountNonLocked,
-      boolean enabled,
+      AccountStatus status,
       RoleEnum role,
       Instant createdAt) {
 
-    return new User(
-        id, username, fullName, phone, passwordHash, accountNonLocked, enabled, role, createdAt);
+    return new User(id, username, fullName, phone, passwordHash, status, role, createdAt);
   }
 
   private User(
@@ -74,8 +72,7 @@ public class User {
       String fullName,
       String phone,
       String passwordHash,
-      boolean accountNonLocked,
-      boolean enabled,
+      AccountStatus status,
       RoleEnum role,
       Instant createdAt) {
 
@@ -85,8 +82,7 @@ public class User {
     this.fullName = fullName;
     this.phone = phone;
     this.passwordHash = passwordHash;
-    this.accountNonLocked = accountNonLocked;
-    this.enabled = enabled;
+    this.status = status;
     this.role = role;
     this.createdAt = createdAt;
   }
@@ -104,18 +100,24 @@ public class User {
   }
 
   public void activateAccount() {
-    if (this.enabled) {
-      throw new DomainValidationException("Atenção: Conta já está ativada.");
+    if (this.status != AccountStatus.PENDING_VERIFICATION) {
+      throw new DomainValidationException("Atenção: A conta já está ativada.");
     }
-    this.enabled = true;
+    this.status = AccountStatus.ACTIVE;
   }
 
   public void lockAccount() {
-    this.accountNonLocked = false;
+    if (this.status == AccountStatus.LOCKED) {
+      throw new DomainValidationException("Atenção: A conta já está bloqueada.");
+    }
+    this.status = AccountStatus.LOCKED;
   }
 
   public void unlockAccount() {
-    this.accountNonLocked = true;
+    if (this.status != AccountStatus.LOCKED) {
+      throw new DomainValidationException("Atenção: A conta não está bloqueada.");
+    }
+    this.status = AccountStatus.ACTIVE;
   }
 
   public boolean isAdmin() {
@@ -159,11 +161,15 @@ public class User {
     return createdAt;
   }
 
+  public AccountStatus getStatus() {
+    return status;
+  }
+
   public boolean isAccountNonLocked() {
-    return accountNonLocked;
+    return this.status != AccountStatus.LOCKED;
   }
 
   public boolean isEnabled() {
-    return enabled;
+    return this.status == AccountStatus.ACTIVE;
   }
 }

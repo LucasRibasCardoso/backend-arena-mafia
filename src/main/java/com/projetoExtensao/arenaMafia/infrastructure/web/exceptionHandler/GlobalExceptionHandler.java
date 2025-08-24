@@ -1,26 +1,22 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler;
 
 import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.BadRefreshTokenException;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.FieldErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-@Order(2)
+@Order()
 public class GlobalExceptionHandler {
 
   @ExceptionHandler(Exception.class)
@@ -69,43 +65,6 @@ public class GlobalExceptionHandler {
             request.getRequestURI());
 
     return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponseDto);
-  }
-
-  @ExceptionHandler(AccessDeniedException.class)
-  public ResponseEntity<ErrorResponseDto> handleAccessDeniedException(HttpServletRequest request) {
-
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(
-            HttpStatus.FORBIDDEN.value(),
-            "Acesso negado. Você não tem permissão para acessar este recurso.",
-            request.getRequestURI());
-
-    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponseDto);
-  }
-
-  @ExceptionHandler(BadCredentialsException.class)
-  public ResponseEntity<ErrorResponseDto> handleBadCredentialsException(
-      HttpServletRequest request) {
-
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(
-            HttpStatus.UNAUTHORIZED.value(),
-            "Credenciais inválidas. Por favor, verifique seu usuário e senha.",
-            request.getRequestURI());
-
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponseDto);
-  }
-
-  @ExceptionHandler(BadRefreshTokenException.class)
-  public ResponseEntity<ErrorResponseDto> handleBadRefreshTokenException(
-      HttpServletRequest request) {
-
-    String message = "Token de atualização inválido ou expirado. Por favor, faça login novamente.";
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(
-            HttpStatus.UNAUTHORIZED.value(), message, request.getRequestURI());
-
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponseDto);
   }
 
   @ExceptionHandler(DomainValidationException.class)

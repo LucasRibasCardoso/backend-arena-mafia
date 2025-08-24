@@ -85,38 +85,29 @@ public class UserJpaRepositoryTest {
   }
 
   @Nested
-  @DisplayName("Testes para os métodos existsBy")
+  @DisplayName("Testes para o método existsByUsernameOrPhone")
   class ExistsByTests {
 
-    @ParameterizedTest(name = "Quando o usuário {0}, deve retornar {1}")
-    @CsvSource({"true, 'existe'", "false, 'não existe'"})
-    @DisplayName("Deve verificar a existência de um usuário pelo username")
-    void existsByUsername_shouldReturnExpectedResult(boolean expectedResult, String description) {
-      // Arrange
-      String username = "usernameTest";
-      if (expectedResult) {
-        createAndPersistUser(username, "5547912345678");
+    @ParameterizedTest(name = "Quando {5}, deve retornar {4}")
+    @CsvSource({
+        "'user-db',   '5547988887777',  'user-db',   '5547911112222', true,  'username existe e telefone não'",
+        "'user-db',   '5547988887777',  'otheruser', '5547988887777', true,  'telefone existe e username não'",
+        "'user-db',   '5547988887777',  'user-db',   '5547988887777', true,  'ambos existem no mesmo registro'",
+        "'null',      'null',           'any-user',  '5547911112222', false, 'nenhum existe (banco de dados vazio)'"
+    })
+    @DisplayName("Deve retornar o resultado esperado para a existência de username OU telefone")
+    void existsByUsernameOrPhone_shouldReturnExpectedResult(
+        String usernameToPersist, String phoneToPersist,
+        String usernameToQuery, String phoneToQuery,
+        boolean expectedResult, String description) {
+
+      // Persistir o usuário no banco de dados apenas se usernameToPersist não for "null
+      if (!"null".equals(usernameToPersist)) {
+        createAndPersistUser(usernameToPersist, phoneToPersist);
       }
 
       // Act
-      boolean exists = userJpaRepository.existsByUsername(username);
-
-      // Assert
-      assertThat(exists).isEqualTo(expectedResult);
-    }
-
-    @ParameterizedTest(name = "Quando o telefone {2}, deve retornar {1}")
-    @CsvSource({"5547912345678, true, 'existir'", "5547931245678, false, 'não existir'"})
-    @DisplayName("Deve verificar a existência de um usuário pelo telefone")
-    void existsByPhone_shouldReturnExpectedResult(
-        String phone, boolean expectedResult, String description) {
-      // Arrange
-      if (expectedResult) {
-        createAndPersistUser("usernameTest", phone);
-      }
-
-      // Act
-      boolean exists = userJpaRepository.existsByPhone(phone);
+      boolean exists = userJpaRepository.existsByUsernameOrPhone(usernameToQuery, phoneToQuery);
 
       // Assert
       assertThat(exists).isEqualTo(expectedResult);

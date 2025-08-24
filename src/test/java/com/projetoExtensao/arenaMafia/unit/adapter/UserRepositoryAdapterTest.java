@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.adapter.UserRepositoryAdapter;
+import com.projetoExtensao.arenaMafia.infrastructure.adapter.repository.UserRepositoryAdapter;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper.UserMapper;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
@@ -160,40 +160,29 @@ public class UserRepositoryAdapterTest {
   }
 
   @Nested
-  @DisplayName("Testes para os métodos existsBy")
+  @DisplayName("Testes para o método existsByUsernameOrPhone")
   class ExistByTests {
 
-    @ParameterizedTest(name = "Quando o telefone {2}, deve retornar {1}")
-    @CsvSource({"'5547912345678', true,  'existir'", "'5547931245678', false, 'não existir'"})
-    @DisplayName("Deve retornar o resultado esperado para a existência do telefone")
-    void existsByPhone_shouldReturnExpectedResult(
-        String phone, boolean expectedResult, String description) {
+    @ParameterizedTest(name = "Quando {3}, deve retornar {2}")
+    @CsvSource({
+      "'userExists', '11999999999', true,  'apenas o username existe'",
+      "'newUser',    '11888888888', true,  'apenas o telefone existe'",
+      "'userExists', '11888888888', true,  'ambos existem'",
+      "'newUser',    '11999999999', false, 'nenhum dos dois existe'"
+    })
+    @DisplayName("Deve retornar o resultado esperado para a existência de username OU telefone")
+    void existsByUsernameOrPhone_shouldReturnExpectedResult(
+        String username, String phone, boolean expectedResult, String description) {
+
       // Arrange
-      when(userJpaRepository.existsByPhone(phone)).thenReturn(expectedResult);
+      when(userJpaRepository.existsByUsernameOrPhone(username, phone)).thenReturn(expectedResult);
 
       // Act
-      boolean exists = userRepositoryAdapter.existsByPhone(phone);
+      boolean exists = userRepositoryAdapter.existsByUsernameOrPhone(username, phone);
 
       // Assert
       assertThat(exists).isEqualTo(expectedResult);
-      verify(userJpaRepository, times(1)).existsByPhone(phone);
-    }
-
-    @ParameterizedTest(name = "Quando o username {2}, deve retornar {1}")
-    @CsvSource({"'usernameTest', true, 'existir'", "'nonExistentUser', false, 'não existir'"})
-    @DisplayName("Deve retornar o resultado esperado para a existência do username")
-    void existsByUsername_shouldReturnExpectedResult(
-        String username, boolean expectedResult, String description) {
-
-      // Arrange
-      when(userJpaRepository.existsByUsername(username)).thenReturn(expectedResult);
-
-      // Act
-      boolean exists = userRepositoryAdapter.existsByUsername(username);
-
-      // Assert
-      assertThat(exists).isEqualTo(expectedResult);
-      verify(userJpaRepository, times(1)).existsByUsername(username);
+      verify(userJpaRepository, times(1)).existsByUsernameOrPhone(username, phone);
     }
   }
 }

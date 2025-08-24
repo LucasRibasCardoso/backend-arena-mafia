@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.integration.controller.exceptionHandler;
+package com.projetoExtensao.arenaMafia.integration.controller.exceptionHandler.utilsExceptionHandler;
 
 import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
 import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenExpiredException;

@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.integration.controller.exceptionHandler;
+package com.projetoExtensao.arenaMafia.integration.controller.exceptionHandler.utilsExceptionHandler;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

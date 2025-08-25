@@ -33,20 +33,16 @@ public class SignUpUseCaseImp implements SignUpUseCase {
 
   @Override
   public String execute(SignupRequestDto requestDto) {
-    // Extrai os dados do DTO
     String username = requestDto.username();
     String fullName = requestDto.fullName();
     String phone = requestDto.phone();
     String password = requestDto.password();
 
-    // Valida se o username e telefone são únicos
     validateUniqueness(username, phone);
 
-    // Formata o telefone e codifica a senha
     String formattedPhone = phoneValidator.formatToE164(phone);
     String encodedPassword = passwordEncoderPort.encode(password);
 
-    // Cria o usuário e salva no banco de dados
     User user = User.create(username, fullName, formattedPhone, encodedPassword);
 
     // Tenta salvar o usuário e captura exceções de integridade se o telefone ou username já existam

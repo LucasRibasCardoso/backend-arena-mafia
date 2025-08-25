@@ -90,16 +90,19 @@ public class UserJpaRepositoryTest {
 
     @ParameterizedTest(name = "Quando {5}, deve retornar {4}")
     @CsvSource({
-        "'user-db',   '5547988887777',  'user-db',   '5547911112222', true,  'username existe e telefone não'",
-        "'user-db',   '5547988887777',  'otheruser', '5547988887777', true,  'telefone existe e username não'",
-        "'user-db',   '5547988887777',  'user-db',   '5547988887777', true,  'ambos existem no mesmo registro'",
-        "'null',      'null',           'any-user',  '5547911112222', false, 'nenhum existe (banco de dados vazio)'"
+      "'user-db',   '5547988887777',  'user-db',   '5547911112222', true,  'username existe e telefone não'",
+      "'user-db',   '5547988887777',  'otheruser', '5547988887777', true,  'telefone existe e username não'",
+      "'user-db',   '5547988887777',  'user-db',   '5547988887777', true,  'ambos existem no mesmo registro'",
+      "'null',      'null',           'any-user',  '5547911112222', false, 'nenhum existe (banco de dados vazio)'"
     })
     @DisplayName("Deve retornar o resultado esperado para a existência de username OU telefone")
     void existsByUsernameOrPhone_shouldReturnExpectedResult(
-        String usernameToPersist, String phoneToPersist,
-        String usernameToQuery, String phoneToQuery,
-        boolean expectedResult, String description) {
+        String usernameToPersist,
+        String phoneToPersist,
+        String usernameToQuery,
+        String phoneToQuery,
+        boolean expectedResult,
+        String description) {
 
       // Persistir o usuário no banco de dados apenas se usernameToPersist não for "null
       if (!"null".equals(usernameToPersist)) {

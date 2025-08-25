@@ -6,5 +6,4 @@ public interface AuthPort {
   User authenticate(String username, String password);
 
   AuthResult generateTokens(User user);
-
 }

@@ -57,7 +57,9 @@ public class GlobalExceptionHandler {
 
     ErrorResponseDto errorResponseDto =
         ErrorResponseDto.forValidationErrors(
-            "Erro de validação. Verifique os campos informados.", request.getRequestURI(), fieldErrors);
+            "Erro de validação. Verifique os campos informados.",
+            request.getRequestURI(),
+            fieldErrors);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDto);
   }

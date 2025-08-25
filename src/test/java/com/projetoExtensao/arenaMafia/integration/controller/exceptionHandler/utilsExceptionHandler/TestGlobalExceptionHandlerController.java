@@ -1,13 +1,8 @@
 package com.projetoExtensao.arenaMafia.integration.controller.exceptionHandler.utilsExceptionHandler;
 
 import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenExpiredException;
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenInvalidFormatException;
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

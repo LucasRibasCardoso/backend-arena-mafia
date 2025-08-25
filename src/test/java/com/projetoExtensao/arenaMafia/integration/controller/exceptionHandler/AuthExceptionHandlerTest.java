@@ -1,5 +1,9 @@
 package com.projetoExtensao.arenaMafia.integration.controller.exceptionHandler;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -7,10 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -91,9 +91,7 @@ public class AuthExceptionHandlerTest {
           .perform(get(BASE_URL + "/disabled-account"))
           .andExpect(status().isForbidden())
           .andExpect(jsonPath("$.status").value(403))
-          .andExpect(
-              jsonPath("$.message")
-                  .value("Está conta não está ativa."))
+          .andExpect(jsonPath("$.message").value("Está conta não está ativa."))
           .andExpect(jsonPath("$.path").value(BASE_URL + "/disabled-account"));
     }
 
@@ -117,9 +115,7 @@ public class AuthExceptionHandlerTest {
           .perform(get(BASE_URL + "/account-not-verified"))
           .andExpect(status().isForbidden())
           .andExpect(jsonPath("$.status").value(403))
-          .andExpect(
-              jsonPath("$.message")
-                  .value("Sua conta ainda não foi verificada."))
+          .andExpect(jsonPath("$.message").value("Sua conta ainda não foi verificada."))
           .andExpect(jsonPath("$.path").value(BASE_URL + "/account-not-verified"));
     }
 
@@ -130,9 +126,7 @@ public class AuthExceptionHandlerTest {
           .perform(get(BASE_URL + "/disabled-account"))
           .andExpect(status().isForbidden())
           .andExpect(jsonPath("$.status").value(403))
-          .andExpect(
-              jsonPath("$.message")
-                  .value("Está conta não está ativa."))
+          .andExpect(jsonPath("$.message").value("Está conta não está ativa."))
           .andExpect(jsonPath("$.path").value(BASE_URL + "/disabled-account"));
     }
 
@@ -143,9 +137,7 @@ public class AuthExceptionHandlerTest {
           .perform(get(BASE_URL + "/bad-phone-number"))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.status").value(400))
-          .andExpect(
-              jsonPath("$.message")
-                  .value("Número de telefone inválido"))
+          .andExpect(jsonPath("$.message").value("Número de telefone inválido"))
           .andExpect(jsonPath("$.path").value(BASE_URL + "/bad-phone-number"));
     }
   }

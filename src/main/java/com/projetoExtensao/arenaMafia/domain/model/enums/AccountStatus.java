@@ -5,7 +5,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum AccountStatus {
   PENDING_VERIFICATION("pending_verification"),
   ACTIVE("active"),
-  LOCKED("locked");
+  LOCKED("locked"),
+  DISABLED("disabled");
 
   private final String value;
 

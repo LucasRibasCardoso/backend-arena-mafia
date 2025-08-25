@@ -58,7 +58,7 @@ public class GlobalExceptionHandlerTest {
                 .content("{\"fieldTestUsername\":\"usr\"}")) // username muito curto
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value(400))
-        .andExpect(jsonPath("$.message").value("Erro de validação nos campos informados."))
+        .andExpect(jsonPath("$.message").value("Erro de validação. Verifique os campos informados."))
         .andExpect(jsonPath("$.path").value(BASE_URL + "/validation"))
         .andExpect(jsonPath("$.fieldErrors[0].fieldName").value("fieldTestUsername"))
         .andExpect(

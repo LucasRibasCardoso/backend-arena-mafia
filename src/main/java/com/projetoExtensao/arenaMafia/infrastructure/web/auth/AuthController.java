@@ -1,18 +1,24 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth;
 
-import com.projetoExtensao.arenaMafia.application.port.gateway.auth.AuthResult;
-import com.projetoExtensao.arenaMafia.application.useCase.LoginUseCase;
-import com.projetoExtensao.arenaMafia.application.useCase.RefreshTokenUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.LoginUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.RefreshTokenUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.SignUpUseCase;
+import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.LoginRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.RefreshTokenRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.TokenResponseDto;
 import jakarta.validation.Valid;
+import java.net.URI;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("api/auth")
@@ -22,11 +28,35 @@ public class AuthController {
   private long refreshTokenExpirationDays;
 
   private final LoginUseCase loginUseCase;
+  private final SignUpUseCase signUpUseCase;
   private final RefreshTokenUseCase refreshTokenUseCase;
 
-  public AuthController(LoginUseCase loginUseCase, RefreshTokenUseCase refreshTokenUseCase) {
+  public AuthController(
+      LoginUseCase loginUseCase,
+      SignUpUseCase signUpUseCase,
+      RefreshTokenUseCase refreshTokenUseCase) {
     this.loginUseCase = loginUseCase;
+    this.signUpUseCase = signUpUseCase;
     this.refreshTokenUseCase = refreshTokenUseCase;
+  }
+
+  @PostMapping("/signup")
+  public ResponseEntity<SignupResponseDto> signup(@Valid @RequestBody SignupRequestDto requestDto) {
+    String userIdentifier = signUpUseCase.execute(requestDto);
+
+    URI location =
+        ServletUriComponentsBuilder.fromCurrentRequestUri()
+            .replacePath("/api/users/{identifier}")
+            .buildAndExpand(userIdentifier)
+            .toUri();
+
+    SignupResponseDto signupResponseDto =
+        new SignupResponseDto(
+            AccountStatus.PENDING_VERIFICATION.getValue(),
+            "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone.",
+            userIdentifier);
+
+    return ResponseEntity.created(location).body(signupResponseDto);
   }
 
   @PostMapping("/login")
@@ -71,16 +101,6 @@ public class AuthController {
         .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
         .body(tokenResponseDto);
   }
-
-  // TODO: Implementar endpoint verify
-
-  // TODO: Implementar endpoint resend-code
-
-  // TODO: Implementar endpoint reset-password
-
-  // TODO: Implementar endpoint forgotten-password
-
-  // TODO: Implementar logout
 
   private ResponseCookie createRefreshTokenCookie(String refreshToken) {
     return ResponseCookie.from("refreshToken", refreshToken)

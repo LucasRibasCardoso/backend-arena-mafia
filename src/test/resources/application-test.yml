@@ -8,6 +8,11 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
   security:
     jwt:
       secret-key: 551VM4LcN284uYnv3MjDckhe9IQ6ta7/0jNwrvNqRz0=

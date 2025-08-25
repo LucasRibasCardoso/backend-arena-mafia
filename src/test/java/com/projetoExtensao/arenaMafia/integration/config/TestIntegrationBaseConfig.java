@@ -4,7 +4,7 @@ import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
-public abstract class TestIntegrationBaseConfig extends TestContainersConfig {
+public abstract class TestIntegrationBaseConfig extends TestContainersPostgresConfig {
 
   @LocalServerPort private int port;
 

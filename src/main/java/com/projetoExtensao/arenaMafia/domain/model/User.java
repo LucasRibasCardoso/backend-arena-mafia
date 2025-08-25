@@ -4,6 +4,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationEx
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 public class User {
@@ -171,5 +172,16 @@ public class User {
 
   public boolean isEnabled() {
     return this.status == AccountStatus.ACTIVE;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof User user)) return false;
+    return Objects.equals(id, user.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return getClass().hashCode();
   }
 }

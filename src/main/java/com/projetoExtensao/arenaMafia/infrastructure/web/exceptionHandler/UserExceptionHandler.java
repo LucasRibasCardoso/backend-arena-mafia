@@ -1,6 +1,7 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler;
 
 import com.projetoExtensao.arenaMafia.domain.exception.user.BadPhoneNumberException;
+import com.projetoExtensao.arenaMafia.domain.exception.user.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.Ordered;
@@ -16,14 +17,23 @@ public class UserExceptionHandler {
 
   @ExceptionHandler(BadPhoneNumberException.class)
   public ResponseEntity<ErrorResponseDto> handlerBadPhoneNumberException(
-      HttpServletRequest request) {
+      HttpServletRequest request, BadPhoneNumberException ex) {
 
     ErrorResponseDto response =
         ErrorResponseDto.forGeneralError(
-            HttpStatus.BAD_REQUEST.value(),
-            "Número de telefone inválido.",
-            request.getRequestURI());
+            HttpStatus.BAD_REQUEST.value(), ex.getMessage(), request.getRequestURI());
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+  }
+
+  @ExceptionHandler(UserAlreadyExistsException.class)
+  public ResponseEntity<ErrorResponseDto> handlerUserAlreadyExistsException(
+      UserAlreadyExistsException ex, HttpServletRequest request) {
+
+    ErrorResponseDto response =
+        ErrorResponseDto.forGeneralError(
+            HttpStatus.CONFLICT.value(), ex.getMessage(), request.getRequestURI());
+
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
   }
 }

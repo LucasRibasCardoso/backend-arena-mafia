@@ -4,8 +4,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationEx
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.FieldErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -34,22 +33,31 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorResponseDto> handleValidationException(
       MethodArgumentNotValidException e, HttpServletRequest request) {
 
+    Map<String, String> errorMap = new LinkedHashMap<>();
+
+    // Itera sobre todos os erros (de campo e globais)
+    e.getBindingResult()
+        .getAllErrors()
+        .forEach(
+            error -> {
+              String key;
+              if (error instanceof FieldError fieldError) {
+                key = fieldError.getField();
+              } else {
+                key = error.getObjectName();
+              }
+              errorMap.putIfAbsent(key, error.getDefaultMessage());
+            });
+
+    // Converte o mapa para a lista de DTOs de erro
     List<FieldErrorResponseDto> fieldErrors =
-        e.getBindingResult().getFieldErrors().stream()
-            .collect(
-                Collectors.toMap(
-                    FieldError::getField, // Key: field name
-                    FieldError::getDefaultMessage, // Value: error message
-                    (existingValue, newValue) -> existingValue) // mantém o valor existente
-                )
-            .entrySet() // Converte o Map em um SET de FieldErrorResponseDto
-            .stream()
+        errorMap.entrySet().stream()
             .map(entry -> new FieldErrorResponseDto(entry.getKey(), entry.getValue()))
-            .toList(); // Converte o SET de Map.Entry em uma lista de FieldErrorResponseDto
+            .toList();
 
     ErrorResponseDto errorResponseDto =
         ErrorResponseDto.forValidationErrors(
-            "Erro de validação nos campos informados.", request.getRequestURI(), fieldErrors);
+            "Erro de validação. Verifique os campos informados.", request.getRequestURI(), fieldErrors);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDto);
   }

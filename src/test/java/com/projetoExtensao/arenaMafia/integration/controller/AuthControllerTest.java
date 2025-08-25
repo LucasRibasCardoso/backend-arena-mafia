@@ -2,13 +2,16 @@ package com.projetoExtensao.arenaMafia.integration.controller;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.tuple;
 
-import com.projetoExtensao.arenaMafia.application.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.LoginRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.TokenResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.integration.config.TestIntegrationBaseConfig;
@@ -92,7 +95,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 401 Unauthorized para login com credenciais inválidas")
+    @DisplayName("Deve retornar 401 Unauthorized quando credenciais inválidas forem fornecidas")
     void login_shouldReturn401ForInvalidLogin() {
       // Arrange
       LoginRequestDto request = new LoginRequestDto("invaliduser", "wrongpassword");
@@ -119,7 +122,8 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 403 Forbidden para usuário com status PENDING_VERIFICATION")
+    @DisplayName(
+        "Deve retornar 403 Forbidden quando um usuário PENDING_VERIFICATION tentar fazer login")
     void login_shouldReturn403ForUserWithPendingVerificationStatus() {
       // Arrange
       createAndPersistUser(AccountStatus.PENDING_VERIFICATION);
@@ -145,7 +149,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 403 Forbidden para usuário com status LOCKED")
+    @DisplayName("Deve retornar 403 Forbidden quando um usuário LOCKED tentar fazer login")
     void login_shouldReturn403ForUserWithLockedStatus() {
       // Arrange
       createAndPersistUser(AccountStatus.LOCKED);
@@ -170,6 +174,32 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
           .isEqualTo("Sua conta está bloqueada. Por favor, contate o suporte.");
       assertThat(response.path()).isEqualTo("/api/auth/login");
     }
+
+    @Test
+    @DisplayName("Deve retornar 403 Forbidden quando um usuário DISABLED tentar fazer login")
+    void login_shouldReturn403ForUserWithDisabledStatus() {
+      // Arrange
+      createAndPersistUser(AccountStatus.DISABLED);
+      LoginRequestDto request = new LoginRequestDto("testUser", "123456");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/login")
+              .then()
+              .statusCode(403)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response).isNotNull();
+      assertThat(response.status()).isEqualTo(403);
+      assertThat(response.message()).isEqualTo("Está conta não está ativa.");
+      assertThat(response.path()).isEqualTo("/api/auth/login");
+    }
   }
 
   @Nested
@@ -177,7 +207,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
   class RefreshTokenTests {
 
     @Test
-    @DisplayName("Deve retornar 200 OK com novos tokens ao usar um refreshToken válido")
+    @DisplayName("Deve retornar 200 OK quando um token válido for enviado")
     void refreshToken_shouldReturn200ForValidToken() {
       // Arrange
       createAndPersistUser(AccountStatus.ACTIVE);
@@ -223,7 +253,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 401 Unauthorized para um refreshToken inválido")
+    @DisplayName("Deve retornar 401 Unauthorized quando um token inválido for enviado")
     void refreshToken_shouldReturn401ForInvalidToken() {
       // Arrange
       Cookie invalidCookie = new Cookie.Builder("refreshToken", "token-que-nao-existe").build();
@@ -251,6 +281,133 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     }
   }
 
+  @Nested
+  @DisplayName("Testes para o endpoint /auth/signup")
+  class SignupTests {
+
+    @Test
+    @DisplayName("Deve retornar 201 created quando os dados do usuário forem válidos")
+    void signup_shouldReturn201ForValidSignup() {
+      // Arrange
+      var signupRequest =
+          new SignupRequestDto("newUser", "New User", "+5547998765432", "password", "password");
+
+      // Act
+      SignupResponseDto response =
+          given()
+              .spec(specification)
+              .body(signupRequest)
+              .when()
+              .post("/signup")
+              .then()
+              .statusCode(201)
+              .extract()
+              .as(SignupResponseDto.class);
+
+      // Assert
+      assertThat(response).isNotNull();
+      assertThat(response.status()).isEqualTo(AccountStatus.PENDING_VERIFICATION.getValue());
+      assertThat(response.message())
+          .isEqualTo(
+              "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone.");
+      assertThat(response.identifier()).isEqualTo(signupRequest.username());
+    }
+
+    @Test
+    @DisplayName("Deve retornar 400 Bad Request quando as senhas não coincidirem")
+    void signup_shouldReturn400ForInvalidSignup() {
+      // Arrange
+      var invalidSignupRequest =
+          new SignupRequestDto(
+              "username_test",
+              "New User",
+              "+5547912345678",
+              "password",
+              "differentPassword" // Senhas não coincidem
+              );
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(invalidSignupRequest)
+              .when()
+              .post("/signup")
+              .then()
+              .statusCode(400)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.fieldErrors())
+          .hasSize(1)
+          .extracting("fieldName", "message")
+          .containsExactly(
+              tuple("confirmPassword", "A senha de confirmação não corresponde à senha."));
+    }
+
+    @Test
+    @DisplayName("Deve retornar 400 Bad Request quando o telefone informado tem formato inválido")
+    void signup_shouldReturn400ForPhoneNumberInvalidFormat() {
+      // Arrange
+      var invalidPhoneSignupRequest =
+          new SignupRequestDto("test_user", "Test User 2", "+554712345678", "password", "password");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(invalidPhoneSignupRequest)
+              .when()
+              .post("/signup")
+              .then()
+              .statusCode(400)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response).isNotNull();
+      assertThat(response.status()).isEqualTo(400);
+      assertThat(response.message())
+          .isEqualTo(
+              "Número de telefone inválido. Por favor, inclua o código do país e o DDD (ex: +5547988887777).");
+      assertThat(response.path()).isEqualTo("/api/auth/signup");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 409 Conflict quando o username ou telefone já estão em uso")
+    void signup_shouldReturn409ForDuplicateUsernameOrPhone() {
+      // Arrange
+      createAndPersistUser(AccountStatus.ACTIVE);
+      var duplicateSignupRequest =
+          new SignupRequestDto(
+              "testUser", // Username já existente
+              "Another User",
+              "+5547912345678", // Telefone já existente
+              "password",
+              "password");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(duplicateSignupRequest)
+              .when()
+              .post("/signup")
+              .then()
+              .statusCode(409)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response).isNotNull();
+      assertThat(response.status()).isEqualTo(409);
+      assertThat(response.message())
+          .isEqualTo("Nome de usuário ou telefone indisponível. Por favor, utilize outros.");
+      assertThat(response.path()).isEqualTo("/api/auth/signup");
+    }
+  }
+
   private void createAndPersistUser(AccountStatus status) {
     String passwordEncoded = passwordEncoder.encode("123456");
     User user =
@@ -258,7 +415,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
             UUID.randomUUID(),
             "testUser",
             "Test User",
-            "5547912345678",
+            "+5547912345678",
             passwordEncoded,
             status,
             RoleEnum.ROLE_USER,

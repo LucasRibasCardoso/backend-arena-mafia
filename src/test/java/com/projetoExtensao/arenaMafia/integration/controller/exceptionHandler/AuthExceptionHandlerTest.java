@@ -145,7 +145,7 @@ public class AuthExceptionHandlerTest {
           .andExpect(jsonPath("$.status").value(400))
           .andExpect(
               jsonPath("$.message")
-                  .value("Número de telefone inválido."))
+                  .value("Número de telefone inválido"))
           .andExpect(jsonPath("$.path").value(BASE_URL + "/bad-phone-number"));
     }
   }

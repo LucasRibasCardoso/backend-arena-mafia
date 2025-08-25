@@ -4,12 +4,9 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.LoginUseCase;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.RefreshTokenUseCase;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.SignUpUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.VerifyAccountUseCase;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.LoginRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.RefreshTokenRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.TokenResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.*;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.Duration;
@@ -29,15 +26,18 @@ public class AuthController {
 
   private final LoginUseCase loginUseCase;
   private final SignUpUseCase signUpUseCase;
+  private final VerifyAccountUseCase verifyAccountUseCase;
   private final RefreshTokenUseCase refreshTokenUseCase;
 
   public AuthController(
       LoginUseCase loginUseCase,
       SignUpUseCase signUpUseCase,
-      RefreshTokenUseCase refreshTokenUseCase) {
+      RefreshTokenUseCase refreshTokenUseCase,
+      VerifyAccountUseCase verifyAccountUseCase) {
     this.loginUseCase = loginUseCase;
     this.signUpUseCase = signUpUseCase;
     this.refreshTokenUseCase = refreshTokenUseCase;
+    this.verifyAccountUseCase = verifyAccountUseCase;
   }
 
   @PostMapping("/signup")
@@ -57,6 +57,26 @@ public class AuthController {
             userIdentifier);
 
     return ResponseEntity.created(location).body(signupResponseDto);
+  }
+
+  @PostMapping("/verify-account")
+  public ResponseEntity<TokenResponseDto> verifyAccount(
+      @Valid @RequestBody VerifyAccountRequestDto requestDto) {
+
+    // Verifica a conta do usuário e gera o conjunto de tokens
+    AuthResult authResult = verifyAccountUseCase.execute(requestDto);
+
+    // Cria o cookie contendo o refresh token
+    ResponseCookie refreshTokenCookie = createRefreshTokenCookie(authResult.refreshToken());
+
+    // Crie o DTO de resposta contendo o username e o accesToken
+    TokenResponseDto tokenResponseDto =
+        new TokenResponseDto(authResult.username(), authResult.accessToken());
+
+    // Retorna o cookie contendo o refreshToken e o accessToken via DTO
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+        .body(tokenResponseDto);
   }
 
   @PostMapping("/login")

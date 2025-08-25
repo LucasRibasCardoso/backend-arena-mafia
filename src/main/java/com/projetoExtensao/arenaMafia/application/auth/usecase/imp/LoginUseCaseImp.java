@@ -26,23 +26,24 @@ public class LoginUseCaseImp implements LoginUseCase {
   @Override
   @Transactional
   public AuthResult execute(LoginRequestDto loginRequestDto) {
-    User existingUser =
-        userRepository
-            .findByUsername(loginRequestDto.username())
-            .orElseThrow(
-                () ->
-                    new BadCredentialsException(
-                        "Credenciais inválidas. Por favor, verifique seu usuário e senha."));
+    User existingUser = getUserIfExists(loginRequestDto.username());
 
-    // Verifica se a conta está ativa
-    ensureAccountIsActive(existingUser);
+    checkIfAccountIsActive(existingUser);
 
-    // Autentica o usuário
     User user = authPort.authenticate(loginRequestDto.username(), loginRequestDto.password());
     return authPort.generateTokens(user);
   }
 
-  private void ensureAccountIsActive(User existingUser) {
+  private User getUserIfExists(String username) {
+    return userRepository
+        .findByUsername(username)
+        .orElseThrow(
+            () ->
+                new BadCredentialsException(
+                    "Credenciais inválidas. Por favor, verifique seu usuário e senha."));
+  }
+
+  private void checkIfAccountIsActive(User existingUser) {
     if (existingUser.getStatus() != AccountStatus.ACTIVE) {
       if (existingUser.getStatus().equals(AccountStatus.PENDING_VERIFICATION)) {
         throw new AccountNotVerifiedException("Sua conta ainda não foi verificada.");

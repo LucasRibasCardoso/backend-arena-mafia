@@ -11,7 +11,6 @@ info:
     name: Apache 2.0
     url: https://github.com/LucasRibasCardoso
 
-# Componentes reutilizáveis
 components:
   securitySchemes:
     bearerAuth:
@@ -65,6 +64,9 @@ components:
 
     LoginRequestDto:
       type: object
+      required:
+        - username
+        - password
       properties:
         username: {
           type: string,
@@ -76,7 +78,6 @@ components:
           description: "Senha do usuário.",
           example: "123456"
         }
-      required: [ username, password ]
 
     TokenResponseDto:
       type: object
@@ -93,10 +94,63 @@ components:
         }
       required: [ username, accessToken ]
 
+    SignupRequest:
+      type: object
+      description: Dados necessários para o cadastro de um novo usuário. A senha e a confirmação de senha devem ser idênticas.
+      required:
+        - username
+        - fullName
+        - phone
+        - password
+        - confirmPassword
+      properties:
+        username:
+          type: string
+          description: "Nome de usuário único, deve conter apenas letras, números e underscore (_)."
+          example: "joao_silva99"
+          minLength: 3
+          maxLength: 20
+          pattern: "^[a-zA-Z0-9_]{3,20}$"
+        fullName:
+          type: string
+          description: "Nome completo do usuário."
+          example: "João da Silva"
+        phone:
+          type: string
+          description: "Número de telefone no formato internacional, incluindo o código do país e DDD."
+          example: "+5547912345678"
+          pattern: "^\\+\\d{10,15}$"
+        password:
+          type: string
+          format: password
+          description: "Senha do usuário. Deve ter entre 6 e 20 caracteres."
+          example: "senhaForte123"
+          minLength: 6
+          maxLength: 20
+        confirmPassword:
+          type: string
+          format: password
+          description: "Confirmação da senha. Deve ser idêntica ao campo 'password'."
+          example: "senhaForte123"
+
+    SignupResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: "Status da conta do usuário após o registro."
+          example: "pending_verification"
+        message:
+          type: string
+          description: "Mensagem de confirmação do sucesso da operação."
+          example: "Usuário registrado com sucesso."
+        identifier:
+          type: string
+          description: "Identificador único (username) do usuário recém-criado."
+          example: "username_test"
+
   responses:
-    # Respostas de erro
     ErrorResponseBadRequest:
-      description: "Requisição inválida."
       content:
         application/json:
           schema:
@@ -127,7 +181,6 @@ components:
                     message: "A senha não pode estar em branco."
 
     ErrorResponseUnauthorized:
-      description: "Requisição não autorizada"
       content:
         application/json:
           schema:
@@ -140,7 +193,6 @@ components:
             fieldErrors: null
 
     ErrorResponseNotFound:
-      description: "Recurso não encontrado."
       content:
         application/json:
           schema:
@@ -153,7 +205,6 @@ components:
             fieldErrors: null
 
     ErrorResponseForbidden:
-      description: "Acesso negado."
       content:
         application/json:
           schema:
@@ -161,12 +212,11 @@ components:
           example:
             timestamp: "2025-08-15T13:55:00Z"
             status: 403
-            message: "Não autorizado a acessar este recurso."
+            message: "Usuário não autorizado a acessar este recurso."
             path: "/api/some/endpoint"
             fieldErrors: null
 
     ErrorResponseConflict:
-      description: "Conflito de recursos ou estado."
       content:
         application/json:
           schema:
@@ -192,11 +242,18 @@ components:
             fieldErrors: null
 
     TokenResponse:
-      description: "Usuário autenticado com sucesso."
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/TokenResponseDto"
+
+
+    SignupResponse:
+      description: Usuário registrado com sucesso. A conta está pendente de verificação.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SignupResponse'
 
 # Mapeamento dos endpoints da API
 paths:
@@ -205,7 +262,7 @@ paths:
       operationId: login
       tags:
         - Autenticação
-      summary: "Autenticação de Usuário"
+      summary: Login do Usuário
       description: |
         Endpoint para autenticar um usuário existente.
         Recebe as credenciais e retorna tokens JWT de acesso e refresh.
@@ -217,21 +274,27 @@ paths:
               $ref: "#/components/schemas/LoginRequestDto"
       responses:
         "200":
-          description: "Usuário autenticado com sucesso."
+          description: Usuário autenticado com sucesso.
           headers:
             Set-Cookie:
-              description: "Cookie HttpOnly contendo o token de refresh."
+              description: Cookie HttpOnly contendo o token de refresh.
               schema:
                 type: string
-                example: "refreshToken=99ed48e3-0076-4b39-a2ed-f02f5335673e...;"
+                example: refreshToken=99ed48e3-0076-4b39-a2ed-f02f5335673e...;
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TokenResponseDto"
+            $ref: "#/components/responses/TokenResponse/content"
         "400":
-          $ref: "#/components/responses/ErrorResponseBadRequest"
+          description: Exceção lançada para requisições inválidas.
+          content:
+            $ref: "#/components/responses/ErrorResponseBadRequest/content"
         "401":
-          $ref: "#/components/responses/ErrorResponseUnauthorized"
+          description: "Exceção lançada para credenciais inválidas."
+          content:
+            $ref: "#/components/responses/ErrorResponseUnauthorized/content"
+        "403":
+          description: Exceção lançada para contas desativadas ou bloqueadas.
+          content:
+            $ref: "#/components/responses/ErrorResponseForbidden/content"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"
 
@@ -240,7 +303,7 @@ paths:
       operationId: refreshToken
       tags:
         - Autenticação
-      summary: "Renovação de Token de Acesso"
+      summary: Renovação de Token de Acesso
       description: |
         Endpoint para renovar o token de acesso usando o token de refresh.
         O token de refresh deve ser enviado como um cookie HttpOnly.
@@ -248,24 +311,55 @@ paths:
         - in: cookie
           name: refreshToken
           required: true
-          description: "O refresh token é recebido no momento do login. O navegador o anexa automaticamente à requisição."
+          description: O refresh token é recebido no momento do login. O navegador o anexa automaticamente à requisição.
           schema:
             type: string
-            example: "99ed48e3-0076-4b39-a2ed-f02f5335673e.."
+            example: 99ed48e3-0076-4b39-a2ed-f02f5335673e..
       responses:
         "200":
-          description: "Token de acesso renovado com sucesso. Um novo refresh token é retornado no cookie para aumentar a segurança (rotação de tokens)."
+          description: Token de acesso renovado com sucesso. Um novo refresh token é retornado no cookie para aumentar a segurança (rotação de tokens).
           headers:
             Set-Cookie:
-              description: "Cookie HttpOnly contendo o **novo** token de refresh."
+              description: Cookie HttpOnly contendo o **novo** token de refresh.
               schema:
                 type: string
-                example: "refreshToken=a1b2c3d4-e5f6-7890-1234-567890abcdef...;"
+                example: refreshToken=a1b2c3d4-e5f6-7890-1234-567890abcdef...;
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TokenResponseDto"
+            $ref: "#/components/responses/TokenResponse/content"
         "401":
-          $ref: "#/components/responses/ErrorResponseUnauthorized"
+          description: Exceção lançada para tokens inválidos, expirados ou ausentes.
+          content:
+            $ref: "#/components/responses/ErrorResponseUnauthorized/content"
+        "500":
+          $ref: "#/components/responses/ErrorResponseInternalServerError"
+
+  /api/auth/signup:
+    post:
+      operationId: signup
+      tags:
+        - Autenticação
+      summary: Registrar Usuário
+      description: |
+        Endpoint para registrar um novo usuário.
+        Recebe os dados do usuário e cria uma nova conta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+      responses:
+        "201":
+          description: Usuário registrado com sucesso.
+          content:
+            $ref: "#/components/responses/SignupResponse/content"
+        "400":
+          description: Exceção lançada para validação de senhas ou quando o telefone conter um formato inválido.
+          content:
+            $ref: "#/components/responses/ErrorResponseBadRequest/content"
+        "409":
+          description: Exceção lançada se o nome de usuário ou telefone já estiverem em uso.
+          content:
+            $ref: "#/components/responses/ErrorResponseConflict/content"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"

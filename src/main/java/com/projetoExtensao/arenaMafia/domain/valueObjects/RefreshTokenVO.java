@@ -30,7 +30,7 @@ public record RefreshTokenVO(UUID value) {
   }
 
   @Override
-  public java.lang.String toString() {
+  public String toString() {
     return value.toString();
   }
 }

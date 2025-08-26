@@ -273,8 +273,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       ErrorResponseDto errorResponse = response.as(ErrorResponseDto.class);
       assertThat(errorResponse).isNotNull();
       assertThat(errorResponse.status()).isEqualTo(400);
-      assertThat(errorResponse.message())
-          .isEqualTo("Formato inválido para o refresh token.");
+      assertThat(errorResponse.message()).isEqualTo("Formato inválido para o refresh token.");
       assertThat(errorResponse.timestamp()).isNotNull();
       assertThat(errorResponse.path()).isEqualTo("/api/auth/refresh-token");
     }
@@ -368,8 +367,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       assertThat(response).isNotNull();
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.message())
-          .isEqualTo(
-              "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
+          .isEqualTo("Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
       assertThat(response.path()).isEqualTo("/api/auth/signup");
     }
 
@@ -401,8 +399,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       // Assert
       assertThat(response).isNotNull();
       assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message())
-          .isEqualTo("Nome de usuário ou telefone indisponível. Por favor, utilize outros.");
+      assertThat(response.message()).isEqualTo("Esse nome de usuário já está em uso.");
       assertThat(response.path()).isEqualTo("/api/auth/signup");
     }
   }
@@ -521,6 +518,85 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       // Assert
       assertThat(response.status()).isEqualTo(409);
       assertThat(response.message()).isEqualTo("Atenção: A conta já está ativada.");
+    }
+  }
+
+  @Nested
+  @DisplayName("Testes para o endpoint /auth/resend-code")
+  class ResendCodeTests {
+
+    @Test
+    @DisplayName("Deve retornar 200 OK quando o código for reenviado com sucesso")
+    void resendCode_shouldReturn200_whenSuccessful() {
+      // Arrange
+      createAndPersistUser(AccountStatus.PENDING_VERIFICATION);
+      ResendCodeRequestDto request = new ResendCodeRequestDto("testUser");
+
+      // Act
+      ResendCodeResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/resend-code")
+              .then()
+              .statusCode(200)
+              .extract()
+              .as(ResendCodeResponseDto.class);
+
+      // Assert
+      assertThat(response).isNotNull();
+      assertThat(response.message()).isEqualTo("Código de verificação reenviado com sucesso.");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 404 Not Found quando o usuário não existir")
+    void resendCode_shouldReturn404_whenUserNotFound() {
+      // Arrange
+      ResendCodeRequestDto request = new ResendCodeRequestDto("nonexistentUser");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/resend-code")
+              .then()
+              .statusCode(404)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.message())
+          .isEqualTo(
+              "Usuário não encontrado para reenviar o código. Por favor realize o cadastro novamente.");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 409 Conflict ao tentar reenviar código para uma conta já ativa")
+    void resendCode_shouldReturn409_whenAccountIsAlreadyActive() {
+      // Arrange
+      createAndPersistUser(AccountStatus.ACTIVE);
+      var request = new ResendCodeRequestDto("testUser");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/resend-code")
+              .then()
+              .statusCode(409)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.status()).isEqualTo(409);
+      assertThat(response.message())
+          .isEqualTo("Atenção: Está conta não está pendente para verificação.");
     }
   }
 

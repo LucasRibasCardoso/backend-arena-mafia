@@ -1,10 +1,7 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
-import com.projetoExtensao.arenaMafia.application.auth.usecase.LoginUseCase;
-import com.projetoExtensao.arenaMafia.application.auth.usecase.RefreshTokenUseCase;
-import com.projetoExtensao.arenaMafia.application.auth.usecase.SignUpUseCase;
-import com.projetoExtensao.arenaMafia.application.auth.usecase.VerifyAccountUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.*;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.*;
 import jakarta.validation.Valid;
@@ -27,17 +24,20 @@ public class AuthController {
   private final LoginUseCase loginUseCase;
   private final SignUpUseCase signUpUseCase;
   private final VerifyAccountUseCase verifyAccountUseCase;
+  private final ResendCodeUseCase resendCodeUseCase;
   private final RefreshTokenUseCase refreshTokenUseCase;
 
   public AuthController(
       LoginUseCase loginUseCase,
       SignUpUseCase signUpUseCase,
       RefreshTokenUseCase refreshTokenUseCase,
-      VerifyAccountUseCase verifyAccountUseCase) {
+      VerifyAccountUseCase verifyAccountUseCase,
+      ResendCodeUseCase resendCodeUseCase) {
     this.loginUseCase = loginUseCase;
     this.signUpUseCase = signUpUseCase;
     this.refreshTokenUseCase = refreshTokenUseCase;
     this.verifyAccountUseCase = verifyAccountUseCase;
+    this.resendCodeUseCase = resendCodeUseCase;
   }
 
   @PostMapping("/signup")
@@ -77,6 +77,18 @@ public class AuthController {
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
         .body(tokenResponseDto);
+  }
+
+  @PostMapping("/resend-code")
+  public ResponseEntity<ResendCodeResponseDto> resendVerificationCode(
+      @Valid @RequestBody ResendCodeRequestDto requestDto) {
+
+    resendCodeUseCase.execute(requestDto);
+
+    ResendCodeResponseDto responseDto =
+        new ResendCodeResponseDto("Código de verificação reenviado com sucesso.");
+
+    return ResponseEntity.ok(responseDto);
   }
 
   @PostMapping("/login")

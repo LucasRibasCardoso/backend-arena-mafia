@@ -2,6 +2,7 @@ package com.projetoExtensao.arenaMafia.unit.domain.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidUsernameFormatException;
@@ -140,6 +141,40 @@ public class UserTest {
   @Nested
   @DisplayName("Gerenciamento da conta")
   class AccountManagementTests {
+
+    @Test
+    @DisplayName(
+        "checkIfPendingVerification() deve lançar exceção se o status não for PENDING_VERIFICATION")
+    void checkIfPendingVerification_shouldThrowExceptionForNonPendingStatus() {
+      // Arrange
+      User user =
+          User.reconstitute(
+              UUID.randomUUID(),
+              username,
+              fullName,
+              phone,
+              passwordHash,
+              AccountStatus.ACTIVE,
+              RoleEnum.ROLE_USER,
+              Instant.now());
+
+      // Act & Assert
+      assertThatThrownBy(user::checkIfPendingVerification)
+          .isInstanceOf(AccountStateConflictException.class)
+          .hasMessage("Atenção: Está conta não está pendente para verificação.");
+    }
+
+    @Test
+    @DisplayName(
+        "checkIfPendingVerification() não deve lançar exceção se o status for PENDING_VERIFICATION")
+    void checkIfPendingVerification_shouldNotThrowExceptionForPendingStatus() {
+      // Arrange
+      User user = User.create(username, fullName, phone, passwordHash);
+      assertThat(user.getStatus()).isEqualTo(AccountStatus.PENDING_VERIFICATION);
+
+      // Act & Assert
+      assertDoesNotThrow(user::checkIfPendingVerification);
+    }
 
     @Test
     @DisplayName("activateAccount() deve ativar a conta se o status for PENDING_VERIFICATION")

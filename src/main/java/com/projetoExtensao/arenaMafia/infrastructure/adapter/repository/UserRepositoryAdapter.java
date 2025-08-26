@@ -22,8 +22,13 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
   }
 
   @Override
-  public boolean existsByUsernameOrPhone(String username, String phone) {
-    return userJpaRepository.existsByUsernameOrPhone(username, phone);
+  public boolean existsByUsername(String username) {
+    return userJpaRepository.existsByUsername(username);
+  }
+
+  @Override
+  public boolean existsByPhone(String phone) {
+    return userJpaRepository.existsByPhone(phone);
   }
 
   @Override

@@ -102,6 +102,13 @@ public class User {
     }
   }
 
+  public void checkIfPendingVerification() {
+    if (this.status != AccountStatus.PENDING_VERIFICATION) {
+      throw new AccountStateConflictException(
+          "Atenção: Está conta não está pendente para verificação.");
+    }
+  }
+
   public void activateAccount() {
     if (this.status != AccountStatus.PENDING_VERIFICATION) {
       throw new AccountStateConflictException("Atenção: A conta já está ativada.");

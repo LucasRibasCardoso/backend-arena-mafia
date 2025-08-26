@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.application.auth.listener;
 
-import com.projetoExtensao.arenaMafia.application.auth.event.UserRegisteredEvent;
+import com.projetoExtensao.arenaMafia.application.auth.event.OnVerificationRequiredEvent;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.SmsPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
@@ -25,7 +25,7 @@ public class NotificationEventListener {
 
   @Async
   @EventListener
-  public void osUserRegistration(UserRegisteredEvent event) {
+  public void osUserRegistration(OnVerificationRequiredEvent event) {
     try {
       User user = event.user();
 

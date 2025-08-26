@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -160,29 +160,44 @@ public class UserRepositoryAdapterTest {
   }
 
   @Nested
-  @DisplayName("Testes para o método existsByUsernameOrPhone")
-  class ExistByUsernameOrPhoneTests {
+  @DisplayName("Testes para o método existsByUsername")
+  class ExistByUsernameTests {
 
-    @ParameterizedTest(name = "Quando {3}, deve retornar {2}")
-    @CsvSource({
-      "'userExists', '11999999999', true,  'apenas o username existe'",
-      "'newUser',    '11888888888', true,  'apenas o telefone existe'",
-      "'userExists', '11888888888', true,  'ambos existem'",
-      "'newUser',    '11999999999', false, 'nenhum dos dois existe'"
-    })
-    @DisplayName("Deve retornar o resultado esperado para a existência de username OU telefone")
-    void existsByUsernameOrPhone_shouldReturnExpectedResult(
-        String username, String phone, boolean expectedResult, String description) {
-
+    @ParameterizedTest(name = "Quando o username existe = {0}, deve retornar {0}")
+    @ValueSource(booleans = {true, false})
+    @DisplayName("Deve retornar o resultado esperado para a existência do username")
+    void existsByUsername_shouldReturnExpectedBoolean(boolean usernameExists) {
       // Arrange
-      when(userJpaRepository.existsByUsernameOrPhone(username, phone)).thenReturn(expectedResult);
+      String username = "testuser";
+      when(userJpaRepository.existsByUsername(username)).thenReturn(usernameExists);
 
       // Act
-      boolean exists = userRepositoryAdapter.existsByUsernameOrPhone(username, phone);
+      boolean actualResult = userRepositoryAdapter.existsByUsername(username);
 
       // Assert
-      assertThat(exists).isEqualTo(expectedResult);
-      verify(userJpaRepository, times(1)).existsByUsernameOrPhone(username, phone);
+      assertThat(actualResult).isEqualTo(usernameExists);
+      verify(userJpaRepository, times(1)).existsByUsername(username);
+    }
+  }
+
+  @Nested
+  @DisplayName("Testes para o método existsByPhone")
+  class ExistsByPhoneTests {
+
+    @ParameterizedTest(name = "Quando o telefone existe = {0}, deve retornar {0}")
+    @ValueSource(booleans = {true, false})
+    @DisplayName("Deve retornar o resultado esperado para a existência do telefone")
+    void existsByPhone_shouldReturnExpectedBoolean(boolean phoneExists) {
+      // Arrange
+      String phone = "+5547988887777";
+      when(userJpaRepository.existsByPhone(phone)).thenReturn(phoneExists);
+
+      // Act
+      boolean actualResult = userRepositoryAdapter.existsByPhone(phone);
+
+      // Assert
+      assertThat(actualResult).isEqualTo(phoneExists);
+      verify(userJpaRepository, times(1)).existsByPhone(phone);
     }
   }
 }

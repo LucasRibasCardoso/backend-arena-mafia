@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import com.projetoExtensao.arenaMafia.application.auth.event.UserRegisteredEvent;
+import com.projetoExtensao.arenaMafia.application.auth.event.OnVerificationRequiredEvent;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordEncoderPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
@@ -56,15 +56,12 @@ public class SignUpUseCaseImpTest {
       String formattedPhone = "+5547999998888";
       String encodedPassword = "hashedPassword";
 
-      // Simula que o usuário não existe
-      when(userRepository.existsByUsernameOrPhone(requestDto.username(), requestDto.phone()))
-          .thenReturn(false);
+      when(userRepository.existsByUsername(anyString())).thenReturn(false);
+      when(userRepository.existsByPhone(anyString())).thenReturn(false);
 
-      // Simula o comportamento dos helpers
       when(phoneValidator.formatToE164(requestDto.phone())).thenReturn(formattedPhone);
       when(passwordEncoderPort.encode(requestDto.password())).thenReturn(encodedPassword);
 
-      // Simula a criação do usuário para capturar o objeto
       User userToSave =
           User.create(
               requestDto.username(), requestDto.fullName(), formattedPhone, encodedPassword);
@@ -78,15 +75,13 @@ public class SignUpUseCaseImpTest {
       verify(userRepository).save(userArgumentCaptor.capture());
       User savedUser = userArgumentCaptor.getValue();
 
-      // 2. Verifica se os dados do usuário salvo estão corretos
       assertThat(savedUser.getUsername()).isEqualTo(requestDto.username());
       assertThat(savedUser.getFullName()).isEqualTo(requestDto.fullName());
       assertThat(savedUser.getPhone()).isEqualTo(formattedPhone);
       assertThat(savedUser.getPasswordHash()).isEqualTo(encodedPassword);
 
-      // 3. Verifica se o evento foi publicado corretamente
-      ArgumentCaptor<UserRegisteredEvent> eventArgumentCaptor =
-          ArgumentCaptor.forClass(UserRegisteredEvent.class);
+      ArgumentCaptor<OnVerificationRequiredEvent> eventArgumentCaptor =
+          ArgumentCaptor.forClass(OnVerificationRequiredEvent.class);
       verify(eventPublisher).publishEvent(eventArgumentCaptor.capture());
 
       assertThat(requestDto.username()).isEqualTo(resultUsername);
@@ -98,17 +93,16 @@ public class SignUpUseCaseImpTest {
   class FailureScenarios {
 
     @Test
-    @DisplayName(
-        "Deve lançar UserAlreadyExistsException se o usuário ou telefone já existirem (pré-verificação)")
-    void execute_shouldThrowException_whenUserOrPhoneAlreadyExists() {
+    @DisplayName("Deve lançar UserAlreadyExistsException se o telefone já existir ")
+    void execute_shouldThrowExceptionWhenPhoneAlreadyExists() {
       // Arrange
-      when(userRepository.existsByUsernameOrPhone(requestDto.username(), requestDto.phone()))
-          .thenReturn(true);
+      when(userRepository.existsByPhone(requestDto.phone())).thenReturn(true);
+      when(userRepository.existsByUsername(requestDto.username())).thenReturn(false);
 
       // Act & Assert
       assertThatThrownBy(() -> signUpUseCase.execute(requestDto))
           .isInstanceOf(UserAlreadyExistsException.class)
-          .hasMessage("Nome de usuário ou telefone indisponível. Por favor, utilize outros.");
+          .hasMessage("Esse número de telefone já está em uso.");
 
       verify(userRepository, never()).save(any(User.class));
       verify(eventPublisher, never()).publishEvent(any());
@@ -116,25 +110,15 @@ public class SignUpUseCaseImpTest {
 
     @Test
     @DisplayName(
-        "Deve lançar UserAlreadyExistsException se ocorrer DataIntegrityViolationException ao salvar")
-    void execute_shouldThrowException_whenDataIntegrityViolationOccurs() {
+        "Deve lançar UserAlreadyExistsException se username já existir ")
+    void execute_shouldThrowExceptionWhenUsernameAlreadyExists() {
       // Arrange
-      // Simula que o usuário não existe na pré-verificação...
-      when(userRepository.existsByUsernameOrPhone(requestDto.username(), requestDto.phone()))
-          .thenReturn(false);
-
-      // Lança uma exceção de integridade ao tentar salvar (simulando uma race condition)
-      when(userRepository.save(any(User.class)))
-          .thenThrow(new DataIntegrityViolationException("Erro de duplicidade no banco"));
-
-      // Mocks dos helpers
-      when(phoneValidator.formatToE164(anyString())).thenReturn("+5547999998888");
-      when(passwordEncoderPort.encode(anyString())).thenReturn("hashedPassword");
+      when(userRepository.existsByUsername(requestDto.username())).thenReturn(true);
 
       // Act & Assert
       assertThatThrownBy(() -> signUpUseCase.execute(requestDto))
           .isInstanceOf(UserAlreadyExistsException.class)
-          .hasMessage("Nome de usuário ou telefone indisponível. Por favor, utilize outros.");
+          .hasMessage("Esse nome de usuário já está em uso.");
 
       verify(eventPublisher, never()).publishEvent(any());
     }

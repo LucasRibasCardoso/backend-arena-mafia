@@ -3,7 +3,7 @@ package com.projetoExtensao.arenaMafia.unit.application.listener;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.projetoExtensao.arenaMafia.application.auth.event.UserRegisteredEvent;
+import com.projetoExtensao.arenaMafia.application.auth.event.OnVerificationRequiredEvent;
 import com.projetoExtensao.arenaMafia.application.auth.listener.NotificationEventListener;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.SmsPort;
@@ -44,7 +44,7 @@ public class NotificationEventListenerTest {
             AccountStatus.ACTIVE,
             RoleEnum.ROLE_USER,
             Instant.now());
-    UserRegisteredEvent event = new UserRegisteredEvent(user);
+    OnVerificationRequiredEvent event = new OnVerificationRequiredEvent(user);
 
     String generatedOtp = "123456";
 
@@ -81,7 +81,7 @@ public class NotificationEventListenerTest {
             AccountStatus.ACTIVE,
             RoleEnum.ROLE_USER,
             Instant.now());
-    UserRegisteredEvent event = new UserRegisteredEvent(user);
+    OnVerificationRequiredEvent event = new OnVerificationRequiredEvent(user);
 
     when(otpPort.generateAndSaveOtp(user.getId()))
         .thenThrow(new RuntimeException("Falha ao conectar com o Redis"));

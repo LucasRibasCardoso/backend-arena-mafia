@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.application.auth.usecase.imp;
 
-import com.projetoExtensao.arenaMafia.application.auth.event.UserRegisteredEvent;
+import com.projetoExtensao.arenaMafia.application.auth.event.OnVerificationRequiredEvent;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordEncoderPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
@@ -9,7 +9,6 @@ import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExist
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupRequestDto;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
@@ -38,6 +37,7 @@ public class SignUpUseCaseImp implements SignUpUseCase {
     String phone = requestDto.phone();
     String password = requestDto.password();
 
+    // Valida se o username e telefone são únicos
     validateUniqueness(username, phone);
 
     String formattedPhone = phoneValidator.formatToE164(phone);
@@ -46,20 +46,17 @@ public class SignUpUseCaseImp implements SignUpUseCase {
     User user = User.create(username, fullName, formattedPhone, encodedPassword);
 
     // Tenta salvar o usuário e captura exceções de integridade se o telefone ou username já existam
-    try {
-      User savedUser = userRepository.save(user);
-      eventPublisher.publishEvent(new UserRegisteredEvent(savedUser));
-      return savedUser.getUsername();
-    } catch (DataIntegrityViolationException e) {
-      throw new UserAlreadyExistsException(
-          "Nome de usuário ou telefone indisponível. Por favor, utilize outros.");
-    }
+    User savedUser = userRepository.save(user);
+    eventPublisher.publishEvent(new OnVerificationRequiredEvent(savedUser));
+    return savedUser.getUsername();
   }
 
   private void validateUniqueness(String username, String phone) {
-    if (userRepository.existsByUsernameOrPhone(username, phone)) {
-      throw new UserAlreadyExistsException(
-          "Nome de usuário ou telefone indisponível. Por favor, utilize outros.");
+    if (userRepository.existsByUsername(username)) {
+      throw new UserAlreadyExistsException("Esse nome de usuário já está em uso.");
+    }
+    if (userRepository.existsByPhone(phone)) {
+      throw new UserAlreadyExistsException("Esse número de telefone já está em uso.");
     }
   }
 }

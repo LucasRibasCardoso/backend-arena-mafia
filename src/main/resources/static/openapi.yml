@@ -94,7 +94,7 @@ components:
         }
       required: [ username, accessToken ]
 
-    SignupRequest:
+    SignupRequestDto:
       type: object
       description: Dados necessários para o cadastro de um novo usuário. A senha e a confirmação de senha devem ser idênticas.
       required:
@@ -133,7 +133,7 @@ components:
           description: "Confirmação da senha. Deve ser idêntica ao campo 'password'."
           example: "senhaForte123"
 
-    SignupResponse:
+    SignupResponseDto:
       type: object
       properties:
         status:
@@ -149,7 +149,7 @@ components:
           description: "Identificador único (username) do usuário recém-criado."
           example: "username_test"
 
-    VerifyAccountRequest:
+    VerifyAccountRequestDto:
       type: object
       description: Dados para verificação da conta via código OTP.
       required:
@@ -165,6 +165,27 @@ components:
           description: "Código OTP de 6 dígitos recebido por SMS."
           example: "123456"
           pattern: "^\\d{6}$"
+
+
+
+
+    ResendCodeRequestDto:
+      type: object
+      description: nome do usuário que está solicitando o reenvio do código OTP.
+      required:
+        - username
+      properties:
+        username:
+          type: string
+          description: "Nome de usuário da conta para a qual o código deve ser reenviado."
+          example: "joao_silva99"
+
+    ResendCodeResponseDto:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Código de verificação reenviado com sucesso."
 
   responses:
     ErrorResponseBadRequest:
@@ -264,13 +285,19 @@ components:
           schema:
             $ref: "#/components/schemas/TokenResponseDto"
 
-
-    SignupResponse:
+    SignupResponseDto:
       description: Usuário registrado com sucesso. A conta está pendente de verificação.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SignupResponse'
+            $ref: '#/components/schemas/SignupResponseDto'
+
+    ResendCodeResponseDto:
+      description: Código OTP reenviado com sucesso.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResendCodeResponseDto'
 
 # Mapeamento dos endpoints da API
 paths:
@@ -363,12 +390,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SignupRequest"
+              $ref: "#/components/schemas/SignupRequestDto"
       responses:
         "201":
           description: Usuário registrado com sucesso.
           content:
-            $ref: "#/components/responses/SignupResponse/content"
+            $ref: "#/components/responses/SignupResponseDto/content"
         "400":
           description: "Retornado se houver erros de validação nos dados enviados (ex: formato de telefone inválido, senhas não coincidem, campos obrigatórios ausentes)."
           content:
@@ -394,7 +421,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/VerifyAccountRequest"
+              $ref: "#/components/schemas/VerifyAccountRequestDto"
       responses:
         "200":
           description: Conta verificada e usuário autenticado com sucesso.
@@ -415,6 +442,41 @@ paths:
             $ref: "#/components/responses/ErrorResponseNotFound/content"
         "409":
           description: Retornado se a conta já estiver ativa (conflito de estado).
+          content:
+            $ref: "#/components/responses/ErrorResponseConflict/content"
+        "500":
+          $ref: "#/components/responses/ErrorResponseInternalServerError"
+
+  /api/auth/resend-code:
+    post:
+      operationId: resendVerificationCode
+      tags:
+        - Autenticação
+      summary: Reenviar Código de Verificação OTP
+      description: |
+        Endpoint para reenviar o código OTP para verificação de conta.
+        Útil se o usuário não recebeu o código inicial ou se expirou.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendCodeRequestDto"
+      responses:
+        "200":
+          description: Código OTP reenviado com sucesso.
+          content:
+            $ref: "#/components/responses/ResendCodeResponseDto/content"
+        "400":
+          description: Retornado se o nome de usuário estiver ausente ou inválido.
+          content:
+            $ref: "#/components/responses/ErrorResponseBadRequest/content"
+        "404":
+          description: Retornado se o nome de usuário não for encontrado.
+          content:
+            $ref: "#/components/responses/ErrorResponseNotFound/content"
+        "409":
+          description: Retornado se a conta já estiver ativa.
           content:
             $ref: "#/components/responses/ErrorResponseConflict/content"
         "500":

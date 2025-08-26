@@ -12,8 +12,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -85,35 +83,62 @@ public class UserJpaRepositoryTest {
   }
 
   @Nested
-  @DisplayName("Testes para o método existsByUsernameOrPhone")
-  class ExistsByTests {
+  @DisplayName("Testes para o método existsByUsername")
+  class ExistsByUsernameTests {
 
-    @ParameterizedTest(name = "Quando {5}, deve retornar {4}")
-    @CsvSource({
-      "'user-db',   '5547988887777',  'user-db',   '5547911112222', true,  'username existe e telefone não'",
-      "'user-db',   '5547988887777',  'otheruser', '5547988887777', true,  'telefone existe e username não'",
-      "'user-db',   '5547988887777',  'user-db',   '5547988887777', true,  'ambos existem no mesmo registro'",
-      "'null',      'null',           'any-user',  '5547911112222', false, 'nenhum existe (banco de dados vazio)'"
-    })
-    @DisplayName("Deve retornar o resultado esperado para a existência de username OU telefone")
-    void existsByUsernameOrPhone_shouldReturnExpectedResult(
-        String usernameToPersist,
-        String phoneToPersist,
-        String usernameToQuery,
-        String phoneToQuery,
-        boolean expectedResult,
-        String description) {
-
-      // Persistir o usuário no banco de dados apenas se usernameToPersist não for "null
-      if (!"null".equals(usernameToPersist)) {
-        createAndPersistUser(usernameToPersist, phoneToPersist);
-      }
+    @Test
+    @DisplayName("Deve retornar true quando o username existe no banco de dados")
+    void existsByUsername_shouldReturnTrue_whenUsernameExists() {
+      // Arrange
+      createAndPersistUser("usernameTest", "+5547988887777");
 
       // Act
-      boolean exists = userJpaRepository.existsByUsernameOrPhone(usernameToQuery, phoneToQuery);
+      boolean exists = userJpaRepository.existsByUsername("usernameTest");
 
       // Assert
-      assertThat(exists).isEqualTo(expectedResult);
+      assertThat(exists).isTrue();
+    }
+
+    @Test
+    @DisplayName("Deve retornar false quando o username não existe no banco de dados")
+    void existsByUsername_shouldReturnFalse_whenUsernameDoesNotExist() {
+      // Arrange (banco de dados está limpo)
+
+      // Act
+      boolean exists = userJpaRepository.existsByUsername("nonexistentuser");
+
+      // Assert
+      assertThat(exists).isFalse();
+    }
+  }
+
+  @Nested
+  @DisplayName("Testes para o método existsByPhone")
+  class ExistsByPhoneTests {
+
+    @Test
+    @DisplayName("Deve retornar true quando o telefone existe no banco de dados")
+    void existsByPhone_shouldReturnTrue_whenPhoneExists() {
+      // Arrange
+      createAndPersistUser("usernameTest", "+5547988887777");
+
+      // Act
+      boolean exists = userJpaRepository.existsByPhone("+5547988887777");
+
+      // Assert
+      assertThat(exists).isTrue();
+    }
+
+    @Test
+    @DisplayName("Deve retornar false quando o telefone não existe no banco de dados")
+    void existsByPhone_shouldReturnFalse_whenPhoneDoesNotExist() {
+      // Arrange (banco de dados está limpo)
+
+      // Act
+      boolean exists = userJpaRepository.existsByPhone("+5547911112222");
+
+      // Assert
+      assertThat(exists).isFalse();
     }
   }
 

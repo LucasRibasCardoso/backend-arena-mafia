@@ -68,6 +68,4 @@ public class ExceptionTestController {
   public void throwGenericException() {
     throw new RuntimeException("Erro genérico simulado.");
   }
-
 }
-

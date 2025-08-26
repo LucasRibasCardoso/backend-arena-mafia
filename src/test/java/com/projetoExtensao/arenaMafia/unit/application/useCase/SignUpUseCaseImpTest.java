@@ -108,8 +108,7 @@ public class SignUpUseCaseImpTest {
     }
 
     @Test
-    @DisplayName(
-        "Deve lançar UserAlreadyExistsException se username já existir ")
+    @DisplayName("Deve lançar UserAlreadyExistsException se username já existir ")
     void execute_shouldThrowExceptionWhenUsernameAlreadyExists() {
       // Arrange
       when(userRepository.existsByUsername(requestDto.username())).thenReturn(true);

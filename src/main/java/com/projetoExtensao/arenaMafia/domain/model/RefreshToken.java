@@ -50,7 +50,8 @@ public class RefreshToken {
 
   public void verifyIfNotExpired() {
     if (isExpired()) {
-      throw new RefreshTokenExpiredException("Sua sessão expirou. Por favor, faça login novamente.");
+      throw new RefreshTokenExpiredException(
+          "Sua sessão expirou. Por favor, faça login novamente.");
     }
   }
 

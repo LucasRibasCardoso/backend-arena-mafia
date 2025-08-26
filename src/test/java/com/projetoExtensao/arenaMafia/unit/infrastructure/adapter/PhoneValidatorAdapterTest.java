@@ -1,5 +1,8 @@
 package com.projetoExtensao.arenaMafia.unit.infrastructure.adapter;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadPhoneNumberException;
 import com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway.PhoneValidatorAdapter;
 import org.junit.jupiter.api.BeforeEach;
@@ -7,9 +10,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Testes unitários para PhoneValidatorAdapter")
 public class PhoneValidatorAdapterTest {
@@ -36,7 +36,8 @@ public class PhoneValidatorAdapterTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"+5547123", "+1202123", "999"}) // Números curtos demais
-  @DisplayName("Deve lançar BadPhoneNumberException para números que são válidos sintaticamente mas inválidos em regras")
+  @DisplayName(
+      "Deve lançar BadPhoneNumberException para números que são válidos sintaticamente mas inválidos em regras")
   void formatToE164_shouldThrowExceptionForInvalidButParsableNumbers(String invalidNumber) {
     // Act & Assert
     assertThatThrownBy(() -> phoneValidatorAdapter.formatToE164(invalidNumber))

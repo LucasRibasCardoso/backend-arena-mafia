@@ -8,7 +8,11 @@ import com.projetoExtensao.arenaMafia.application.auth.usecase.VerifyAccountUseC
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.VerifyAccountRequestDto;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Service
+@Transactional
 public class VerifyAccountUseCaseImp implements VerifyAccountUseCase {
 
   private final AuthPort authPort;

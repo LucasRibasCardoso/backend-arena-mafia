@@ -7,7 +7,11 @@ import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundExce
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.ResendCodeRequestDto;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Service
+@Transactional
 public class ResendCodeUseCaseImp implements ResendCodeUseCase {
 
   private final UserRepositoryPort userRepository;

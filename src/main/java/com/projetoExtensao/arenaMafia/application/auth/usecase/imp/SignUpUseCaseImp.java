@@ -9,8 +9,10 @@ import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExist
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupRequestDto;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Service
 @Transactional
 public class SignUpUseCaseImp implements SignUpUseCase {
 

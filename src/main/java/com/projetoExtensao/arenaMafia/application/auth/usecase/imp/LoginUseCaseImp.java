@@ -11,8 +11,11 @@ import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.LoginRequestDto;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Service
+@Transactional
 public class LoginUseCaseImp implements LoginUseCase {
 
   private final AuthPort authPort;
@@ -24,7 +27,6 @@ public class LoginUseCaseImp implements LoginUseCase {
   }
 
   @Override
-  @Transactional
   public AuthResult execute(LoginRequestDto loginRequestDto) {
     User existingUser = getUserIfExists(loginRequestDto.username());
 

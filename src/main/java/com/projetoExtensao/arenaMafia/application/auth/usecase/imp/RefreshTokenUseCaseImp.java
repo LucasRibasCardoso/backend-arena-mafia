@@ -9,8 +9,11 @@ import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshToken
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.RefreshTokenRequestDto;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Service
+@Transactional
 public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
 
   private final AuthPort authPort;
@@ -23,7 +26,6 @@ public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
   }
 
   @Override
-  @Transactional
   public AuthResult execute(RefreshTokenRequestDto refreshTokenRequestDto) {
     // Transforma uma string em um objeto RefreshTokenVO
     RefreshTokenVO refreshTokenVO =

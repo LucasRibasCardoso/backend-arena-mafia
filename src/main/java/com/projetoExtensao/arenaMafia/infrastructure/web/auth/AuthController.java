@@ -22,22 +22,25 @@ public class AuthController {
   private long refreshTokenExpirationDays;
 
   private final LoginUseCase loginUseCase;
+  private final LogoutUseCase logoutUseCase;
   private final SignUpUseCase signUpUseCase;
-  private final VerifyAccountUseCase verifyAccountUseCase;
   private final ResendCodeUseCase resendCodeUseCase;
   private final RefreshTokenUseCase refreshTokenUseCase;
+  private final VerifyAccountUseCase verifyAccountUseCase;
 
   public AuthController(
       LoginUseCase loginUseCase,
+      LogoutUseCase logoutUseCase,
       SignUpUseCase signUpUseCase,
+      ResendCodeUseCase resendCodeUseCase,
       RefreshTokenUseCase refreshTokenUseCase,
-      VerifyAccountUseCase verifyAccountUseCase,
-      ResendCodeUseCase resendCodeUseCase) {
+      VerifyAccountUseCase verifyAccountUseCase) {
     this.loginUseCase = loginUseCase;
+    this.logoutUseCase = logoutUseCase;
     this.signUpUseCase = signUpUseCase;
+    this.resendCodeUseCase = resendCodeUseCase;
     this.refreshTokenUseCase = refreshTokenUseCase;
     this.verifyAccountUseCase = verifyAccountUseCase;
-    this.resendCodeUseCase = resendCodeUseCase;
   }
 
   @PostMapping("/signup")
@@ -111,6 +114,19 @@ public class AuthController {
         .body(tokenResponseDto);
   }
 
+  @PostMapping("/logout")
+  public ResponseEntity<LogoutResponseDto> logout(
+      @CookieValue(value = "refreshToken", required = false) String refreshToken) {
+
+    logoutUseCase.execute(refreshToken);
+    ResponseCookie expiredCookie = createRefreshTokenExpiredCookie();
+
+    LogoutResponseDto responseDto = new LogoutResponseDto("Logout realizado com sucesso.");
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
+        .body(responseDto);
+  }
+
   @PostMapping("/refresh-token")
   public ResponseEntity<TokenResponseDto> refreshToken(
       @CookieValue(name = "refreshToken") String oldRefreshToken) {
@@ -140,6 +156,16 @@ public class AuthController {
         .secure(true)
         .path("/api/auth")
         .maxAge(Duration.ofDays(refreshTokenExpirationDays))
+        .sameSite("Strict")
+        .build();
+  }
+
+  private ResponseCookie createRefreshTokenExpiredCookie() {
+    return ResponseCookie.from("refreshToken", "")
+        .httpOnly(true)
+        .secure(true)
+        .path("/api/auth")
+        .maxAge(0) // Definido como 0 para expirar imediatamente o cookie
         .sameSite("Strict")
         .build();
   }

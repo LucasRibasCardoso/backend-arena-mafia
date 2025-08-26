@@ -166,9 +166,6 @@ components:
           example: "123456"
           pattern: "^\\d{6}$"
 
-
-
-
     ResendCodeRequestDto:
       type: object
       description: nome do usuário que está solicitando o reenvio do código OTP.
@@ -186,6 +183,13 @@ components:
         message:
           type: string
           example: "Código de verificação reenviado com sucesso."
+
+    LogoutResponseDto:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Logout realizado com sucesso."
 
   responses:
     ErrorResponseBadRequest:
@@ -299,6 +303,13 @@ components:
           schema:
             $ref: '#/components/schemas/ResendCodeResponseDto'
 
+    LogoutResponseDto:
+      description: Logout realizado com sucesso.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LogoutResponseDto'
+
 # Mapeamento dos endpoints da API
 paths:
   /api/auth/login:
@@ -357,7 +368,6 @@ paths:
           description: O refresh token é recebido no momento do login. O navegador o anexa automaticamente à requisição.
           schema:
             type: string
-            example: 99ed48e3-0076-4b39-a2ed-f02f5335673e..
       responses:
         "200":
           description: Token de acesso renovado com sucesso. Um novo refresh token é retornado no cookie para aumentar a segurança (rotação de tokens).
@@ -479,5 +489,35 @@ paths:
           description: Retornado se a conta já estiver ativa.
           content:
             $ref: "#/components/responses/ErrorResponseConflict/content"
+        "500":
+          $ref: "#/components/responses/ErrorResponseInternalServerError"
+
+  /api/auth/logout:
+    post:
+      operationId: logout
+      tags:
+        - Autenticação
+      summary: Logout do Usuário
+      description: |
+        Endpoint para realizar o logout do usuário.
+        Invalida o token de refresh no servidor e remove o cookie do cliente.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: cookie
+          name: refreshToken
+          required: false
+          description: O refresh token recebido no momento do login. O navegador o anexa automaticamente à requisição.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Logout realizado com sucesso.
+          content:
+            $ref: "#/components/responses/LogoutResponseDto/content"
+        "401":
+          description: Retornado se o token de refresh estiver ausente ou inválido.
+          content:
+            $ref: "#/components/responses/ErrorResponseUnauthorized/content"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"

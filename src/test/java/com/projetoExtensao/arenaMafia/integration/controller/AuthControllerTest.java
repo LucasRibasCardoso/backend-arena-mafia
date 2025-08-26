@@ -5,10 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.tuple;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
+import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.*;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
@@ -29,8 +31,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @DisplayName("Testes de Integração para AuthController")
 public class AuthControllerTest extends TestIntegrationBaseConfig {
 
-  @Autowired private UserRepositoryPort userRepository;
+  @Autowired private RefreshTokenRepositoryPort refreshTokenRepository;
   @Autowired private UserJpaRepository userJpaRepository;
+  @Autowired private UserRepositoryPort userRepository;
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private OtpPort otpPort;
 
@@ -198,6 +201,85 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       assertThat(response.status()).isEqualTo(403);
       assertThat(response.message()).isEqualTo("Está conta não está ativa.");
       assertThat(response.path()).isEqualTo("/api/auth/login");
+    }
+  }
+
+  @Nested
+  @DisplayName("Testes para o endpoint /auth/logout")
+  class LogoutTests {
+
+    @Test
+    @DisplayName(
+        "Deve retornar 200 OK, invalidar o refresh token e expirar o cookie quando autenticado")
+    void logout_shouldReturn200AndInvalidateRefreshTokenWhenAuthenticated() {
+      // Arrange
+      createAndPersistUser(AccountStatus.ACTIVE);
+      LoginRequestDto loginRequest = new LoginRequestDto("testUser", "123456");
+
+      Response loginResponse =
+          given()
+              .spec(specification)
+              .body(loginRequest)
+              .when()
+              .post("/login")
+              .then()
+              .statusCode(200)
+              .extract()
+              .response();
+
+      String accessToken = loginResponse.as(TokenResponseDto.class).accessToken();
+      Cookie refreshTokenCookie = loginResponse.getDetailedCookie("refreshToken");
+      RefreshTokenVO refreshToken = RefreshTokenVO.fromString(refreshTokenCookie.getValue());
+
+      // Garante que o refresh token existe no banco de dados ANTES do logout.
+      assertThat(refreshTokenRepository.findByToken(refreshToken)).isPresent();
+
+      // Act
+      // Executa a chamada de logout, enviando o accessToken e o refreshToken no cookie.
+      Response logoutResponse =
+          given()
+              .spec(specification)
+              .header("Authorization", "Bearer " + accessToken)
+              .cookie(refreshTokenCookie)
+              .when()
+              .post("/logout")
+              .then()
+              .statusCode(200)
+              .extract()
+              .response();
+
+      // Assert
+      LogoutResponseDto logoutBody = logoutResponse.as(LogoutResponseDto.class);
+      assertThat(logoutBody.message()).isEqualTo("Logout realizado com sucesso.");
+
+      // Verifica se o servidor instruiu o navegador a apagar o cookie.
+      Cookie expiredCookie = logoutResponse.getDetailedCookie("refreshToken");
+      assertThat(expiredCookie).isNotNull();
+      assertThat(expiredCookie.getMaxAge()).isEqualTo(0);
+
+      // Garante que o refresh token foi DELETADO do banco de dados.
+      assertThat(refreshTokenRepository.findByToken(refreshToken)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Deve retornar 401 Unauthorized ao tentar fazer logout sem autenticação")
+    void logout_shouldReturn401_whenNotAuthenticated() {
+      // Act & Assert
+      ErrorResponseDto responseDto =
+          given()
+              .spec(specification)
+              .when()
+              .post("/logout")
+              .then()
+              .statusCode(401)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      assertThat(responseDto).isNotNull();
+      assertThat(responseDto.status()).isEqualTo(401);
+      assertThat(responseDto.message())
+          .isEqualTo("Sua sessão é inválida ou expirou. Por favor, faça login novamente.");
+      assertThat(responseDto.path()).isEqualTo("/api/auth/logout");
     }
   }
 

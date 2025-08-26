@@ -44,4 +44,9 @@ public class UseCaseBeans {
       UserRepositoryPort userRepository, ApplicationEventPublisher eventPublisher) {
     return new ResendCodeUseCaseImp(userRepository, eventPublisher);
   }
+
+  @Bean
+  public LogoutUseCase logoutUseCase(RefreshTokenRepositoryPort refreshTokenRepository) {
+    return new LogoutUseCaseImp(refreshTokenRepository);
+  }
 }

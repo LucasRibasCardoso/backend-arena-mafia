@@ -55,7 +55,8 @@ public class RefreshTokenTest {
     Instant createdAt = Instant.now().minus(1, ChronoUnit.DAYS);
 
     // Act
-    RefreshToken refreshToken = RefreshToken.reconstitute(tokenVO, expiryDate, testUser, createdAt);
+    RefreshToken refreshToken =
+        RefreshToken.reconstitute(1L, tokenVO, expiryDate, testUser, createdAt);
 
     // Assert
     assertThat(refreshToken.getToken()).isEqualTo(tokenVO);
@@ -99,7 +100,7 @@ public class RefreshTokenTest {
       Instant expiredInstant = Instant.now().minusSeconds(1);
       RefreshToken expiredToken =
           RefreshToken.reconstitute(
-              RefreshTokenVO.generate(), expiredInstant, testUser, Instant.now());
+              1L, RefreshTokenVO.generate(), expiredInstant, testUser, Instant.now());
 
       // Act & Assert
       assertThatThrownBy(expiredToken::verifyIfNotExpired)

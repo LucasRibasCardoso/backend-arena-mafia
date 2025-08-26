@@ -8,9 +8,9 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.imp.RefreshTokenUseCaseImp;
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenExpiredException;
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenInvalidFormatException;
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenNotFoundException;
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenExpiredException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.RefreshTokenInvalidFormatException;
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
@@ -95,7 +95,7 @@ public class RefreshTokenUseCaseImpTest {
     // Act & Assert
     assertThatThrownBy(() -> refreshTokenUseCase.execute(requestDto))
         .isInstanceOf(RefreshTokenExpiredException.class)
-        .hasMessage("Refresh token expirado. Faça login novamente.");
+        .hasMessage("Sua sessão expirou. Por favor, faça login novamente.");
 
     verify(refreshTokenRepository, times(1)).delete(expiredRefreshToken);
     verify(authPort, never()).generateTokens(any(User.class));

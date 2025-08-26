@@ -4,8 +4,8 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.RefreshTokenUseCase;
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenExpiredException;
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenNotFoundException;
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenExpiredException;
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.RefreshTokenRequestDto;
@@ -35,12 +35,15 @@ public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
             .findByToken(refreshTokenVO)
             .orElseThrow(() -> new RefreshTokenNotFoundException("Refresh token não encontrado."));
 
-    // Verifica se o RefreshToken está expirado
-    if (refreshToken.isExpired()) {
-      refreshTokenRepository.delete(refreshToken);
-      throw new RefreshTokenExpiredException("Refresh token expirado. Faça login novamente.");
-    }
+    try {
+      refreshToken.verifyIfNotExpired();
+      return authPort.generateTokens(refreshToken.getUser());
 
-    return authPort.generateTokens(refreshToken.getUser());
+    } catch (RefreshTokenExpiredException e) {
+      refreshTokenRepository.delete(refreshToken);
+
+      // Relança a exceção para ser tratada no GlobalExceptionHandler
+      throw e;
+    }
   }
 }

@@ -4,15 +4,13 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.tuple;
 
+import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.LoginRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.TokenResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.*;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.integration.config.TestIntegrationBaseConfig;
 import io.restassured.builder.RequestSpecBuilder;
@@ -24,6 +22,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -34,6 +33,8 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
   @Autowired private UserRepositoryPort userRepository;
   @Autowired private UserJpaRepository userJpaRepository;
   @Autowired private PasswordEncoder passwordEncoder;
+  @Autowired private OtpPort otpPort;
+  @Autowired private RedisTemplate<String, String> redisTemplate;
 
   private RequestSpecification specification;
 
@@ -253,8 +254,8 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 401 Unauthorized quando um token inválido for enviado")
-    void refreshToken_shouldReturn401ForInvalidToken() {
+    @DisplayName("Deve retornar 400 BadRequest quando um token inválido for enviado")
+    void refreshToken_shouldReturn400ForInvalidToken() {
       // Arrange
       Cookie invalidCookie = new Cookie.Builder("refreshToken", "token-que-nao-existe").build();
 
@@ -266,16 +267,16 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
               .when()
               .post("/refresh-token")
               .then()
-              .statusCode(401)
+              .statusCode(400)
               .extract()
               .response();
 
       // Assert
       ErrorResponseDto errorResponse = response.as(ErrorResponseDto.class);
       assertThat(errorResponse).isNotNull();
-      assertThat(errorResponse.status()).isEqualTo(401);
+      assertThat(errorResponse.status()).isEqualTo(400);
       assertThat(errorResponse.message())
-          .isEqualTo("Token de atualização inválido ou expirado. Por favor, faça login novamente.");
+          .isEqualTo("Formato inválido para o refresh token.");
       assertThat(errorResponse.timestamp()).isNotNull();
       assertThat(errorResponse.path()).isEqualTo("/api/auth/refresh-token");
     }
@@ -370,7 +371,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.message())
           .isEqualTo(
-              "Número de telefone inválido. Por favor, inclua o código do país e o DDD (ex: +5547988887777).");
+              "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
       assertThat(response.path()).isEqualTo("/api/auth/signup");
     }
 
@@ -405,6 +406,123 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       assertThat(response.message())
           .isEqualTo("Nome de usuário ou telefone indisponível. Por favor, utilize outros.");
       assertThat(response.path()).isEqualTo("/api/auth/signup");
+    }
+  }
+
+  @Nested
+  @DisplayName("Testes para o endpoint /auth/verify-account")
+  class VerifyAccountTests {
+
+    @Test
+    @DisplayName("Deve retornar 200 OK e tokens quando o OTP for válido para um usuário pendente")
+    void verifyAccount_shouldReturn200AndTokens_whenOtpIsValidForPendingUser() {
+      // Arrange
+      createAndPersistUser(AccountStatus.PENDING_VERIFICATION);
+      User user = userRepository.findByUsername("testUser").orElseThrow();
+
+      String validOtp = otpPort.generateAndSaveOtp(user.getId());
+      var request = new VerifyAccountRequestDto("testUser", validOtp);
+
+      // Act
+      Response response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/verify-account")
+              .then()
+              .statusCode(200)
+              .extract()
+              .response();
+
+      // Assert
+      TokenResponseDto responseBody = response.as(TokenResponseDto.class);
+      assertThat(responseBody).isNotNull();
+      assertThat(responseBody.username()).isEqualTo("testUser");
+      assertThat(responseBody.accessToken()).isNotBlank();
+
+      Cookie refreshTokenCookie = response.getDetailedCookie("refreshToken");
+      assertThat(refreshTokenCookie).isNotNull();
+
+      User updatedUser = userRepository.findById(user.getId()).orElseThrow();
+      assertThat(updatedUser.getStatus()).isEqualTo(AccountStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("Deve retornar 404 Not Found quando o usuário não existir")
+    void verifyAccount_shouldReturn404_whenUserNotFound() {
+      // Arrange
+      var request = new VerifyAccountRequestDto("nonexistentUser", "123456");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/verify-account")
+              .then()
+              .statusCode(404)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.message())
+          .isEqualTo(
+              "Usuário não encontrado para realizar verificação. Por favor faça o cadastro novamente.");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 400 Bad Request quando o OTP for inválido")
+    void verifyAccount_shouldReturn400_whenOtpIsInvalid() {
+      // Arrange
+      createAndPersistUser(AccountStatus.PENDING_VERIFICATION);
+      // OTP "111222" é deliberadamente incorreto
+      var request = new VerifyAccountRequestDto("testUser", "111222");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/verify-account")
+              .then()
+              .statusCode(400) // Esperamos Bad Request conforme a hierarquia de exceções
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.status()).isEqualTo(400);
+      assertThat(response.message()).isEqualTo("Código de verificação inválido ou expirado.");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 409 Conflict ao tentar verificar uma conta que já está ativa")
+    void verifyAccount_shouldReturn409_whenAccountIsAlreadyActive() {
+      // Arrange
+      createAndPersistUser(AccountStatus.ACTIVE);
+      User user = userRepository.findByUsername("testUser").orElseThrow();
+
+      String validOtp = otpPort.generateAndSaveOtp(user.getId());
+      var request = new VerifyAccountRequestDto("testUser", validOtp);
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/verify-account")
+              .then()
+              .statusCode(409)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.status()).isEqualTo(409);
+      assertThat(response.message()).isEqualTo("Atenção: A conta já está ativada.");
     }
   }
 

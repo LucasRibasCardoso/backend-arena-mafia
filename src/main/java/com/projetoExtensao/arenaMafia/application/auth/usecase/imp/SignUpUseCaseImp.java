@@ -5,7 +5,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordEnco
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.SignUpUseCase;
-import com.projetoExtensao.arenaMafia.domain.exception.user.UserAlreadyExistsException;
+import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupRequestDto;
 import org.springframework.context.ApplicationEventPublisher;

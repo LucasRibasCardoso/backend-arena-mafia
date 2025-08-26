@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.domain.valueObjects;
 
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenInvalidFormatException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.RefreshTokenInvalidFormatException;
 import java.util.UUID;
 
 public record RefreshTokenVO(UUID value) {

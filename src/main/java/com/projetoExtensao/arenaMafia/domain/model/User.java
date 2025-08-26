@@ -1,6 +1,7 @@
 package com.projetoExtensao.arenaMafia.domain.model;
 
-import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidUsernameFormatException;
+import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import java.time.Instant;
@@ -90,33 +91,34 @@ public class User {
 
   public static void validateUsername(String username) {
     if (username == null || username.isBlank()) {
-      throw new DomainValidationException("O nome de usuário não pode ser nulo ou vazio.");
+      throw new InvalidUsernameFormatException("O nome de usuário não pode ser nulo ou vazio.");
     }
     if (username.chars().anyMatch(Character::isWhitespace)) {
-      throw new DomainValidationException("O nome de usuário não pode conter espaços.");
+      throw new InvalidUsernameFormatException("O nome de usuário não pode conter espaços.");
     }
     if (username.length() < 4 || username.length() > 50) {
-      throw new DomainValidationException("O nome de usuário deve ter entre 4 e 50 caracteres.");
+      throw new InvalidUsernameFormatException(
+          "O nome de usuário deve ter entre 4 e 50 caracteres.");
     }
   }
 
   public void activateAccount() {
     if (this.status != AccountStatus.PENDING_VERIFICATION) {
-      throw new DomainValidationException("Atenção: A conta já está ativada.");
+      throw new AccountStateConflictException("Atenção: A conta já está ativada.");
     }
     this.status = AccountStatus.ACTIVE;
   }
 
   public void lockAccount() {
     if (this.status == AccountStatus.LOCKED) {
-      throw new DomainValidationException("Atenção: A conta já está bloqueada.");
+      throw new AccountStateConflictException("Atenção: A conta já está bloqueada.");
     }
     this.status = AccountStatus.LOCKED;
   }
 
   public void unlockAccount() {
     if (this.status != AccountStatus.LOCKED) {
-      throw new DomainValidationException("Atenção: A conta não está bloqueada.");
+      throw new AccountStateConflictException("Atenção: A conta não está bloqueada.");
     }
     this.status = AccountStatus.ACTIVE;
   }

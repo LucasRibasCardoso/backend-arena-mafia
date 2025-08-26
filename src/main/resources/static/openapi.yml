@@ -149,6 +149,23 @@ components:
           description: "Identificador único (username) do usuário recém-criado."
           example: "username_test"
 
+    VerifyAccountRequest:
+      type: object
+      description: Dados para verificação da conta via código OTP.
+      required:
+        - username
+        - verificationCode
+      properties:
+        username:
+          type: string
+          description: "Nome de usuário da conta a ser verificada."
+          example: "joao_silva99"
+        verificationCode:
+          type: string
+          description: "Código OTP de 6 dígitos recebido por SMS."
+          example: "123456"
+          pattern: "^\\d{6}$"
+
   responses:
     ErrorResponseBadRequest:
       content:
@@ -280,7 +297,6 @@ paths:
               description: Cookie HttpOnly contendo o token de refresh.
               schema:
                 type: string
-                example: refreshToken=99ed48e3-0076-4b39-a2ed-f02f5335673e...;
           content:
             $ref: "#/components/responses/TokenResponse/content"
         "400":
@@ -354,11 +370,51 @@ paths:
           content:
             $ref: "#/components/responses/SignupResponse/content"
         "400":
-          description: Exceção lançada para validação de senhas ou quando o telefone conter um formato inválido.
+          description: "Retornado se houver erros de validação nos dados enviados (ex: formato de telefone inválido, senhas não coincidem, campos obrigatórios ausentes)."
           content:
             $ref: "#/components/responses/ErrorResponseBadRequest/content"
         "409":
           description: Exceção lançada se o nome de usuário ou telefone já estiverem em uso.
+          content:
+            $ref: "#/components/responses/ErrorResponseConflict/content"
+        "500":
+          $ref: "#/components/responses/ErrorResponseInternalServerError"
+
+  /api/auth/verify-account:
+    post:
+      operationId: verifyAccount
+      tags:
+        - Autenticação
+      summary: Verificação de Conta de Usuário
+      description: |
+        Endpoint para verificar uma nova conta de usuário usando o código OTP recebido por SMS.
+        Em caso de sucesso, o usuário é automaticamente logado, recebendo os tokens de acesso e refresh.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyAccountRequest"
+      responses:
+        "200":
+          description: Conta verificada e usuário autenticado com sucesso.
+          headers:
+            Set-Cookie:
+              description: Cookie HttpOnly contendo o token de refresh.
+              schema:
+                type: string
+          content:
+            $ref: "#/components/responses/TokenResponse/content"
+        "400":
+          description: Retornado se o código de verificação (OTP) for inválido.
+          content:
+            $ref: "#/components/responses/ErrorResponseBadRequest/content"
+        "404":
+          description: Retornado se o nome de usuário não for encontrado.
+          content:
+            $ref: "#/components/responses/ErrorResponseNotFound/content"
+        "409":
+          description: Retornado se a conta já estiver ativa (conflito de estado).
           content:
             $ref: "#/components/responses/ErrorResponseConflict/content"
         "500":

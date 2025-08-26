@@ -3,7 +3,7 @@ package com.projetoExtensao.arenaMafia.unit.domain.model;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.RefreshTokenInvalidFormatException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.RefreshTokenInvalidFormatException;
 import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;

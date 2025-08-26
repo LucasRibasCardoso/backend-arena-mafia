@@ -1,5 +1,6 @@
 package com.projetoExtensao.arenaMafia.domain.model;
 
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenExpiredException;
 import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -47,8 +48,13 @@ public class RefreshToken {
     this.createdAt = createdAt;
   }
 
-  // --- Métodos de Negócio ---
-  public boolean isExpired() {
+  public void verifyIfNotExpired() {
+    if (isExpired()) {
+      throw new RefreshTokenExpiredException("Sua sessão expirou. Por favor, faça login novamente.");
+    }
+  }
+
+  private boolean isExpired() {
     return Instant.now().isAfter(expiryDate);
   }
 

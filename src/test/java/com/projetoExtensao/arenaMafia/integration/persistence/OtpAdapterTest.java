@@ -1,7 +1,10 @@
 package com.projetoExtensao.arenaMafia.integration.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
 import com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway.OtpAdapter;
 import com.projetoExtensao.arenaMafia.integration.config.TestContainerRedisConfig;
 import java.time.Duration;
@@ -41,38 +44,53 @@ public class OtpAdapterTest extends TestContainerRedisConfig {
   }
 
   @Test
-  @DisplayName("Deve validar o código OTP corretamente e remover a chave do Redis após a validação")
-  void validateOtp_shouldReturnTrueAndDeleteKey_whenOtpIsCorrect() {
+  @DisplayName(
+      "Deve validar o código OTP corretamente e não lançar exceção, removendo a chave do Redis")
+  void validateOtp_shouldNotThrowExceptionAndDeleteKey_whenOtpIsCorrect() {
     // Arrange
     UUID userId = UUID.randomUUID();
     String redisKey = "otp:user:" + userId;
     String otpCode = otpAdapter.generateAndSaveOtp(userId);
 
-    // Act
-    boolean isValid = otpAdapter.validateOtp(userId, otpCode);
-
-    // Assert
-    assertThat(isValid).isTrue();
+    // Act & Assert
+    assertDoesNotThrow(() -> otpAdapter.validateOtp(userId, otpCode));
 
     Boolean keyExists = redisTemplate.hasKey(redisKey);
     assertThat(keyExists).isFalse();
   }
 
   @Test
-  @DisplayName("Deve retornar falso ao validar um código OTP incorreto e manter a chave no Redis")
-  void validateOtp_shouldReturnFalse_whenOtpIsIncorrect() {
+  @DisplayName("Deve lançar InvalidOtpException ao validar um código OTP incorreto")
+  void validateOtp_shouldThrowException_whenOtpIsIncorrect() {
     // Arrange
     UUID userId = UUID.randomUUID();
     String redisKey = "otp:user:" + userId;
     otpAdapter.generateAndSaveOtp(userId);
+    String incorrectCode = "000000";
 
-    // Act
-    boolean isValid = otpAdapter.validateOtp(userId, "000000");
-
-    // Assert
-    assertThat(isValid).isFalse();
+    // Act & Assert
+    assertThatThrownBy(() -> otpAdapter.validateOtp(userId, incorrectCode))
+        .isInstanceOf(InvalidOtpException.class)
+        .hasMessage("Código de verificação inválido ou expirado.");
 
     Boolean keyExists = redisTemplate.hasKey(redisKey);
     assertThat(keyExists).isTrue();
+  }
+
+  @Test
+  @DisplayName("Deve lançar InvalidOtpException ao validar um código OTP expirado")
+  void validateOtp_shouldThrowException_whenOtpIsExpired() {
+    // Arrange
+    UUID userId = UUID.randomUUID();
+    String redisKey = "otp:user:" + userId;
+    String otpCode = otpAdapter.generateAndSaveOtp(userId);
+
+    // Simula a expiração removendo a chave diretamente do Redis
+    redisTemplate.delete(redisKey);
+
+    // Act & Assert
+    assertThatThrownBy(() -> otpAdapter.validateOtp(userId, otpCode))
+        .isInstanceOf(InvalidOtpException.class)
+        .hasMessage("Código de verificação inválido ou expirado.");
   }
 }

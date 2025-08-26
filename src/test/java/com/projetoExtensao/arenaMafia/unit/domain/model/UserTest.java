@@ -4,7 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidUsernameFormatException;
+import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
@@ -98,13 +99,13 @@ public class UserTest {
     @MethodSource(
         "com.projetoExtensao.arenaMafia.unit.domain.model.UserTest#invalidUsernameProvider")
     @DisplayName(
-        "Deve lançar DomainValidationException para usernames inválidos ao tentar criar um usuário")
+        "Deve lançar InvalidUsernameFormatException para usernames inválidos ao tentar criar um usuário")
     void create_shouldThrowExceptionForInvalidUsernames(
         String invalidUsername, String expectMessage) {
 
       // Arrange & Act & Assert
       assertThatThrownBy(() -> User.create(invalidUsername, fullName, phone, passwordHash))
-          .isInstanceOf(DomainValidationException.class)
+          .isInstanceOf(InvalidUsernameFormatException.class)
           .hasMessage(expectMessage);
     }
 
@@ -112,7 +113,7 @@ public class UserTest {
     @MethodSource(
         "com.projetoExtensao.arenaMafia.unit.domain.model.UserTest#invalidUsernameProvider")
     @DisplayName(
-        "Deve lançar DomainValidationException para usernames inválidos ao tentar reconstituir um usuário")
+        "Deve lançar InvalidUsernameFormatException para usernames inválidos ao tentar reconstituir um usuário")
     void reconstitute_shouldThrowExceptionForInvalidFullName(
         String invalidUsername, String expectMessage) {
       // Arrange
@@ -131,7 +132,7 @@ public class UserTest {
                       AccountStatus.ACTIVE,
                       RoleEnum.ROLE_USER,
                       createdAt))
-          .isInstanceOf(DomainValidationException.class)
+          .isInstanceOf(InvalidUsernameFormatException.class)
           .hasMessage(expectMessage);
     }
   }
@@ -174,7 +175,7 @@ public class UserTest {
 
       // Act & Assert
       assertThatThrownBy(user::activateAccount)
-          .isInstanceOf(DomainValidationException.class)
+          .isInstanceOf(AccountStateConflictException.class)
           .hasMessage("Atenção: A conta já está ativada.");
     }
 
@@ -220,7 +221,7 @@ public class UserTest {
 
       // Act & Assert
       assertThatThrownBy(user::lockAccount)
-          .isInstanceOf(DomainValidationException.class)
+          .isInstanceOf(AccountStateConflictException.class)
           .hasMessage("Atenção: A conta já está bloqueada.");
     }
 
@@ -266,7 +267,7 @@ public class UserTest {
 
       // Act & Assert
       assertThatThrownBy(user::unlockAccount)
-          .isInstanceOf(DomainValidationException.class)
+          .isInstanceOf(AccountStateConflictException.class)
           .hasMessage("Atenção: A conta não está bloqueada.");
     }
   }

@@ -1,9 +1,10 @@
 package com.projetoExtensao.arenaMafia.unit.domain.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenExpiredException;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
@@ -64,39 +65,46 @@ public class RefreshTokenTest {
   }
 
   @Nested
-  @DisplayName("Testes para o método isExpired")
-  class IsExpiredTests {
+  @DisplayName("Testes para o método verifyIfNotExpired")
+  class verifyIfNotExpiredTests {
 
     @Test
-    @DisplayName("isExpired deve retornar false para um token que ainda é válido")
-    void isExpired_shouldReturnFalseForValidToken() {
+    @DisplayName("verifyIfNotExpired não deve lançar exceção para um token que ainda é válido")
+    void verifyIfNotExpired_shouldNotThrowExceptionForValidToken() {
       // Arrange
       RefreshToken validToken = RefreshToken.create(EXPIRATION_DAYS, testUser);
 
       // Act & Assert
-      assertFalse(validToken.isExpired());
+      assertDoesNotThrow(validToken::verifyIfNotExpired);
     }
 
     @Test
-    @DisplayName("isExpired deve retornar true para um token que já expirou")
-    void isExpired_shouldReturnTrueForExpiredToken() {
+    @DisplayName(
+        "verifyIfNotExpired deve lançar RefreshTokenExpiredException para um token que já expirou")
+    void verifyIfNotExpired_shouldThrowExceptionForExpiredToken() {
       // Arrange
       RefreshToken expiredToken = RefreshToken.create(-1L, testUser);
 
       // Act & Assert
-      assertTrue(expiredToken.isExpired());
+      assertThatThrownBy(() -> expiredToken.verifyIfNotExpired())
+          .isInstanceOf(RefreshTokenExpiredException.class)
+          .hasMessage("Sua sessão expirou. Por favor, faça login novamente.");
     }
 
     @Test
-    @DisplayName("isExpired deve retornar true para um token que expira exatamente agora")
-    void isExpired_shouldReturnTrueForTokenExpiringNow() {
+    @DisplayName("verifyIfNotExpired deve lançar exceção para um token que expirou no passado")
+    void verifyIfNotExpired_shouldThrowExceptionForTokenThatExpiredInThePast() {
       // Arrange
-      Instant now = Instant.now();
-      RefreshToken tokenExpiringNow =
-          RefreshToken.reconstitute(RefreshTokenVO.generate(), now, testUser, now);
+      // Data de expiração que é 1 segundo no passado para garantir a falha.
+      Instant expiredInstant = Instant.now().minusSeconds(1);
+      RefreshToken expiredToken =
+          RefreshToken.reconstitute(
+              RefreshTokenVO.generate(), expiredInstant, testUser, Instant.now());
 
       // Act & Assert
-      assertTrue(tokenExpiringNow.isExpired());
+      assertThatThrownBy(() -> expiredToken.verifyIfNotExpired())
+          .isInstanceOf(RefreshTokenExpiredException.class)
+          .hasMessage("Sua sessão expirou. Por favor, faça login novamente.");
     }
   }
 }

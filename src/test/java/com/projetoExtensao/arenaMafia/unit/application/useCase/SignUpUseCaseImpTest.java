@@ -10,7 +10,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordEnco
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.imp.SignUpUseCaseImp;
-import com.projetoExtensao.arenaMafia.domain.exception.user.UserAlreadyExistsException;
+import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupRequestDto;
 import org.junit.jupiter.api.BeforeEach;

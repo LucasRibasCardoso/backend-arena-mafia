@@ -109,7 +109,7 @@ public class JwtTokenProviderTest {
     @DisplayName("Deve lançar InvalidJwtTokenException para um token expirado")
     void getAuthentication_shouldThrowExceptionForExpiredToken() {
       // Arrange
-      String expiredToken = createExpiredToken(username, RoleEnum.ROLE_USER);
+      String expiredToken = createExpiredToken(username);
 
       // Act & Assert
       assertThatThrownBy(() -> tokenProvider.getAuthentication(expiredToken))
@@ -199,13 +199,13 @@ public class JwtTokenProviderTest {
     }
   }
 
-  private String createExpiredToken(String username, RoleEnum role) {
+  private String createExpiredToken(String username) {
     Instant now = Instant.now();
     String encodedSecret = Base64.getEncoder().encodeToString(secretKey.getBytes());
     Algorithm algorithm = Algorithm.HMAC256(encodedSecret.getBytes());
 
     return JWT.create()
-        .withClaim("role", role.name())
+        .withClaim("role", RoleEnum.ROLE_USER.name())
         .withIssuedAt(now.minusSeconds(7200)) // Criado 2 horas atrás
         .withExpiresAt(now.minusSeconds(3600)) // Expirou 1 hora atrás
         .withSubject(username)

@@ -22,7 +22,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -34,7 +33,6 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
   @Autowired private UserJpaRepository userJpaRepository;
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private OtpPort otpPort;
-  @Autowired private RedisTemplate<String, String> redisTemplate;
 
   private RequestSpecification specification;
 

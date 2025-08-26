@@ -86,7 +86,7 @@ public class RefreshTokenTest {
       RefreshToken expiredToken = RefreshToken.create(-1L, testUser);
 
       // Act & Assert
-      assertThatThrownBy(() -> expiredToken.verifyIfNotExpired())
+      assertThatThrownBy(expiredToken::verifyIfNotExpired)
           .isInstanceOf(RefreshTokenExpiredException.class)
           .hasMessage("Sua sessão expirou. Por favor, faça login novamente.");
     }
@@ -102,7 +102,7 @@ public class RefreshTokenTest {
               RefreshTokenVO.generate(), expiredInstant, testUser, Instant.now());
 
       // Act & Assert
-      assertThatThrownBy(() -> expiredToken.verifyIfNotExpired())
+      assertThatThrownBy(expiredToken::verifyIfNotExpired)
           .isInstanceOf(RefreshTokenExpiredException.class)
           .hasMessage("Sua sessão expirou. Por favor, faça login novamente.");
     }

@@ -2,14 +2,12 @@ package com.projetoExtensao.arenaMafia.unit.infrastructure.jwt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.InvalidJwtTokenException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
-import com.projetoExtensao.arenaMafia.infrastructure.security.UserDetailsAdapter;
 import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.JwtTokenProvider;
 import java.time.Instant;
 import java.util.Base64;
@@ -21,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -84,56 +83,15 @@ public class JwtTokenProviderTest {
   }
 
   @Nested
-  @DisplayName("Validação de Token")
-  class TokenValidationTests {
-
-    @Test
-    @DisplayName("Deve retornar true para um token válido e não expirado")
-    void validateToken_shouldReturnTrueForValidToken() {
-      // Arrange
-      String tokenJWT = tokenProvider.generateAccessToken(username, RoleEnum.ROLE_USER);
-
-      // Act
-      boolean isValid = tokenProvider.validateToken(tokenJWT);
-
-      // Assert
-      assertThat(isValid).isTrue();
-    }
-
-    @Test
-    @DisplayName("Deve lançar exceção para um token expirado")
-    void validateToken_shouldThrowExceptionForExpiredToken() {
-      // Arrange
-      String expiredTokenJWT = createExpiredToken(username, RoleEnum.ROLE_USER);
-
-      // Act & Assert
-      assertThatThrownBy(() -> tokenProvider.validateToken(expiredTokenJWT))
-          .isInstanceOf(JWTVerificationException.class);
-    }
-
-    @Test
-    @DisplayName("Deve lançar exceção para um token com assinatura inválida")
-    void validateToken_shouldThrowExceptionForInvalidSignature() {
-      // Arrange
-      String tokenWithWrongSignature = "eyJhbGciOiJIUzI1NiInR5cCI6IkpXVCJ9..invalid-signature";
-
-      // Act & Assert
-      assertThatThrownBy(() -> tokenProvider.validateToken(tokenWithWrongSignature))
-          .isInstanceOf(JWTVerificationException.class);
-    }
-  }
-
-  @Nested
   @DisplayName("Obtenção de Autenticação")
   class AuthenticationRetrievalTests {
 
     @Test
     @DisplayName("Deve retornar um objeto Authentication para um token válido")
-    void getAuthentication_shouldReturnAuthentication_forValidToken() {
+    void getAuthentication_shouldReturnAuthenticationForValidToken() {
       // Arrange
       String tokenJWT = tokenProvider.generateAccessToken(username, RoleEnum.ROLE_USER);
-      User user = User.create(username, "Test User", "55912345678", "password_hash");
-      UserDetailsAdapter userDetails = new UserDetailsAdapter(user);
+      UserDetails userDetails = mock(UserDetails.class);
 
       // Configura o comportamento do mock
       when(userDetailsService.loadUserByUsername(username)).thenReturn(userDetails);
@@ -143,8 +101,54 @@ public class JwtTokenProviderTest {
 
       // Assert
       assertThat(authentication).isNotNull();
-      assertThat(authentication.getName()).isEqualTo(username);
       assertThat(authentication.getPrincipal()).isEqualTo(userDetails);
+      verify(userDetailsService, times(1)).loadUserByUsername(username);
+    }
+
+    @Test
+    @DisplayName("Deve lançar InvalidJwtTokenException para um token expirado")
+    void getAuthentication_shouldThrowExceptionForExpiredToken() {
+      // Arrange
+      String expiredToken = createExpiredToken(username, RoleEnum.ROLE_USER);
+
+      // Act & Assert
+      assertThatThrownBy(() -> tokenProvider.getAuthentication(expiredToken))
+          .isInstanceOf(InvalidJwtTokenException.class)
+          .hasMessage("Token JWT inválido ou expirado.");
+
+      // Verify
+      verify(userDetailsService, never()).loadUserByUsername(anyString());
+    }
+
+    @Test
+    @DisplayName("Deve lançar InvalidJwtTokenException para um token com assinatura inválida")
+    void getAuthentication_shouldThrowExceptionForInvalidSignatureToken() {
+      // Arrange
+      String validToken = tokenProvider.generateAccessToken(username, RoleEnum.ROLE_USER);
+      String tamperedToken = validToken + "invalid-signature";
+
+      // Act & Assert
+      assertThatThrownBy(() -> tokenProvider.getAuthentication(tamperedToken))
+          .isInstanceOf(InvalidJwtTokenException.class)
+          .hasMessage("Token JWT inválido ou expirado.");
+
+      // Verify
+      verify(userDetailsService, never()).loadUserByUsername(anyString());
+    }
+
+    @Test
+    @DisplayName("Deve lançar InvalidJwtTokenException para um token malformado")
+    void getAuthentication_shouldThrowExceptionForMalformedToken() {
+      // Arrange
+      String malformedToken = "not-a-valid-jwt";
+
+      // Act & Assert
+      assertThatThrownBy(() -> tokenProvider.getAuthentication(malformedToken))
+          .isInstanceOf(InvalidJwtTokenException.class)
+          .hasMessage("Token JWT inválido ou expirado.");
+
+      // Verify
+      verify(userDetailsService, never()).loadUserByUsername(anyString());
     }
   }
 

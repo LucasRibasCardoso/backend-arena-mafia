@@ -5,12 +5,15 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.InvalidJwtTokenException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.Date;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -58,9 +61,13 @@ public class JwtTokenProvider {
   }
 
   public Authentication getAuthentication(String token) {
-    DecodedJWT decoder = decodedToken(token);
-    UserDetails user = userDetailsService.loadUserByUsername(decoder.getSubject());
-    return new UsernamePasswordAuthenticationToken(user, "", user.getAuthorities());
+    try {
+      DecodedJWT decoder = decodedToken(token);
+      UserDetails user = userDetailsService.loadUserByUsername(decoder.getSubject());
+      return new UsernamePasswordAuthenticationToken(user, "", user.getAuthorities());
+    } catch (JWTVerificationException e) {
+      throw new InvalidJwtTokenException("Token JWT inválido ou expirado.");
+    }
   }
 
   public String resolveToken(HttpServletRequest request) {
@@ -73,20 +80,8 @@ public class JwtTokenProvider {
     return null;
   }
 
-  public boolean validateToken(String token) {
-    try {
-      DecodedJWT decodedJWT = decodedToken(token);
-      return !decodedJWT.getExpiresAt().before(new Date());
-    } catch (JWTVerificationException e) {
-      throw new JWTVerificationException("Expired or invalid JWT token");
-    }
-  }
-
   private DecodedJWT decodedToken(String token) {
-    // Cria um verificador de JWT com o algoritmo de decodificação
     JWTVerifier verifier = JWT.require(algorithm).build();
-
-    // Verifica o token JWT e retorna o token decodificado
     return verifier.verify(token);
   }
 

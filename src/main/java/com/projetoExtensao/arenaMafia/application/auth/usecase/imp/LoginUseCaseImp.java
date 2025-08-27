@@ -9,7 +9,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountNotVerif
 import com.projetoExtensao.arenaMafia.domain.exception.forbidden.DisabledAccountException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.LoginRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.LoginRequestDto;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

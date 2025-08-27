@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto;
+package com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

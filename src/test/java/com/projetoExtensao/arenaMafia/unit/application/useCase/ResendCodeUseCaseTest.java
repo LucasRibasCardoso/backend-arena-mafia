@@ -12,7 +12,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundExce
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.ResendCodeRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendCodeRequestDto;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

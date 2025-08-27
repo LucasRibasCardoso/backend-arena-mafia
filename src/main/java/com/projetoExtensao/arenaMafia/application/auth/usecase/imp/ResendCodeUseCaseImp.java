@@ -5,7 +5,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepos
 import com.projetoExtensao.arenaMafia.application.auth.usecase.ResendCodeUseCase;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.ResendCodeRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendCodeRequestDto;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

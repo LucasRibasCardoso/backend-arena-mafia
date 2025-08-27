@@ -7,7 +7,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepos
 import com.projetoExtensao.arenaMafia.application.auth.usecase.SignUpUseCase;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

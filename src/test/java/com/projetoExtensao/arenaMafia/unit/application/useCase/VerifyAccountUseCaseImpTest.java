@@ -15,7 +15,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundExce
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.VerifyAccountRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.VerifyAccountRequestDto;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;

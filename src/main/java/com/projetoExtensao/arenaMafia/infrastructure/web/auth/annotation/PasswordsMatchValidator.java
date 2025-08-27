@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth.annotation;
 
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 

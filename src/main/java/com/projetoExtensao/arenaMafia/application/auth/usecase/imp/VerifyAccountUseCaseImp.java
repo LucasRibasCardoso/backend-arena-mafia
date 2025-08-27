@@ -7,7 +7,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepos
 import com.projetoExtensao.arenaMafia.application.auth.usecase.VerifyAccountUseCase;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.VerifyAccountRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.VerifyAccountRequestDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

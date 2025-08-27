@@ -12,7 +12,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepos
 import com.projetoExtensao.arenaMafia.application.auth.usecase.imp.SignUpUseCaseImp;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.SignupRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

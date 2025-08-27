@@ -177,19 +177,12 @@ components:
           description: "Nome de usuário da conta para a qual o código deve ser reenviado."
           example: "joao_silva99"
 
-    ResendCodeResponseDto:
+    MessageResponseDto:
       type: object
       properties:
         message:
           type: string
-          example: "Código de verificação reenviado com sucesso."
-
-    LogoutResponseDto:
-      type: object
-      properties:
-        message:
-          type: string
-          example: "Logout realizado com sucesso."
+          example: "Operação realizada com sucesso."
 
   responses:
     ErrorResponseBadRequest:
@@ -296,19 +289,12 @@ components:
           schema:
             $ref: '#/components/schemas/SignupResponseDto'
 
-    ResendCodeResponseDto:
-      description: Código OTP reenviado com sucesso.
+    MessageResponseDto:
+      description: Operação realizada com sucesso.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ResendCodeResponseDto'
-
-    LogoutResponseDto:
-      description: Logout realizado com sucesso.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/LogoutResponseDto'
+            $ref: '#/components/schemas/MessageResponseDto'
 
 # Mapeamento dos endpoints da API
 paths:
@@ -476,7 +462,7 @@ paths:
         "200":
           description: Código OTP reenviado com sucesso.
           content:
-            $ref: "#/components/responses/ResendCodeResponseDto/content"
+            $ref: "#/components/responses/MessageResponseDto/content"
         "400":
           description: Retornado se o nome de usuário estiver ausente ou inválido.
           content:
@@ -514,7 +500,7 @@ paths:
         "200":
           description: Logout realizado com sucesso.
           content:
-            $ref: "#/components/responses/LogoutResponseDto/content"
+            $ref: "#/components/responses/MessageResponseDto/content"
         "401":
           description: Exceção lançada para tokens inválidos, expirados ou ausentes.
           content:

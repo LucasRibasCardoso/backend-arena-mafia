@@ -15,10 +15,9 @@ import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.User
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.LoginRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendCodeRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.LogoutResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.ResendCodeResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.MessageResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.SignupResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.VerifyAccountRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.integration.config.TestIntegrationBaseConfig;
@@ -256,7 +255,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
               .response();
 
       // Assert
-      LogoutResponseDto logoutBody = logoutResponse.as(LogoutResponseDto.class);
+      MessageResponseDto logoutBody = logoutResponse.as(MessageResponseDto.class);
       assertThat(logoutBody.message()).isEqualTo("Logout realizado com sucesso.");
 
       // Verifica se o servidor instruiu o navegador a apagar o cookie.
@@ -505,7 +504,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       User user = userRepository.findByUsername("testUser").orElseThrow();
 
       String validOtp = otpPort.generateAndSaveOtp(user.getId());
-      var request = new VerifyAccountRequestDto("testUser", validOtp);
+      var request = new ValidateOtpRequestDto("testUser", validOtp);
 
       // Act
       Response response =
@@ -536,7 +535,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     @DisplayName("Deve retornar 404 Not Found quando o usuário não existir")
     void verifyAccount_shouldReturn404_whenUserNotFound() {
       // Arrange
-      var request = new VerifyAccountRequestDto("nonexistentUser", "123456");
+      var request = new ValidateOtpRequestDto("nonexistentUser", "123456");
 
       // Act
       ErrorResponseDto response =
@@ -563,7 +562,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       // Arrange
       createAndPersistUser(AccountStatus.PENDING_VERIFICATION);
       // OTP "111222" é deliberadamente incorreto
-      var request = new VerifyAccountRequestDto("testUser", "111222");
+      var request = new ValidateOtpRequestDto("testUser", "111222");
 
       // Act
       ErrorResponseDto response =
@@ -590,7 +589,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       User user = userRepository.findByUsername("testUser").orElseThrow();
 
       String validOtp = otpPort.generateAndSaveOtp(user.getId());
-      var request = new VerifyAccountRequestDto("testUser", validOtp);
+      var request = new ValidateOtpRequestDto("testUser", validOtp);
 
       // Act
       ErrorResponseDto response =
@@ -622,7 +621,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       ResendCodeRequestDto request = new ResendCodeRequestDto("testUser");
 
       // Act
-      ResendCodeResponseDto response =
+      MessageResponseDto response =
           given()
               .spec(specification)
               .body(request)
@@ -631,7 +630,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
               .then()
               .statusCode(200)
               .extract()
-              .as(ResendCodeResponseDto.class);
+              .as(MessageResponseDto.class);
 
       // Assert
       assertThat(response).isNotNull();

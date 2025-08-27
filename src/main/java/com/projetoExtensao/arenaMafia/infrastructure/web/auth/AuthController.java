@@ -4,8 +4,8 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.*;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.*;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.LogoutResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.ResendCodeResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.MessageResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.SignupResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
 import jakarta.validation.Valid;
@@ -68,7 +68,7 @@ public class AuthController {
 
   @PostMapping("/verify-account")
   public ResponseEntity<TokenResponseDto> verifyAccount(
-      @Valid @RequestBody VerifyAccountRequestDto requestDto) {
+      @Valid @RequestBody ValidateOtpRequestDto requestDto) {
 
     // Verifica a conta do usuário e gera o conjunto de tokens
     AuthResult authResult = verifyAccountUseCase.execute(requestDto);
@@ -87,13 +87,13 @@ public class AuthController {
   }
 
   @PostMapping("/resend-code")
-  public ResponseEntity<ResendCodeResponseDto> resendVerificationCode(
+  public ResponseEntity<MessageResponseDto> resendVerificationCode(
       @Valid @RequestBody ResendCodeRequestDto requestDto) {
 
     resendCodeUseCase.execute(requestDto);
 
-    ResendCodeResponseDto responseDto =
-        new ResendCodeResponseDto("Código de verificação reenviado com sucesso.");
+    MessageResponseDto responseDto =
+        new MessageResponseDto("Código de verificação reenviado com sucesso.");
 
     return ResponseEntity.ok(responseDto);
   }
@@ -119,13 +119,13 @@ public class AuthController {
   }
 
   @PostMapping("/logout")
-  public ResponseEntity<LogoutResponseDto> logout(
+  public ResponseEntity<MessageResponseDto> logout(
       @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
     logoutUseCase.execute(refreshToken);
     ResponseCookie expiredCookie = createRefreshTokenExpiredCookie();
 
-    LogoutResponseDto responseDto = new LogoutResponseDto("Logout realizado com sucesso.");
+    MessageResponseDto responseDto = new MessageResponseDto("Logout realizado com sucesso.");
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
         .body(responseDto);

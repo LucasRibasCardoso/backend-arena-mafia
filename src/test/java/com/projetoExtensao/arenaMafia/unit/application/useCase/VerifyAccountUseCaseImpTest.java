@@ -15,7 +15,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundExce
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.VerifyAccountRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,7 +41,7 @@ public class VerifyAccountUseCaseImpTest {
   @DisplayName("Deve ativar a conta e retornar tokens para um usuário e OTP válidos")
   void execute_shouldActivateAccountAndReturnTokens_forValidUserAndOtp() {
     // Arrange
-    var requestDto = new VerifyAccountRequestDto("testuser", "123456");
+    var requestDto = new ValidateOtpRequestDto("testuser", "123456");
     User userPendingVerification =
         User.create("testuser", "Test User", "+5547988887777", "hashedPassword");
 
@@ -75,7 +75,7 @@ public class VerifyAccountUseCaseImpTest {
   @DisplayName("Deve lançar UserNotFoundException quando o usuário não for encontrado")
   void execute_shouldThrowUserNotFoundException_whenUserIsNotFound() {
     // Arrange
-    var requestDto = new VerifyAccountRequestDto("nonexistent", "123456");
+    var requestDto = new ValidateOtpRequestDto("nonexistent", "123456");
     when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
 
     // Act & Assert
@@ -94,7 +94,7 @@ public class VerifyAccountUseCaseImpTest {
   @DisplayName("Deve lançar InvalidOtpException para um código de verificação inválido")
   void execute_shouldThrowInvalidOtpException_forInvalidOtpCode() {
     // Arrange
-    var requestDto = new VerifyAccountRequestDto("testuser", "wrong-code");
+    var requestDto = new ValidateOtpRequestDto("testuser", "wrong-code");
     User userPendingVerification =
         User.create("testuser", "Test User", "+5547988887777", "hashedPassword");
 
@@ -118,7 +118,7 @@ public class VerifyAccountUseCaseImpTest {
   @DisplayName("Deve lançar exceção ao tentar verificar uma conta que já está ativa")
   void execute_shouldThrowException_whenAccountIsNotPendingVerification() {
     // Arrange
-    var requestDto = new VerifyAccountRequestDto("testuser", "123456");
+    var requestDto = new ValidateOtpRequestDto("testuser", "123456");
 
     User activeUser =
         User.reconstitute(

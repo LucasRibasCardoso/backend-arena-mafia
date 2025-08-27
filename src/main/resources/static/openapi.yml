@@ -516,7 +516,7 @@ paths:
           content:
             $ref: "#/components/responses/LogoutResponseDto/content"
         "401":
-          description: Retornado se o token de refresh estiver ausente ou inválido.
+          description: Exceção lançada para tokens inválidos, expirados ou ausentes.
           content:
             $ref: "#/components/responses/ErrorResponseUnauthorized/content"
         "500":

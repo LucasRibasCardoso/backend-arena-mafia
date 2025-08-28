@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.imp.VerifyAccountUseCaseImp;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
@@ -33,6 +34,7 @@ public class VerifyAccountUseCaseImpTest {
 
   @Mock private AuthPort authPort;
   @Mock private OtpPort otpPort;
+  @Mock private PhoneValidatorPort phoneValidator;
   @Mock private UserRepositoryPort userRepository;
 
   @InjectMocks private VerifyAccountUseCaseImp verifyAccountUseCase;
@@ -41,13 +43,14 @@ public class VerifyAccountUseCaseImpTest {
   @DisplayName("Deve ativar a conta e retornar tokens para um usuário e OTP válidos")
   void execute_shouldActivateAccountAndReturnTokens_forValidUserAndOtp() {
     // Arrange
-    var requestDto = new ValidateOtpRequestDto("testuser", "123456");
+    var requestDto = new ValidateOtpRequestDto("+5547912345678", "123456");
     User userPendingVerification =
-        User.create("testuser", "Test User", "+5547988887777", "hashedPassword");
+        User.create("testuser", "Test User", "+5547912345678", "hashedPassword");
 
     var expectedAuthResult = new AuthResult("testuser", "access_token", "refresh_token");
 
-    when(userRepository.findByUsername("testuser"))
+    when(phoneValidator.formatToE164(requestDto.phone())).thenReturn(requestDto.phone());
+    when(userRepository.findByPhone(requestDto.phone()))
         .thenReturn(Optional.of(userPendingVerification));
     doNothing().when(otpPort).validateOtp(userPendingVerification.getId(), "123456");
     when(authPort.generateTokens(any(User.class))).thenReturn(expectedAuthResult);
@@ -66,8 +69,8 @@ public class VerifyAccountUseCaseImpTest {
 
     assertThat(savedUser.getStatus()).isEqualTo(AccountStatus.ACTIVE);
 
-    verify(userRepository, times(1)).findByUsername("testuser");
-    verify(otpPort, times(1)).validateOtp(userPendingVerification.getId(), "123456");
+    verify(userRepository, times(1)).findByPhone(requestDto.phone());
+    verify(otpPort, times(1)).validateOtp(userPendingVerification.getId(), requestDto.code());
     verify(authPort, times(1)).generateTokens(savedUser);
   }
 
@@ -75,18 +78,20 @@ public class VerifyAccountUseCaseImpTest {
   @DisplayName("Deve lançar UserNotFoundException quando o usuário não for encontrado")
   void execute_shouldThrowUserNotFoundException_whenUserIsNotFound() {
     // Arrange
-    var requestDto = new ValidateOtpRequestDto("nonexistent", "123456");
-    when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
+    var requestDto = new ValidateOtpRequestDto("+554799999999", "123456");
+    when(phoneValidator.formatToE164(requestDto.phone())).thenReturn(requestDto.phone());
+    when(userRepository.findByPhone(requestDto.phone())).thenReturn(Optional.empty());
 
     // Act & Assert
     assertThatThrownBy(() -> verifyAccountUseCase.execute(requestDto))
         .isInstanceOf(UserNotFoundException.class)
         .hasMessage(
-            "Usuário não encontrado para realizar verificação. Por favor faça o cadastro novamente.");
+            "Usuário não encontrado. Retorne ao início do cadastro para criar uma nova conta.");
 
     // Verify
     verify(otpPort, never()).validateOtp(any(), anyString());
     verify(userRepository, never()).save(any(User.class));
+    verify(userRepository, times(1)).findByPhone(requestDto.phone());
     verify(authPort, never()).generateTokens(any(User.class));
   }
 
@@ -94,15 +99,16 @@ public class VerifyAccountUseCaseImpTest {
   @DisplayName("Deve lançar InvalidOtpException para um código de verificação inválido")
   void execute_shouldThrowInvalidOtpException_forInvalidOtpCode() {
     // Arrange
-    var requestDto = new ValidateOtpRequestDto("testuser", "wrong-code");
+    var requestDto = new ValidateOtpRequestDto("+5547912345678", "999999");
     User userPendingVerification =
-        User.create("testuser", "Test User", "+5547988887777", "hashedPassword");
+        User.create("testuser", "Test User", "+5547912345678", "hashedPassword");
 
-    when(userRepository.findByUsername("testuser"))
+    when(phoneValidator.formatToE164(requestDto.phone())).thenReturn(requestDto.phone());
+    when(userRepository.findByPhone(requestDto.phone()))
         .thenReturn(Optional.of(userPendingVerification));
     doThrow(new InvalidOtpException("Código de verificação inválido ou expirado."))
         .when(otpPort)
-        .validateOtp(userPendingVerification.getId(), "wrong-code");
+        .validateOtp(userPendingVerification.getId(), requestDto.code());
 
     // Act & Assert
     assertThatThrownBy(() -> verifyAccountUseCase.execute(requestDto))
@@ -110,6 +116,8 @@ public class VerifyAccountUseCaseImpTest {
         .hasMessage("Código de verificação inválido ou expirado.");
 
     // Verify
+    verify(userRepository, times(1)).findByPhone(requestDto.phone());
+    verify(otpPort, times(1)).validateOtp(userPendingVerification.getId(), requestDto.code());
     verify(userRepository, never()).save(any(User.class));
     verify(authPort, never()).generateTokens(any(User.class));
   }
@@ -118,21 +126,22 @@ public class VerifyAccountUseCaseImpTest {
   @DisplayName("Deve lançar exceção ao tentar verificar uma conta que já está ativa")
   void execute_shouldThrowException_whenAccountIsNotPendingVerification() {
     // Arrange
-    var requestDto = new ValidateOtpRequestDto("testuser", "123456");
+    var requestDto = new ValidateOtpRequestDto("+5547912345678", "123456");
 
     User activeUser =
         User.reconstitute(
             UUID.randomUUID(),
             "testuser",
             "Test User",
-            "+5547988887777",
+            "+5547912345678",
             "hashedPassword",
             AccountStatus.ACTIVE,
             RoleEnum.ROLE_USER,
             Instant.now());
 
-    when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(activeUser));
-    doNothing().when(otpPort).validateOtp(activeUser.getId(), "123456");
+    when(phoneValidator.formatToE164(requestDto.phone())).thenReturn(requestDto.phone());
+    when(userRepository.findByPhone(requestDto.phone())).thenReturn(Optional.of(activeUser));
+    doNothing().when(otpPort).validateOtp(activeUser.getId(), requestDto.code());
 
     // Act & Assert
     assertThatThrownBy(() -> verifyAccountUseCase.execute(requestDto))
@@ -140,6 +149,7 @@ public class VerifyAccountUseCaseImpTest {
         .hasMessage("Atenção: A conta já está ativada.");
 
     // Verify
+    verify(userRepository, times(1)).findByPhone(requestDto.phone());
     verify(userRepository, never()).save(any(User.class));
     verify(authPort, never()).generateTokens(any(User.class));
   }

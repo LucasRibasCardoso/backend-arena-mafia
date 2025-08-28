@@ -1,8 +1,11 @@
 package com.projetoExtensao.arenaMafia.unit.infrastructure.adapter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
+import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.adapter.repository.UserRepositoryAdapter;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEntity;
@@ -112,6 +115,53 @@ public class UserRepositoryAdapterTest {
   }
 
   @Nested
+  @DisplayName("Testes para o método findByPhone")
+  class FindByPhoneTests {
+
+    @Test
+    @DisplayName("Deve encontrar um userEntity pelo telefone e retornar um User mapeado")
+    void findByPhone_shouldReturnMappedUser() {
+      // Arrange
+      String phone = "+55912345678";
+      UserEntity userEntity = new UserEntity();
+      User userMapped = User.create("usernameTest", "User Test", "+55912345678", "password_hash");
+
+      when(userJpaRepository.findByPhone(phone)).thenReturn(Optional.of(userEntity));
+      when(userMapper.toDomain(userEntity)).thenReturn(userMapped);
+
+      // Act
+      Optional<User> result = userRepositoryAdapter.findByPhone(phone);
+
+      // Assert
+      assertThat(result).isNotNull();
+      assertThat(result).isPresent();
+      assertThat(result.get().getPhone()).isEqualTo(phone);
+
+      verify(userJpaRepository, times(1)).findByPhone(phone);
+      verify(userMapper, times(1)).toDomain(userEntity);
+    }
+
+    @Test
+    @DisplayName("Deve retornar um optional vazio quando não encontrar um User pelo telefone")
+    void findByPhone_shouldReturnEmptyOptionalWhenNotFound() {
+      // Arrange
+      String phone = "+55900000000";
+
+      when(userJpaRepository.findByPhone(phone)).thenReturn(Optional.empty());
+
+      // Act
+      var result = userRepositoryAdapter.findByPhone(phone);
+
+      // Assert
+      assertThat(result).isNotNull();
+      assertThat(result).isEmpty();
+
+      verify(userJpaRepository, times(1)).findByPhone(phone);
+      verify(userMapper, never()).toDomain(any());
+    }
+  }
+
+  @Nested
   @DisplayName("Testes para o método findById")
   class FindByIdTests {
 
@@ -200,4 +250,5 @@ public class UserRepositoryAdapterTest {
       verify(userJpaRepository, times(1)).existsByPhone(phone);
     }
   }
+
 }

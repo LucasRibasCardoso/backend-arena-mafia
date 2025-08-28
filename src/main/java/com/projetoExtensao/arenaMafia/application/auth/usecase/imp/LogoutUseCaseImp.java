@@ -19,7 +19,7 @@ public class LogoutUseCaseImp implements LogoutUseCase {
   @Override
   public void execute(String refreshToken) {
     if (refreshToken == null || refreshToken.isBlank()) {
-      return; // Nada a fazer se o token for nulo ou vazio
+      return;
     }
     RefreshTokenVO refreshTokenVO = RefreshTokenVO.fromString(refreshToken);
     refreshTokenRepository.findByToken(refreshTokenVO).ifPresent(refreshTokenRepository::delete);

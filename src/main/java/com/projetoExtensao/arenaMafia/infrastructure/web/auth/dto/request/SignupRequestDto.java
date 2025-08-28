@@ -1,5 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request;
 
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.annotation.PasswordConfirmationProvider;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.annotation.PasswordsMatch;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -21,5 +22,18 @@ public record SignupRequestDto(
         String phone,
     @NotBlank(message = "Por favor, insira uma senha.")
         @Size(min = 6, max = 20, message = "A senha deve ter entre 6 e 20 caracteres.")
+        @Pattern(regexp = "^\\S+$", message = "A senha não pode conter espaços em branco.")
         String password,
-    String confirmPassword) {}
+    String confirmPassword)
+    implements PasswordConfirmationProvider {
+
+  @Override
+  public String getPassword() {
+    return password;
+  }
+
+  @Override
+  public String getConfirmPassword() {
+    return confirmPassword;
+  }
+}

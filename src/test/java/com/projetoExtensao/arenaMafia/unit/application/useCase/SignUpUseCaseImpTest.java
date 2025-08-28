@@ -67,7 +67,7 @@ public class SignUpUseCaseImpTest {
       when(userRepository.save(any(User.class))).thenReturn(userToSave);
 
       // Act
-      String resultUsername = signUpUseCase.execute(requestDto);
+      String result = signUpUseCase.execute(requestDto);
 
       // Assert
       ArgumentCaptor<User> userArgumentCaptor = ArgumentCaptor.forClass(User.class);
@@ -83,7 +83,7 @@ public class SignUpUseCaseImpTest {
           ArgumentCaptor.forClass(OnVerificationRequiredEvent.class);
       verify(eventPublisher).publishEvent(eventArgumentCaptor.capture());
 
-      assertThat(requestDto.username()).isEqualTo(resultUsername);
+      assertThat(requestDto.phone()).isEqualTo(result);
     }
   }
 

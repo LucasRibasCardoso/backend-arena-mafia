@@ -1,11 +1,10 @@
-package com.projetoExtensao.arenaMafia.application.auth.usecase.imp;
+package com.projetoExtensao.arenaMafia.application.auth.usecase.ForgotPassword.imp;
 
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordResetTokenPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
-import com.projetoExtensao.arenaMafia.application.auth.usecase.VerifyAccountUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.ForgotPassword.GeneratePasswordResetTokenUseCase;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
@@ -14,32 +13,30 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
-public class VerifyAccountUseCaseImp implements VerifyAccountUseCase {
+public class GeneratePasswordResetTokenUseCaseImp implements GeneratePasswordResetTokenUseCase {
 
-  private final AuthPort authPort;
   private final OtpPort otpPort;
-  private final UserRepositoryPort userRepository;
   private final PhoneValidatorPort phoneValidator;
+  private final UserRepositoryPort userRepository;
+  private final PasswordResetTokenPort passwordResetToken;
 
-  public VerifyAccountUseCaseImp(
-      AuthPort authPort,
+  public GeneratePasswordResetTokenUseCaseImp(
       OtpPort otpPort,
       UserRepositoryPort userRepository,
-      PhoneValidatorPort phoneValidator) {
+      PhoneValidatorPort phoneValidator,
+      PasswordResetTokenPort passwordResetToken) {
     this.otpPort = otpPort;
-    this.authPort = authPort;
     this.userRepository = userRepository;
     this.phoneValidator = phoneValidator;
+    this.passwordResetToken = passwordResetToken;
   }
 
   @Override
-  public AuthResult execute(ValidateOtpRequestDto requestDto) {
+  public String execute(ValidateOtpRequestDto requestDto) {
     String formattedPhone = phoneValidator.formatToE164(requestDto.phone());
     User user = getUserByPhoneOrElseThrow(formattedPhone);
     otpPort.validateOtp(user.getId(), requestDto.code());
-    user.activateAccount();
-    userRepository.save(user);
-    return authPort.generateTokens(user);
+    return passwordResetToken.save(user.getId());
   }
 
   private User getUserByPhoneOrElseThrow(String phone) {
@@ -48,6 +45,6 @@ public class VerifyAccountUseCaseImp implements VerifyAccountUseCase {
         .orElseThrow(
             () ->
                 new UserNotFoundException(
-                    "Usuário não encontrado. Retorne ao início do cadastro para criar uma nova conta."));
+                    "Usuário não encontrado. Verifique o número de telefone informado e tente novamente."));
   }
 }

@@ -49,12 +49,8 @@ public class AuthAdapter implements AuthPort {
   }
 
   private String generateRefreshToken(User user) {
-    // Gera um novo RefreshToken
     RefreshToken refreshToken = RefreshToken.create(refreshTokenExpirationDays, user);
-
-    // Salva o RefreshToken no banco de dados
     RefreshToken savedRefreshToken = refreshTokenRepositoryPort.save(refreshToken);
-
     return savedRefreshToken.getToken().toString();
   }
 

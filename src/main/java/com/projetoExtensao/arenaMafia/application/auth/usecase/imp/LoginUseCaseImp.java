@@ -28,15 +28,13 @@ public class LoginUseCaseImp implements LoginUseCase {
 
   @Override
   public AuthResult execute(LoginRequestDto loginRequestDto) {
-    User existingUser = getUserIfExists(loginRequestDto.username());
-
+    User existingUser = getUserOrElseThrow(loginRequestDto.username());
     checkIfAccountIsActive(existingUser);
-
     User user = authPort.authenticate(loginRequestDto.username(), loginRequestDto.password());
     return authPort.generateTokens(user);
   }
 
-  private User getUserIfExists(String username) {
+  private User getUserOrElseThrow(String username) {
     return userRepository
         .findByUsername(username)
         .orElseThrow(

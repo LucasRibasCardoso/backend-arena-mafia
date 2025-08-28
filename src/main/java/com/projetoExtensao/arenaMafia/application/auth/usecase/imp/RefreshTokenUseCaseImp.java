@@ -26,26 +26,23 @@ public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
   }
 
   @Override
-  public AuthResult execute(RefreshTokenRequestDto refreshTokenRequestDto) {
-    // Transforma uma string em um objeto RefreshTokenVO
-    RefreshTokenVO refreshTokenVO =
-        RefreshTokenVO.fromString(refreshTokenRequestDto.refreshToken());
-
-    // Busca o RefreshToken no banco de dados
-    RefreshToken refreshToken =
-        refreshTokenRepository
-            .findByToken(refreshTokenVO)
-            .orElseThrow(() -> new RefreshTokenNotFoundException("Refresh token não encontrado."));
+  public AuthResult execute(RefreshTokenRequestDto requestDto) {
+    RefreshTokenVO refreshTokenVO = RefreshTokenVO.fromString(requestDto.refreshToken());
+    RefreshToken refreshToken = getRefreshTokenOrElseThrow(refreshTokenVO);
 
     try {
       refreshToken.verifyIfNotExpired();
       return authPort.generateTokens(refreshToken.getUser());
-
     } catch (RefreshTokenExpiredException e) {
       refreshTokenRepository.delete(refreshToken);
-
       // Relança a exceção para ser tratada no GlobalExceptionHandler
       throw e;
     }
+  }
+
+  private RefreshToken getRefreshTokenOrElseThrow(RefreshTokenVO refreshTokenVO) {
+    return refreshTokenRepository
+        .findByToken(refreshTokenVO)
+        .orElseThrow(() -> new RefreshTokenNotFoundException("Refresh token não encontrado."));
   }
 }

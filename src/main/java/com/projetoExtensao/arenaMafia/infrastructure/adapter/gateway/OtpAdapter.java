@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class OtpAdapter implements OtpPort {
 
-  private static final String OTP_PREFIX = "otp:user:";
+  private static final String OTP_PREFIX = "otp-user:";
   private static final Duration OTP_EXPIRATION = Duration.ofMinutes(5);
 
   private final RedisTemplate<String, String> redisTemplate;
@@ -23,13 +23,9 @@ public class OtpAdapter implements OtpPort {
 
   @Override
   public String generateAndSaveOtp(UUID userId) {
-    // Cria um código OTP de 6 dígitos
     String otpCode = new DecimalFormat("000000").format(new SecureRandom().nextInt(999999));
-
-    // Salva o código OTP no Redis
     String redisKey = OTP_PREFIX + userId.toString();
     redisTemplate.opsForValue().set(redisKey, otpCode, OTP_EXPIRATION);
-
     return otpCode;
   }
 

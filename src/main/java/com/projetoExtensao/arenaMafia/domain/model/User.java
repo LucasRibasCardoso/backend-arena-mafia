@@ -14,10 +14,10 @@ public class User {
   private final String username;
   private final String fullName;
   private final String phone;
-  private final String passwordHash;
   private final RoleEnum role;
   private final Instant createdAt;
 
+  private String passwordHash;
   private AccountStatus status;
 
   /**
@@ -107,6 +107,10 @@ public class User {
       throw new AccountStateConflictException(
           "Atenção: Está conta não está pendente para verificação.");
     }
+  }
+
+  public void updatePasswordHash(String passwordHash) {
+    this.passwordHash = passwordHash;
   }
 
   public void activateAccount() {

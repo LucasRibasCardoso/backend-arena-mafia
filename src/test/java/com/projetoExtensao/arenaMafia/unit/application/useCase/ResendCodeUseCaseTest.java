@@ -2,13 +2,14 @@ package com.projetoExtensao.arenaMafia.unit.application.useCase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.*;
 
 import com.projetoExtensao.arenaMafia.application.auth.event.OnVerificationRequiredEvent;
+import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.imp.ResendCodeUseCaseImp;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
-import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
@@ -28,6 +29,7 @@ import org.springframework.context.ApplicationEventPublisher;
 public class ResendCodeUseCaseTest {
 
   @Mock private UserRepositoryPort userRepository;
+  @Mock private PhoneValidatorPort phoneValidator;
   @Mock private ApplicationEventPublisher eventPublisher;
 
   @InjectMocks private ResendCodeUseCaseImp resendCodeUseCase;
@@ -35,13 +37,14 @@ public class ResendCodeUseCaseTest {
   @Test
   @DisplayName(
       "Deve publicar um evento de verificação quando o usuário for encontrado e estiver pendente")
-  void execute_shouldPublishEvent_whenUserIsFoundAndPending() {
+  void execute_shouldPublishEventWhenUserIsFoundAndPending() {
     // Arrange
-    var requestDto = new ResendCodeRequestDto("testuser");
+    var requestDto = new ResendCodeRequestDto("+558320548181");
     User userPendingVerification =
-        User.create("testuser", "Test User", "+5547988887777", "hashedPassword");
+        User.create("testuser", "Test User", "+558320548181", "hashedPassword");
 
-    when(userRepository.findByUsername("testuser"))
+    when(phoneValidator.formatToE164(requestDto.phone())).thenReturn(requestDto.phone());
+    when(userRepository.findByPhone(requestDto.phone()))
         .thenReturn(Optional.of(userPendingVerification));
 
     // Act
@@ -55,44 +58,44 @@ public class ResendCodeUseCaseTest {
     OnVerificationRequiredEvent publishedEvent = eventCaptor.getValue();
 
     assertThat(publishedEvent.user()).isEqualTo(userPendingVerification);
-    verify(userRepository, times(1)).findByUsername("testuser");
+    verify(userRepository, times(1)).findByPhone(requestDto.phone());
   }
 
   @Test
-  @DisplayName("Deve lançar UserNotFoundException quando o usuário não for encontrado")
-  void execute_shouldThrowUserNotFoundException_whenUserIsNotFound() {
+  @DisplayName("Deve ignorar quando um usuário não for encontrado")
+  void execute_shouldDoNothingSilentlyWhenUserIsNotFound() {
     // Arrange
-    var requestDto = new ResendCodeRequestDto("nonexistent");
-    when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
+    var requestDto = new ResendCodeRequestDto("+558320548181");
+    when(phoneValidator.formatToE164(requestDto.phone())).thenReturn(requestDto.phone());
+    when(userRepository.findByPhone(requestDto.phone())).thenReturn(Optional.empty());
 
-    // Act & Assert
-    assertThatThrownBy(() -> resendCodeUseCase.execute(requestDto))
-        .isInstanceOf(UserNotFoundException.class)
-        .hasMessage(
-            "Usuário não encontrado para reenviar o código. Por favor realize o cadastro novamente.");
+    // Act
+    assertDoesNotThrow(() -> resendCodeUseCase.execute(requestDto));
 
     // Verify
     verify(eventPublisher, never()).publishEvent(any());
+    verify(userRepository, times(1)).findByPhone(requestDto.phone());
   }
 
   @Test
   @DisplayName(
       "Deve lançar AccountStateConflictException quando a conta não estiver pendente de verificação")
-  void execute_shouldThrowAccountStateConflictException_whenAccountIsNotPending() {
+  void execute_shouldThrowAccountStateConflictExceptionWhenAccountIsNotPending() {
     // Arrange
-    var requestDto = new ResendCodeRequestDto("activeuser");
+    var requestDto = new ResendCodeRequestDto("+558320548186");
     User activeUser =
         User.reconstitute(
             java.util.UUID.randomUUID(),
             "activeuser",
             "Active User",
-            "+5547911112222",
+            "+558320548186",
             "hashedPassword",
             AccountStatus.ACTIVE,
             RoleEnum.ROLE_USER,
             java.time.Instant.now());
 
-    when(userRepository.findByUsername("activeuser")).thenReturn(Optional.of(activeUser));
+    when(phoneValidator.formatToE164(requestDto.phone())).thenReturn(requestDto.phone());
+    when(userRepository.findByPhone(requestDto.phone())).thenReturn(Optional.of(activeUser));
 
     // Act & Assert
     assertThatThrownBy(() -> resendCodeUseCase.execute(requestDto))
@@ -101,5 +104,6 @@ public class ResendCodeUseCaseTest {
 
     // Verify
     verify(eventPublisher, never()).publishEvent(any());
+    verify(userRepository, times(1)).findByPhone(requestDto.phone());
   }
 }

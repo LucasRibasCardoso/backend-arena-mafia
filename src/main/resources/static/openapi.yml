@@ -146,21 +146,21 @@ components:
           example: "Usuário registrado com sucesso."
         identifier:
           type: string
-          description: "Identificador único (username) do usuário recém-criado."
-          example: "username_test"
+          description: "Identificador único (phone) do usuário recém-criado."
+          example: "+5547912345678"
 
-    VerifyAccountRequestDto:
+    ValidateOtpRequestDto:
       type: object
       description: Dados para verificação da conta via código OTP.
       required:
-        - username
-        - verificationCode
+        - phone
+        - code
       properties:
-        username:
+        phone:
           type: string
-          description: "Nome de usuário da conta a ser verificada."
-          example: "joao_silva99"
-        verificationCode:
+          description: "Telefone de usuário da conta a ser verificada."
+          example: "+5547912345678"
+        code:
           type: string
           description: "Código OTP de 6 dígitos recebido por SMS."
           example: "123456"
@@ -168,14 +168,14 @@ components:
 
     ResendCodeRequestDto:
       type: object
-      description: nome do usuário que está solicitando o reenvio do código OTP.
+      description: Telefone do usuário que está solicitando o reenvio do código OTP.
       required:
-        - username
+        - phone
       properties:
-        username:
+        phone:
           type: string
-          description: "Nome de usuário da conta para a qual o código deve ser reenviado."
-          example: "joao_silva99"
+          description: "Telefone de usuário da conta para a qual o código deve ser reenviado."
+          example: "+5547912345678"
 
     MessageResponseDto:
       type: object
@@ -183,6 +183,51 @@ components:
         message:
           type: string
           example: "Operação realizada com sucesso."
+
+    ForgotPasswordRequestDto:
+      type: object
+      description: Telefone do usuário que está solicitando a alteração da senha.
+      required:
+        - phone
+      properties:
+        phone:
+          type: string
+          description: "Telefone de usuário da conta para a qual a senha deve ser alterada."
+          example: "+5547912345678"
+
+    PasswordResetTokenResponseDto:
+      type: object
+      properties:
+        passwordResetToken:
+          type: string
+          description: "Token temporário para redefinição de senha."
+          example: "dawda-1234-asdas-5678-asdasd-9876"
+
+    ResetPasswordRequestDto:
+      type: object
+      description: "Dados necessários para a etapa final da redefinição de senha."
+      required:
+        - passwordResetToken
+        - newPassword
+        - confirmPassword
+      properties:
+        passwordResetToken:
+          type: string
+          description: "O token seguro de uso único recebido na etapa de validação do OTP."
+          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+        newPassword:
+          type: string
+          format: password
+          description: "A nova senha do usuário. Deve ter entre 6 e 20 caracteres e não pode conter espaços."
+          example: "novaSenhaSegura123"
+          minLength: 6
+          maxLength: 20
+          pattern: "^\\S+$"
+        confirmPassword:
+          type: string
+          format: password
+          description: "Confirmação da nova senha. Deve ser idêntica ao campo 'newPassword'."
+          example: "novaSenhaSegura123"
 
   responses:
     ErrorResponseBadRequest:
@@ -296,6 +341,13 @@ components:
           schema:
             $ref: '#/components/schemas/MessageResponseDto'
 
+    PasswordResetTokenResponseDto:
+      description: Token temporário para redefinição de senha.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PasswordResetTokenResponseDto'
+
 # Mapeamento dos endpoints da API
 paths:
   /api/auth/login:
@@ -365,10 +417,10 @@ paths:
                 example: refreshToken=a1b2c3d4-e5f6-7890-1234-567890abcdef...;
           content:
             $ref: "#/components/responses/TokenResponse/content"
-        "401":
+        "400":
           description: Exceção lançada para tokens inválidos, expirados ou ausentes.
           content:
-            $ref: "#/components/responses/ErrorResponseUnauthorized/content"
+            $ref: "#/components/responses/ErrorResponseBadRequest/content"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"
 
@@ -417,7 +469,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/VerifyAccountRequestDto"
+              $ref: "#/components/schemas/ValidateOtpRequestDto"
       responses:
         "200":
           description: Conta verificada e usuário autenticado com sucesso.
@@ -463,14 +515,6 @@ paths:
           description: Código OTP reenviado com sucesso.
           content:
             $ref: "#/components/responses/MessageResponseDto/content"
-        "400":
-          description: Retornado se o nome de usuário estiver ausente ou inválido.
-          content:
-            $ref: "#/components/responses/ErrorResponseBadRequest/content"
-        "404":
-          description: Retornado se o nome de usuário não for encontrado.
-          content:
-            $ref: "#/components/responses/ErrorResponseNotFound/content"
         "409":
           description: Retornado se a conta já estiver ativa.
           content:
@@ -505,5 +549,91 @@ paths:
           description: Exceção lançada para tokens inválidos, expirados ou ausentes.
           content:
             $ref: "#/components/responses/ErrorResponseUnauthorized/content"
+        "500":
+          $ref: "#/components/responses/ErrorResponseInternalServerError"
+
+  /api/auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      tags:
+        - Autenticação
+      summary: Solicitar Redefinição de Senha
+      description: |
+        Endpoint para iniciar o processo de redefinição de senha.
+        Envia um código OTP para o telefone do usuário se a conta existir.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordRequestDto"
+      responses:
+        "200":
+          description: Mensagem retornada mesmo que a conta não exista, para evitar vazamento de informações.
+          content:
+            $ref: "#/components/responses/MessageResponseDto/content"
+        "500":
+          $ref: "#/components/responses/ErrorResponseInternalServerError"
+
+  /api/auth/generate-password-reset-token:
+    post:
+      operationId: generatePasswordResetToken
+      tags:
+        - Autenticação
+      summary: Confirmar código OTP e gerar Token Temporário para Redefinição de Senha
+      description: |
+        Endpoint para gerar um token temporário para redefinição de senha.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateOtpRequestDto"
+      responses:
+        "200":
+          description: Token temporário gerado com sucesso.
+          content:
+            $ref: "#/components/responses/PasswordResetTokenResponseDto/content"
+        "400":
+          description: Retornado se ocorrer erro de validação para o código OTP ou telefone.
+          content:
+            $ref: "#/components/responses/ErrorResponseBadRequest/content"
+        "404":
+          description: Retornado se o telefone não estiver associado a nenhuma conta.
+          content:
+            $ref: "#/components/responses/ErrorResponseNotFound/content"
+        "500":
+          $ref: "#/components/responses/ErrorResponseInternalServerError"
+
+  /api/auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags:
+        - Autenticação
+      summary: Redefinir a Senha do Usuário
+      description: |
+        Endpoint final do fluxo de "esqueci a senha".
+        Recebe o token temporário da etapa anterior e a nova senha para efetivar a alteração.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequestDto"
+      responses:
+        "200":
+          description: Senha redefinida com sucesso.
+          content:
+            $ref: "#/components/responses/MessageResponseDto/content"
+        "400":
+          description: |
+            Retornado se houver erros de validação (ex: senhas não coincidem, senha fora do padrão)
+            ou se o 'passwordResetToken' for inválido ou expirado.
+          content:
+            $ref: "#/components/responses/ErrorResponseBadRequest/content"
+        "404":
+          description: "Retornado em um caso raro onde o usuário associado ao token válido não é mais encontrado."
+          content:
+            $ref: "#/components/responses/ErrorResponseNotFound/content"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"

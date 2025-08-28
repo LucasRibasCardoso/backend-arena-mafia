@@ -54,6 +54,35 @@ public class UserJpaRepositoryTest {
   }
 
   @Nested
+  @DisplayName("Testes para o método findByPhone")
+  class FindByPhoneTests {
+
+    @Test
+    @DisplayName("Deve encontrar um usuário com sucesso pelo seu telefone")
+    void findByUsername_shouldReturnUserWhenUsernameExists() {
+      // Arrange
+      createAndPersistUser("usernameTest", "+5547912345678");
+
+      // Act
+      Optional<UserEntity> foundUser = userJpaRepository.findByPhone("+5547912345678");
+
+      // Assert
+      assertThat(foundUser).isPresent();
+      assertThat(foundUser.get().getPhone()).isEqualTo("+5547912345678");
+    }
+
+    @Test
+    @DisplayName("Deve retornar vazio quando o telefone não existir")
+    void findByUsername_shouldReturnEmptyWhenUsernameDoesNotExist() {
+      // Act
+      Optional<UserEntity> foundUser = userJpaRepository.findByPhone("+5547999999999");
+
+      // Assert
+      assertThat(foundUser).isEmpty();
+    }
+  }
+
+  @Nested
   @DisplayName("Testes para o método findById")
   class FindByIdTests {
 

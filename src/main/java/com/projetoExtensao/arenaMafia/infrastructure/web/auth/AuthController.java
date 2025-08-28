@@ -2,12 +2,15 @@ package com.projetoExtensao.arenaMafia.infrastructure.web.auth;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.*;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.ForgotPassword.ForgotPasswordUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.ForgotPassword.GeneratePasswordResetTokenUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.ForgotPassword.ResetPasswordUseCase;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.*;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.MessageResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.PasswordResetTokenResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.SignupResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.dto.SimpleMessageResponseDto;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.Duration;
@@ -30,7 +33,10 @@ public class AuthController {
   private final SignUpUseCase signUpUseCase;
   private final ResendCodeUseCase resendCodeUseCase;
   private final RefreshTokenUseCase refreshTokenUseCase;
+  private final ResetPasswordUseCase resetPasswordUseCase;
   private final VerifyAccountUseCase verifyAccountUseCase;
+  private final ForgotPasswordUseCase forgotPasswordUseCase;
+  private final GeneratePasswordResetTokenUseCase GeneratePasswordResetTokenUseCase;
 
   public AuthController(
       LoginUseCase loginUseCase,
@@ -38,13 +44,19 @@ public class AuthController {
       SignUpUseCase signUpUseCase,
       ResendCodeUseCase resendCodeUseCase,
       RefreshTokenUseCase refreshTokenUseCase,
-      VerifyAccountUseCase verifyAccountUseCase) {
+      ResetPasswordUseCase resetPasswordUseCase,
+      VerifyAccountUseCase verifyAccountUseCase,
+      ForgotPasswordUseCase forgotPasswordUseCase,
+      GeneratePasswordResetTokenUseCase GeneratePasswordResetTokenUseCase) {
     this.loginUseCase = loginUseCase;
     this.logoutUseCase = logoutUseCase;
     this.signUpUseCase = signUpUseCase;
     this.resendCodeUseCase = resendCodeUseCase;
     this.refreshTokenUseCase = refreshTokenUseCase;
+    this.resetPasswordUseCase = resetPasswordUseCase;
     this.verifyAccountUseCase = verifyAccountUseCase;
+    this.forgotPasswordUseCase = forgotPasswordUseCase;
+    this.GeneratePasswordResetTokenUseCase = GeneratePasswordResetTokenUseCase;
   }
 
   @PostMapping("/signup")
@@ -87,23 +99,22 @@ public class AuthController {
   }
 
   @PostMapping("/resend-code")
-  public ResponseEntity<MessageResponseDto> resendVerificationCode(
+  public ResponseEntity<SimpleMessageResponseDto> resendVerificationCode(
       @Valid @RequestBody ResendCodeRequestDto requestDto) {
 
     resendCodeUseCase.execute(requestDto);
 
-    MessageResponseDto responseDto =
-        new MessageResponseDto("Código de verificação reenviado com sucesso.");
+    SimpleMessageResponseDto responseDto =
+        new SimpleMessageResponseDto("Código de verificação reenviado com sucesso.");
 
     return ResponseEntity.ok(responseDto);
   }
 
   @PostMapping("/login")
-  public ResponseEntity<TokenResponseDto> login(
-      @RequestBody @Valid LoginRequestDto loginRequestDto) {
+  public ResponseEntity<TokenResponseDto> login(@RequestBody @Valid LoginRequestDto requestDto) {
 
     // Realiza a autenticação do usuário e gera o conjunto de tokens
-    AuthResult authResult = loginUseCase.execute(loginRequestDto);
+    AuthResult authResult = loginUseCase.execute(requestDto);
 
     // Cria o cookie contendo o refresh token
     ResponseCookie refreshTokenCookie = createRefreshTokenCookie(authResult.refreshToken());
@@ -119,13 +130,14 @@ public class AuthController {
   }
 
   @PostMapping("/logout")
-  public ResponseEntity<MessageResponseDto> logout(
-      @CookieValue(value = "refreshToken", required = false) String refreshToken) {
+  public ResponseEntity<SimpleMessageResponseDto> logout(
+      @CookieValue(value = "refreshToken", required = false) String requestDto) {
 
-    logoutUseCase.execute(refreshToken);
+    logoutUseCase.execute(requestDto);
     ResponseCookie expiredCookie = createRefreshTokenExpiredCookie();
 
-    MessageResponseDto responseDto = new MessageResponseDto("Logout realizado com sucesso.");
+    SimpleMessageResponseDto responseDto =
+        new SimpleMessageResponseDto("Logout realizado com sucesso.");
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
         .body(responseDto);
@@ -152,6 +164,43 @@ public class AuthController {
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
         .body(tokenResponseDto);
+  }
+
+  @PostMapping("/forgot-password")
+  public ResponseEntity<SimpleMessageResponseDto> forgotPassword(
+      @Valid @RequestBody ForgotPasswordRequestDto requestDto) {
+
+    forgotPasswordUseCase.execute(requestDto);
+    SimpleMessageResponseDto responseDto =
+        new SimpleMessageResponseDto(
+            "Se o telefone informado for válido, enviaremos um código para verificação da conta.");
+    return ResponseEntity.ok(responseDto);
+  }
+
+  @PostMapping("/generate-password-reset-token")
+  public ResponseEntity<PasswordResetTokenResponseDto> forgotPasswordVerify(
+      @Valid @RequestBody ValidateOtpRequestDto requestDto) {
+
+    String passwordResetToken = GeneratePasswordResetTokenUseCase.execute(requestDto);
+    PasswordResetTokenResponseDto responseDto =
+        new PasswordResetTokenResponseDto(passwordResetToken);
+    return ResponseEntity.ok(responseDto);
+  }
+
+  @PostMapping("/reset-password")
+  public ResponseEntity<SimpleMessageResponseDto> resetPassword(
+      @Valid @RequestBody ResetPasswordRequestDto requestDto) {
+
+    resetPasswordUseCase.execute(requestDto);
+    ResponseCookie expiredCookie = createRefreshTokenExpiredCookie();
+
+    SimpleMessageResponseDto responseDto =
+        new SimpleMessageResponseDto(
+            "Senha redefinida com sucesso. Você já pode fazer o login com sua nova senha.");
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
+        .body(responseDto);
   }
 
   private ResponseCookie createRefreshTokenCookie(String refreshToken) {

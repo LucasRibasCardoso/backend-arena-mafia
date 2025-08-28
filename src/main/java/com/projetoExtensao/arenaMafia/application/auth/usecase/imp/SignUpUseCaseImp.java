@@ -34,23 +34,17 @@ public class SignUpUseCaseImp implements SignUpUseCase {
 
   @Override
   public String execute(SignupRequestDto requestDto) {
-    String username = requestDto.username();
-    String fullName = requestDto.fullName();
-    String phone = requestDto.phone();
-    String password = requestDto.password();
+    validateUniqueness(requestDto.username(), requestDto.phone());
 
-    // Valida se o username e telefone são únicos
-    validateUniqueness(username, phone);
+    String formattedPhone = phoneValidator.formatToE164(requestDto.phone());
+    String encodedPassword = passwordEncoderPort.encode(requestDto.password());
 
-    String formattedPhone = phoneValidator.formatToE164(phone);
-    String encodedPassword = passwordEncoderPort.encode(password);
+    User userToSave =
+        User.create(requestDto.username(), requestDto.fullName(), formattedPhone, encodedPassword);
 
-    User user = User.create(username, fullName, formattedPhone, encodedPassword);
-
-    // Tenta salvar o usuário e captura exceções de integridade se o telefone ou username já existam
-    User savedUser = userRepository.save(user);
+    User savedUser = userRepository.save(userToSave);
     eventPublisher.publishEvent(new OnVerificationRequiredEvent(savedUser));
-    return savedUser.getUsername();
+    return savedUser.getPhone();
   }
 
   private void validateUniqueness(String username, String phone) {

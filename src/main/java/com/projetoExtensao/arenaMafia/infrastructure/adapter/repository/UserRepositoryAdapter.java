@@ -44,6 +44,12 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public Optional<User> findByPhone(String phone) {
+    return userJpaRepository.findByPhone(phone).map(userMapper::toDomain);
+  }
+
+  @Override
   @Transactional
   public User save(User user) {
     UserEntity userEntity = userMapper.toEntity(user);

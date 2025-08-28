@@ -19,6 +19,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 @DisplayName("Testes de integração de persistência para OtpAdapter")
 public class OtpAdapterTest extends TestContainerRedisConfig {
 
+  private static final String OTP_PREFIX = "otp-user:";
+
   @Autowired private OtpAdapter otpAdapter;
 
   @Autowired private RedisTemplate<String, String> redisTemplate;
@@ -28,7 +30,7 @@ public class OtpAdapterTest extends TestContainerRedisConfig {
   void generateAndSaveOtp_shouldSaveOtpWithExpirationInRedis() {
     // Arrange
     UUID userId = UUID.randomUUID();
-    String redisKey = "otp:user:" + userId;
+    String redisKey = OTP_PREFIX + userId;
 
     // Act
     String otpCode = otpAdapter.generateAndSaveOtp(userId);
@@ -64,7 +66,7 @@ public class OtpAdapterTest extends TestContainerRedisConfig {
   void validateOtp_shouldThrowException_whenOtpIsIncorrect() {
     // Arrange
     UUID userId = UUID.randomUUID();
-    String redisKey = "otp:user:" + userId;
+    String redisKey = OTP_PREFIX + userId;
     otpAdapter.generateAndSaveOtp(userId);
     String incorrectCode = "000000";
 
@@ -82,7 +84,7 @@ public class OtpAdapterTest extends TestContainerRedisConfig {
   void validateOtp_shouldThrowException_whenOtpIsExpired() {
     // Arrange
     UUID userId = UUID.randomUUID();
-    String redisKey = "otp:user:" + userId;
+    String redisKey = OTP_PREFIX + userId;
     String otpCode = otpAdapter.generateAndSaveOtp(userId);
 
     // Simula a expiração removendo a chave diretamente do Redis

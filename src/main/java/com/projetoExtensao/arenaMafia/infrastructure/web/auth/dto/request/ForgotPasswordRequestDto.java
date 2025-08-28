@@ -8,4 +8,4 @@ public record ForgotPasswordRequestDto(
         @Pattern(
             regexp = "^\\+\\d{10,15}$",
             message = "O telefone deve estar no formato internacional (ex: +5547999999999).")
-        String phoneNumber) {}
+        String phone) {}

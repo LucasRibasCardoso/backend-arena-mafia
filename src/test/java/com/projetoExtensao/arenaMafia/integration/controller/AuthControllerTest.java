@@ -3,8 +3,10 @@ package com.projetoExtensao.arenaMafia.integration.controller;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.tuple;
+import static org.hamcrest.Matchers.*;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordResetTokenPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
@@ -12,13 +14,11 @@ import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.LoginRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendCodeRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.MessageResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.*;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.PasswordResetTokenResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.SignupResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.dto.SimpleMessageResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.integration.config.TestIntegrationBaseConfig;
 import io.restassured.builder.RequestSpecBuilder;
@@ -38,6 +38,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class AuthControllerTest extends TestIntegrationBaseConfig {
 
   @Autowired private RefreshTokenRepositoryPort refreshTokenRepository;
+  @Autowired private PasswordResetTokenPort passwordResetTokenPort;
   @Autowired private UserJpaRepository userJpaRepository;
   @Autowired private UserRepositoryPort userRepository;
   @Autowired private PasswordEncoder passwordEncoder;
@@ -255,7 +256,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
               .response();
 
       // Assert
-      MessageResponseDto logoutBody = logoutResponse.as(MessageResponseDto.class);
+      SimpleMessageResponseDto logoutBody = logoutResponse.as(SimpleMessageResponseDto.class);
       assertThat(logoutBody.message()).isEqualTo("Logout realizado com sucesso.");
 
       // Verifica se o servidor instruiu o navegador a apagar o cookie.
@@ -376,7 +377,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     void signup_shouldReturn201ForValidSignup() {
       // Arrange
       var signupRequest =
-          new SignupRequestDto("newUser", "New User", "+5547998765432", "password", "password");
+          new SignupRequestDto("newUser", "New User", "+558320548186", "password", "password");
 
       // Act
       SignupResponseDto response =
@@ -396,7 +397,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       assertThat(response.message())
           .isEqualTo(
               "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone.");
-      assertThat(response.identifier()).isEqualTo(signupRequest.username());
+      assertThat(response.identifier()).isEqualTo(signupRequest.phone());
     }
 
     @Test
@@ -407,7 +408,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
           new SignupRequestDto(
               "username_test",
               "New User",
-              "+5547912345678",
+              "+558320548186",
               "password",
               "differentPassword" // Senhas não coincidem
               );
@@ -468,7 +469,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
           new SignupRequestDto(
               "testUser", // Username já existente
               "Another User",
-              "+5547912345678", // Telefone já existente
+              "+558320548186", // Telefone já existente
               "password",
               "password");
 
@@ -504,7 +505,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       User user = userRepository.findByUsername("testUser").orElseThrow();
 
       String validOtp = otpPort.generateAndSaveOtp(user.getId());
-      var request = new ValidateOtpRequestDto("testUser", validOtp);
+      var request = new ValidateOtpRequestDto("+558320548186", validOtp);
 
       // Act
       Response response =
@@ -532,37 +533,12 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 404 Not Found quando o usuário não existir")
-    void verifyAccount_shouldReturn404_whenUserNotFound() {
-      // Arrange
-      var request = new ValidateOtpRequestDto("nonexistentUser", "123456");
-
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/verify-account")
-              .then()
-              .statusCode(404)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      assertThat(response.status()).isEqualTo(404);
-      assertThat(response.message())
-          .isEqualTo(
-              "Usuário não encontrado para realizar verificação. Por favor faça o cadastro novamente.");
-    }
-
-    @Test
     @DisplayName("Deve retornar 400 Bad Request quando o OTP for inválido")
     void verifyAccount_shouldReturn400_whenOtpIsInvalid() {
       // Arrange
       createAndPersistUser(AccountStatus.PENDING_VERIFICATION);
       // OTP "111222" é deliberadamente incorreto
-      var request = new ValidateOtpRequestDto("testUser", "111222");
+      var request = new ValidateOtpRequestDto("+558320548186", "111222");
 
       // Act
       ErrorResponseDto response =
@@ -582,6 +558,31 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     }
 
     @Test
+    @DisplayName("Deve retornar 404 Not Found quando o usuário não existir")
+    void verifyAccount_shouldReturn404_whenUserNotFound() {
+      // Arrange
+      var request = new ValidateOtpRequestDto("+558320548181", "123456");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/verify-account")
+              .then()
+              .statusCode(404)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.message())
+          .isEqualTo(
+              "Usuário não encontrado. Retorne ao início do cadastro para criar uma nova conta.");
+    }
+
+    @Test
     @DisplayName("Deve retornar 409 Conflict ao tentar verificar uma conta que já está ativa")
     void verifyAccount_shouldReturn409_whenAccountIsAlreadyActive() {
       // Arrange
@@ -589,7 +590,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
       User user = userRepository.findByUsername("testUser").orElseThrow();
 
       String validOtp = otpPort.generateAndSaveOtp(user.getId());
-      var request = new ValidateOtpRequestDto("testUser", validOtp);
+      var request = new ValidateOtpRequestDto("+558320548186", validOtp);
 
       // Act
       ErrorResponseDto response =
@@ -618,10 +619,10 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     void resendCode_shouldReturn200_whenSuccessful() {
       // Arrange
       createAndPersistUser(AccountStatus.PENDING_VERIFICATION);
-      ResendCodeRequestDto request = new ResendCodeRequestDto("testUser");
+      ResendCodeRequestDto request = new ResendCodeRequestDto("+558320548186");
 
       // Act
-      MessageResponseDto response =
+      SimpleMessageResponseDto response =
           given()
               .spec(specification)
               .body(request)
@@ -630,7 +631,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
               .then()
               .statusCode(200)
               .extract()
-              .as(MessageResponseDto.class);
+              .as(SimpleMessageResponseDto.class);
 
       // Assert
       assertThat(response).isNotNull();
@@ -638,28 +639,20 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 404 Not Found quando o usuário não existir")
-    void resendCode_shouldReturn404_whenUserNotFound() {
+    @DisplayName("Deve retornar 200 OK mesmo quando o telefone não existir (Segurança)")
+    void resendCode_shouldReturn200_whenPhoneDoesNotExist() {
       // Arrange
-      ResendCodeRequestDto request = new ResendCodeRequestDto("nonexistentUser");
+      var request = new ResendCodeRequestDto("+558320548181"); // Telefone inexistente
 
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/resend-code")
-              .then()
-              .statusCode(404)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      assertThat(response.status()).isEqualTo(404);
-      assertThat(response.message())
-          .isEqualTo(
-              "Usuário não encontrado para reenviar o código. Por favor realize o cadastro novamente.");
+      // Act & Assert
+      given()
+          .spec(specification)
+          .body(request)
+          .when()
+          .post("/resend-code")
+          .then()
+          .statusCode(200)
+          .body("message", containsString("Código de verificação reenviado com sucesso."));
     }
 
     @Test
@@ -667,7 +660,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     void resendCode_shouldReturn409_whenAccountIsAlreadyActive() {
       // Arrange
       createAndPersistUser(AccountStatus.ACTIVE);
-      var request = new ResendCodeRequestDto("testUser");
+      var request = new ResendCodeRequestDto("+558320548186");
 
       // Act
       ErrorResponseDto response =
@@ -688,6 +681,217 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
     }
   }
 
+  @Nested
+  @DisplayName("Testes para o fluxo de Esqueci a Senha")
+  class ForgotPasswordFlowTests {
+
+    // ETAPA 1: POST /api/auth/forgot-password
+    @Nested
+    @DisplayName("Etapa 1: Solicitar código de redefinição")
+    class RequestResetTests {
+
+      @Test
+      @DisplayName("Deve retornar 200 OK e acionar o envio de OTP quando o telefone existir ou não")
+      void forgotPassword_shouldReturn200AndTriggerOtp_whenPhoneExists() {
+        // Arrange
+        createAndPersistUser(AccountStatus.ACTIVE);
+        var request = new ForgotPasswordRequestDto("+558320548186");
+
+        // Act
+        given()
+            .spec(specification)
+            .body(request)
+            .when()
+            .post("/forgot-password")
+            .then()
+            .statusCode(200)
+            .body(
+                "message",
+                equalTo(
+                    "Se o telefone informado for válido, enviaremos um código para verificação da conta."));
+      }
+    }
+
+    // ETAPA 2: POST /api/auth/generate-password-reset-token
+    @Nested
+    @DisplayName("Etapa 2: Validar código OTP")
+    class ValidateOtpTests {
+
+      @Test
+      @DisplayName("Deve retornar 200 OK com um passwordResetToken quando o OTP for válido")
+      void validateResetToken_shouldReturn200WithToken_whenOtpIsValid() {
+        // Arrange
+        createAndPersistUser(AccountStatus.ACTIVE);
+        User user = userRepository.findByUsername("testUser").orElseThrow();
+        String validOtp = otpPort.generateAndSaveOtp(user.getId());
+        var request = new ValidateOtpRequestDto("+558320548186", validOtp);
+
+        // Act
+        PasswordResetTokenResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/generate-password-reset-token")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(PasswordResetTokenResponseDto.class);
+
+        // Assert
+        assertThat(response.passwordResetToken()).isNotNull().hasSize(36);
+      }
+
+      @Test
+      @DisplayName("Deve retornar 400 Bad Request quando o OTP for inválido")
+      void validateResetToken_shouldReturn400_whenOtpIsInvalid() {
+        // Arrange
+        createAndPersistUser(AccountStatus.ACTIVE);
+        var request = new ValidateOtpRequestDto("+558320548186", "000000");
+
+        // Act & Assert
+        given()
+            .spec(specification)
+            .body(request)
+            .when()
+            .post("/generate-password-reset-token")
+            .then()
+            .statusCode(400)
+            .body("message", equalTo("Código de verificação inválido ou expirado."));
+      }
+
+      @Test
+      @DisplayName("Deve retornar 404 Not Found quando o usuário não existir")
+      void validateResetToken_shouldReturn404_whenUserNotFound() {
+        // Arrange
+        var request = new ValidateOtpRequestDto("+558320548181", "123456");
+
+        // Act & Assert
+        given()
+            .spec(specification)
+            .body(request)
+            .when()
+            .post("/generate-password-reset-token")
+            .then()
+            .statusCode(404)
+            .body(
+                "message",
+                equalTo(
+                    "Usuário não encontrado. Verifique o número de telefone informado e tente novamente."));
+      }
+    }
+
+    // ETAPA 3: POST /api/auth/reset-password
+    @Nested
+    @DisplayName("Etapa 3: Redefinir a senha")
+    class ResetPasswordTests {
+
+      @Test
+      @DisplayName(
+          "Deve retornar 200 OK e alterar a senha quando o token de redefinição for válido")
+      void resetPassword_shouldReturn200AndChangePassword_whenTokenIsValid() {
+        // Arrange
+        createAndPersistUser(AccountStatus.ACTIVE);
+        User user = userRepository.findByUsername("testUser").orElseThrow();
+        String validResetToken = passwordResetTokenPort.save(user.getId());
+        var request =
+            new ResetPasswordRequestDto(validResetToken, "newPassword123", "newPassword123");
+
+        // Act & Assert
+        given()
+            .spec(specification)
+            .body(request)
+            .when()
+            .post("/reset-password")
+            .then()
+            .statusCode(200)
+            .body(
+                "message",
+                equalTo(
+                    "Senha redefinida com sucesso. Você já pode fazer o login com sua nova senha."));
+
+        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(passwordEncoder.matches("newPassword123", updatedUser.getPasswordHash()))
+            .isTrue();
+      }
+
+      @Test
+      @DisplayName("Deve retornar 400 Bad Request quando o token de redefinição for inválido")
+      void resetPassword_shouldReturn400_whenTokenIsInvalid() {
+        // Arrange
+        var request =
+            new ResetPasswordRequestDto(UUID.randomUUID().toString(), "newPass123", "newPass123");
+
+        // Act & Assert
+        given()
+            .spec(specification)
+            .body(request)
+            .when()
+            .post("/reset-password")
+            .then()
+            .statusCode(400)
+            .body("message", equalTo("Token inválido ou expirado"));
+      }
+
+      @Test
+      @DisplayName("Deve retornar 400 Bad Request quando as novas senhas não coincidirem")
+      void resetPassword_shouldReturn400_whenPasswordsDoNotMatch() {
+        // Arrange
+        createAndPersistUser(AccountStatus.ACTIVE);
+        User user = userRepository.findByUsername("testUser").orElseThrow();
+        String validResetToken = passwordResetTokenPort.save(user.getId());
+        var request =
+            new ResetPasswordRequestDto(validResetToken, "newPass123", "differentPass456");
+
+        // Act & Assert
+        ErrorResponseDto errorResponseDto =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/reset-password")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        assertThat(errorResponseDto).isNotNull();
+        assertThat(errorResponseDto.status()).isEqualTo(400);
+        assertThat(errorResponseDto.fieldErrors())
+            .hasSize(1)
+            .extracting("fieldName", "message")
+            .containsExactly(
+                tuple("confirmPassword", "A senha de confirmação não corresponde à nova senha."));
+      }
+
+      @Test
+      @DisplayName("Deve retornar 404 Not Found quando o usuário associado ao token não existir")
+      void resetPassword_shouldReturn404_whenUserNotFound() {
+        // Arrange
+        createAndPersistUser(AccountStatus.ACTIVE);
+        String validResetToken = passwordResetTokenPort.save(UUID.randomUUID());
+        var request = new ResetPasswordRequestDto(validResetToken, "newPass123", "newPass123");
+
+        // Act & Assert
+        given()
+            .spec(specification)
+            .body(request)
+            .when()
+            .log()
+            .all()
+            .post("/reset-password")
+            .then()
+            .log()
+            .all()
+            .statusCode(404)
+            .body(
+                "message",
+                equalTo(
+                    "Ocorreu um erro ao redefinir sua senha. Por favor, inicie o processo novamente."));
+      }
+    }
+  }
+
   private void createAndPersistUser(AccountStatus status) {
     String passwordEncoded = passwordEncoder.encode("123456");
     User user =
@@ -695,7 +899,7 @@ public class AuthControllerTest extends TestIntegrationBaseConfig {
             UUID.randomUUID(),
             "testUser",
             "Test User",
-            "+5547912345678",
+            "+558320548186",
             passwordEncoded,
             status,
             RoleEnum.ROLE_USER,

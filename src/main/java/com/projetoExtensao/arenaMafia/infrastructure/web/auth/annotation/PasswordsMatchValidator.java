@@ -1,20 +1,19 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth.annotation;
 
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 public class PasswordsMatchValidator
-    implements ConstraintValidator<PasswordsMatch, SignupRequestDto> {
+    implements ConstraintValidator<PasswordsMatch, PasswordConfirmationProvider> {
 
   @Override
-  public boolean isValid(SignupRequestDto dto, ConstraintValidatorContext context) {
+  public boolean isValid(PasswordConfirmationProvider dto, ConstraintValidatorContext context) {
     // Delega a validação de senha nula para outras anotações, como @NotNull ou @NotBlank
-    if (dto.password() == null || dto.confirmPassword() == null) {
+    if (dto.getPassword() == null || dto.getConfirmPassword() == null) {
       return true;
     }
 
-    boolean passwordsMatch = dto.password().equals(dto.confirmPassword());
+    boolean passwordsMatch = dto.getPassword().equals(dto.getConfirmPassword());
 
     if (!passwordsMatch) {
       context.disableDefaultConstraintViolation();

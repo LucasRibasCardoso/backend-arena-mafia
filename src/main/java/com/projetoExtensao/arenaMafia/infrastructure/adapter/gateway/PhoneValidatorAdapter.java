@@ -19,14 +19,14 @@ public class PhoneValidatorAdapter implements PhoneValidatorPort {
   @Override
   public String formatToE164(String phoneNumber) {
     try {
-      Phonenumber.PhoneNumber number = phoneUtil.parse(phoneNumber, null);
+      Phonenumber.PhoneNumber parsedPhone = phoneUtil.parse(phoneNumber, null);
 
-      if (!phoneUtil.isValidNumber(number)) {
+      if (!phoneUtil.isValidNumber(parsedPhone)) {
         throw new BadPhoneNumberException(
             "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
       }
+      return phoneUtil.format(parsedPhone, PhoneNumberUtil.PhoneNumberFormat.E164);
 
-      return phoneUtil.format(number, PhoneNumberUtil.PhoneNumberFormat.E164);
     } catch (NumberParseException e) {
       throw new BadPhoneNumberException(
           "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");

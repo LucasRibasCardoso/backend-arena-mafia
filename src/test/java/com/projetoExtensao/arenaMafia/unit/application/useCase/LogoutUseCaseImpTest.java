@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
-import com.projetoExtensao.arenaMafia.application.auth.usecase.LogoutUseCase;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.imp.LogoutUseCaseImp;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.RefreshTokenInvalidFormatException;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;

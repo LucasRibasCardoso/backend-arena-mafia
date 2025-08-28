@@ -71,7 +71,8 @@ public class PasswordResetTokenAdapterTest {
       String nonExistentToken = UUID.randomUUID().toString();
 
       // Act & Assert
-      assertThatThrownBy(() -> passwordResetTokenAdapter.getUserIdByTokenOrElseThrow(nonExistentToken))
+      assertThatThrownBy(
+              () -> passwordResetTokenAdapter.getUserIdByTokenOrElseThrow(nonExistentToken))
           .isInstanceOf(InvalidPasswordResetTokenException.class)
           .hasMessage("Token inválido ou expirado");
     }

@@ -1,11 +1,8 @@
 package com.projetoExtensao.arenaMafia.unit.infrastructure.adapter;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.adapter.repository.UserRepositoryAdapter;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEntity;
@@ -250,5 +247,4 @@ public class UserRepositoryAdapterTest {
       verify(userJpaRepository, times(1)).existsByPhone(phone);
     }
   }
-
 }

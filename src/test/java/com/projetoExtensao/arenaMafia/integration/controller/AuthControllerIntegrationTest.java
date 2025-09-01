@@ -9,7 +9,6 @@ import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
-import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.*;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.SignupResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
@@ -46,7 +45,6 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
   private final RoleEnum defaultRole = RoleEnum.ROLE_USER;
 
   private final String defaultConfirmPassword = defaultPassword;
-  @Autowired private UserJpaRepository userJpaRepository;
 
   @BeforeEach
   void setup() {
@@ -59,14 +57,14 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
   }
 
   private void mockPersistUser(
-      String username, String fullName, String phone, AccountStatus status) {
+      AccountStatus status) {
     String passwordEncoded = passwordEncoder.encode(defaultPassword);
     User user =
         User.reconstitute(
             UUID.randomUUID(),
-            username,
-            fullName,
-            phone,
+            defaultUsername,
+            defaultFullName,
+            defaultPhone,
             passwordEncoded,
             status,
             RoleEnum.ROLE_USER,
@@ -98,7 +96,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 200 OK quando as credenciais forem válidas")
     void login_shouldReturn200_whenCredentialsAreValid() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
 
       // Act
@@ -191,7 +189,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     void login_shouldReturn409_whenAccountIsPendingVerification() {
       // Arrange
       mockPersistUser(
-          defaultUsername, defaultFullName, defaultPhone, AccountStatus.PENDING_VERIFICATION);
+          AccountStatus.PENDING_VERIFICATION);
       LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
 
       // Act
@@ -219,7 +217,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 409 Conflict quando a conta estiver bloqueada")
     void login_shouldReturn409_whenAccountIsLocked() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, AccountStatus.LOCKED);
+      mockPersistUser(AccountStatus.LOCKED);
       LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
 
       // Act
@@ -246,7 +244,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 409 Conflict quando a conta estiver desativada")
     void login_shouldReturn409_whenAccountIsDisabled() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, AccountStatus.DISABLED);
+      mockPersistUser(AccountStatus.DISABLED);
       LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
 
       // Act
@@ -277,7 +275,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 200 OK quando o logout for realizado com sucesso")
     void logout_shouldReturn200_whenLogoutIsSuccessfully() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       LoginRequestDto loginRequest = new LoginRequestDto(defaultUsername, defaultPassword);
 
       Response loginResponse =
@@ -348,7 +346,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 400 Bad Request quando o refresh token for inválido")
     void logout_shouldReturn400_whenRefreshTokenIsInvalid() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       LoginRequestDto loginRequest = new LoginRequestDto(defaultUsername, defaultPassword);
 
       Response loginResponse =
@@ -396,7 +394,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 200 OK quando um refresh token válido for enviado")
     void refreshToken_shouldReturn200_whenTokenIsValid() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       LoginRequestDto loginRequest = new LoginRequestDto(defaultUsername, defaultPassword);
       Cookie initialRefreshTokenCookie =
           given()
@@ -519,7 +517,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 409 Conflict quando a conta do usuário estiver bloqueada")
     void refreshToken_shouldReturn409_whenUserAccountIsLocked() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       LoginRequestDto loginRequest = new LoginRequestDto(defaultUsername, defaultPassword);
       Cookie refreshTokenCookie =
           given()
@@ -560,7 +558,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
         "Deve retornar 409 Conflict quando a conta do usuário estiver pendente de verificação")
     void refreshToken_shouldReturn409_whenUserAccountIsPendingVerification() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       LoginRequestDto loginRequest = new LoginRequestDto(defaultUsername, defaultPassword);
       Cookie refreshTokenCookie =
           given()
@@ -601,7 +599,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 409 Conflict quando a conta do usuário estiver desativada")
     void refreshToken_shouldReturn409_whenUserAccountIsDisabled() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       LoginRequestDto loginRequest = new LoginRequestDto(defaultUsername, defaultPassword);
       Cookie refreshTokenCookie =
           given()
@@ -743,7 +741,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 409 Conflict quando o username já estiver em uso")
     void signup_shouldReturn409_whenUsernameAlreadyExists() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       String newPhone = "+5583998765432";
       var request =
           new SignupRequestDto(
@@ -772,7 +770,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 409 Conflict quando o telefone já estiver em uso")
     void signup_shouldReturn409_whenPhoneAlreadyExists() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       String newUsername = "new_user";
       var request =
           new SignupRequestDto(

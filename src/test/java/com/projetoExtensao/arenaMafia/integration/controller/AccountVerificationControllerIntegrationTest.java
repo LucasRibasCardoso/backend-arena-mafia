@@ -53,15 +53,14 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
             .build();
   }
 
-  private void mockPersistUser(
-      String username, String fullName, String phone, AccountStatus status) {
+  private void mockPersistUser(AccountStatus status) {
     String passwordEncoded = passwordEncoder.encode(defaultPassword);
     User user =
         User.reconstitute(
             UUID.randomUUID(),
-            username,
-            fullName,
-            phone,
+            defaultUsername,
+            defaultFullName,
+            defaultPhone,
             passwordEncoded,
             status,
             RoleEnum.ROLE_USER,
@@ -78,7 +77,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 200 OK quando o código OTP for válido e a conta estiver pendente")
     void verifyAccount_shouldReturn200_whenOtpIsValidForPendingUser() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       User user = userRepository.findByUsername(defaultUsername).orElseThrow();
 
       String codeOTP = otpPort.generateCodeOTP(user.getId());
@@ -169,7 +168,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido")
     void verifyAccount_shouldReturn400_whenOtpIsInvalid() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       String invalidCodeOTP = "111222";
       var request = new ValidateOtpRequestDto(defaultPhone, invalidCodeOTP);
 
@@ -223,7 +222,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 409 Conflict ao tentar ativar uma conta que já está ativa")
     void verifyAccount_shouldReturn409_whenAccountIsAlreadyActive() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, AccountStatus.ACTIVE);
+      mockPersistUser(AccountStatus.ACTIVE);
       User user = userRepository.findByUsername(defaultUsername).orElseThrow();
 
       String codeOTP = otpPort.generateCodeOTP(user.getId());
@@ -258,7 +257,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 200 OK quando o código for reenviado com sucesso")
     void resendCode_shouldReturn200_whenSuccessful() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, defaultStatus);
+      mockPersistUser(defaultStatus);
       ResendCodeRequestDto request = new ResendCodeRequestDto(defaultPhone);
 
       // Act
@@ -358,7 +357,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 409 Conflict ao tentar reenviar código para uma conta já ativa")
     void resendCode_shouldReturn409_whenAccountIsAlreadyActive() {
       // Arrange
-      mockPersistUser(defaultUsername, defaultFullName, defaultPhone, AccountStatus.ACTIVE);
+      mockPersistUser(AccountStatus.ACTIVE);
       var request = new ResendCodeRequestDto(defaultPhone);
 
       // Act

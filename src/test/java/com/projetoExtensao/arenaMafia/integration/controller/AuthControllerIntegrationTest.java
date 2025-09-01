@@ -56,8 +56,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
             .build();
   }
 
-  private void mockPersistUser(
-      AccountStatus status) {
+  private void mockPersistUser(AccountStatus status) {
     String passwordEncoded = passwordEncoder.encode(defaultPassword);
     User user =
         User.reconstitute(
@@ -188,8 +187,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 409 Conflict quando a conta estiver pendente de verificação")
     void login_shouldReturn409_whenAccountIsPendingVerification() {
       // Arrange
-      mockPersistUser(
-          AccountStatus.PENDING_VERIFICATION);
+      mockPersistUser(AccountStatus.PENDING_VERIFICATION);
       LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
 
       // Act

@@ -52,6 +52,14 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             auth ->
                 auth
+                    // Endpoints públicos para autenticação e cadastro
+                    .requestMatchers("/api/auth/logout")
+                    .authenticated()
+
+                    // Endpoints públicos para autenticação e cadastro
+                    .requestMatchers("/api/auth/**")
+                    .permitAll()
+
                     // Endpoints públicos para desenvolvimento
                     .requestMatchers(
                         "/h2-console/**",
@@ -60,10 +68,6 @@ public class SecurityConfig {
                         "/swagger-ui.html",
                         "/webjars/**",
                         "/openapi.yml")
-                    .permitAll()
-
-                    // Endpoints públicos para autenticação e cadastro
-                    .requestMatchers("/api/auth/**")
                     .permitAll()
 
                     // Restringe o acesso a endpoints de monitoramento

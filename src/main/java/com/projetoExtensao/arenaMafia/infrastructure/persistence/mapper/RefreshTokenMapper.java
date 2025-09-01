@@ -2,7 +2,7 @@ package com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper;
 
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.RefreshTokenEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -15,7 +15,7 @@ public abstract class RefreshTokenMapper {
 
   @Autowired private UserMapper userMapper;
 
-  @Mapping(target = "id", ignore = true)
+  @Mapping(source = "token", target = "token")
   public abstract RefreshTokenEntity toEntity(RefreshToken domain);
 
   public RefreshToken toDomain(RefreshTokenEntity entity) {
@@ -27,7 +27,7 @@ public abstract class RefreshTokenMapper {
     RefreshTokenVO tokenVO = mapStringToVO(entity.getToken());
 
     return RefreshToken.reconstitute(
-        tokenVO, entity.getExpiryDate(), userDomain, entity.getCreatedAt());
+        entity.getId(), tokenVO, entity.getExpiryDate(), userDomain, entity.getCreatedAt());
   }
 
   // Métodos auxiliares para converter entre RefreshTokenVO e String e vice-versa

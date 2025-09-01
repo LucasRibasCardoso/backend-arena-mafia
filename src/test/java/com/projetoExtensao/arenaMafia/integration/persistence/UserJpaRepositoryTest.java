@@ -2,6 +2,7 @@ package com.projetoExtensao.arenaMafia.integration.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
@@ -11,8 +12,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -55,6 +54,35 @@ public class UserJpaRepositoryTest {
   }
 
   @Nested
+  @DisplayName("Testes para o método findByPhone")
+  class FindByPhoneTests {
+
+    @Test
+    @DisplayName("Deve encontrar um usuário com sucesso pelo seu telefone")
+    void findByUsername_shouldReturnUserWhenUsernameExists() {
+      // Arrange
+      createAndPersistUser("usernameTest", "+5547912345678");
+
+      // Act
+      Optional<UserEntity> foundUser = userJpaRepository.findByPhone("+5547912345678");
+
+      // Assert
+      assertThat(foundUser).isPresent();
+      assertThat(foundUser.get().getPhone()).isEqualTo("+5547912345678");
+    }
+
+    @Test
+    @DisplayName("Deve retornar vazio quando o telefone não existir")
+    void findByUsername_shouldReturnEmptyWhenUsernameDoesNotExist() {
+      // Act
+      Optional<UserEntity> foundUser = userJpaRepository.findByPhone("+5547999999999");
+
+      // Assert
+      assertThat(foundUser).isEmpty();
+    }
+  }
+
+  @Nested
   @DisplayName("Testes para o método findById")
   class FindByIdTests {
 
@@ -84,41 +112,62 @@ public class UserJpaRepositoryTest {
   }
 
   @Nested
-  @DisplayName("Testes para os métodos existsBy")
-  class ExistsByTests {
+  @DisplayName("Testes para o método existsByUsername")
+  class ExistsByUsernameTests {
 
-    @ParameterizedTest(name = "Quando o usuário {0}, deve retornar {1}")
-    @CsvSource({"true, 'existe'", "false, 'não existe'"})
-    @DisplayName("Deve verificar a existência de um usuário pelo username")
-    void existsByUsername_shouldReturnExpectedResult(boolean expectedResult, String description) {
+    @Test
+    @DisplayName("Deve retornar true quando o username existe no banco de dados")
+    void existsByUsername_shouldReturnTrue_whenUsernameExists() {
       // Arrange
-      String username = "usernameTest";
-      if (expectedResult) {
-        createAndPersistUser(username, "5547912345678");
-      }
+      createAndPersistUser("usernameTest", "+5547988887777");
 
       // Act
-      boolean exists = userJpaRepository.existsByUsername(username);
+      boolean exists = userJpaRepository.existsByUsername("usernameTest");
 
       // Assert
-      assertThat(exists).isEqualTo(expectedResult);
+      assertThat(exists).isTrue();
     }
 
-    @ParameterizedTest(name = "Quando o telefone {2}, deve retornar {1}")
-    @CsvSource({"5547912345678, true, 'existir'", "5547931245678, false, 'não existir'"})
-    @DisplayName("Deve verificar a existência de um usuário pelo telefone")
-    void existsByPhone_shouldReturnExpectedResult(
-        String phone, boolean expectedResult, String description) {
-      // Arrange
-      if (expectedResult) {
-        createAndPersistUser("usernameTest", phone);
-      }
+    @Test
+    @DisplayName("Deve retornar false quando o username não existe no banco de dados")
+    void existsByUsername_shouldReturnFalse_whenUsernameDoesNotExist() {
+      // Arrange (banco de dados está limpo)
 
       // Act
-      boolean exists = userJpaRepository.existsByPhone(phone);
+      boolean exists = userJpaRepository.existsByUsername("nonexistentuser");
 
       // Assert
-      assertThat(exists).isEqualTo(expectedResult);
+      assertThat(exists).isFalse();
+    }
+  }
+
+  @Nested
+  @DisplayName("Testes para o método existsByPhone")
+  class ExistsByPhoneTests {
+
+    @Test
+    @DisplayName("Deve retornar true quando o telefone existe no banco de dados")
+    void existsByPhone_shouldReturnTrue_whenPhoneExists() {
+      // Arrange
+      createAndPersistUser("usernameTest", "+5547988887777");
+
+      // Act
+      boolean exists = userJpaRepository.existsByPhone("+5547988887777");
+
+      // Assert
+      assertThat(exists).isTrue();
+    }
+
+    @Test
+    @DisplayName("Deve retornar false quando o telefone não existe no banco de dados")
+    void existsByPhone_shouldReturnFalse_whenPhoneDoesNotExist() {
+      // Arrange (banco de dados está limpo)
+
+      // Act
+      boolean exists = userJpaRepository.existsByPhone("+5547911112222");
+
+      // Assert
+      assertThat(exists).isFalse();
     }
   }
 
@@ -132,8 +181,7 @@ public class UserJpaRepositoryTest {
     userEntity.setPasswordHash("hashedPassword");
     userEntity.setRole(RoleEnum.ROLE_USER);
     userEntity.setCreatedAt(Instant.now());
-    userEntity.setAccountNonLocked(true);
-    userEntity.setEnabled(true);
+    userEntity.setStatus(AccountStatus.ACTIVE);
     return entityManager.persistAndFlush(userEntity);
   }
 }

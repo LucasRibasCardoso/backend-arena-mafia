@@ -1,8 +1,12 @@
 package com.projetoExtensao.arenaMafia.domain.model;
 
-import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPasswordHashException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidUsernameFormatException;
+import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
+import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 public class User {
@@ -11,12 +15,11 @@ public class User {
   private final String username;
   private final String fullName;
   private final String phone;
-  private final String passwordHash;
   private final RoleEnum role;
   private final Instant createdAt;
 
-  private boolean accountNonLocked;
-  private boolean enabled;
+  private String passwordHash;
+  private AccountStatus status;
 
   /**
    * Factory Method para criar uma instância de User. Por padrão um usuário será criado com a role
@@ -33,9 +36,10 @@ public class User {
 
     UUID newId = UUID.randomUUID();
     Instant now = Instant.now();
+    AccountStatus status = AccountStatus.PENDING_VERIFICATION;
 
     return new User(
-        newId, username, fullName, phone, passwordHash, true, false, RoleEnum.ROLE_USER, now);
+        newId, username, fullName, phone, passwordHash, status, RoleEnum.ROLE_USER, now);
   }
 
   /**
@@ -47,8 +51,7 @@ public class User {
    * @param fullName o nome completo do usuário
    * @param phone o telefone do usuário
    * @param passwordHash o hash da senha do usuário
-   * @param accountNonLocked se a conta está bloqueada
-   * @param enabled se a conta está ativada
+   * @param status o status da conta do usuário
    * @param role a role do usuário
    * @param createdAt a data de criação do usuário
    * @return uma instância de User
@@ -59,13 +62,12 @@ public class User {
       String fullName,
       String phone,
       String passwordHash,
-      boolean accountNonLocked,
-      boolean enabled,
+      AccountStatus status,
       RoleEnum role,
       Instant createdAt) {
 
-    return new User(
-        id, username, fullName, phone, passwordHash, accountNonLocked, enabled, role, createdAt);
+    validateUsername(username);
+    return new User(id, username, fullName, phone, passwordHash, status, role, createdAt);
   }
 
   private User(
@@ -74,48 +76,72 @@ public class User {
       String fullName,
       String phone,
       String passwordHash,
-      boolean accountNonLocked,
-      boolean enabled,
+      AccountStatus status,
       RoleEnum role,
       Instant createdAt) {
 
-    validateUsername(username);
     this.id = id;
     this.username = username;
     this.fullName = fullName;
     this.phone = phone;
     this.passwordHash = passwordHash;
-    this.accountNonLocked = accountNonLocked;
-    this.enabled = enabled;
+    this.status = status;
     this.role = role;
     this.createdAt = createdAt;
   }
 
   public static void validateUsername(String username) {
     if (username == null || username.isBlank()) {
-      throw new DomainValidationException("O nome de usuário não pode ser nulo ou vazio.");
+      throw new InvalidUsernameFormatException("O nome de usuário não pode ser nulo ou vazio.");
     }
     if (username.chars().anyMatch(Character::isWhitespace)) {
-      throw new DomainValidationException("O nome de usuário não pode conter espaços.");
+      throw new InvalidUsernameFormatException("O nome de usuário não pode conter espaços.");
     }
     if (username.length() < 4 || username.length() > 50) {
-      throw new DomainValidationException("O nome de usuário deve ter entre 4 e 50 caracteres.");
+      throw new InvalidUsernameFormatException(
+          "O nome de usuário deve ter entre 4 e 50 caracteres.");
+    }
+  }
+
+  public void updatePasswordHash(String passwordHash) {
+    if (passwordHash == null || passwordHash.isBlank()) {
+      throw new InvalidPasswordHashException(
+          "Não foi possível atualizar sua senha no momento. Por favor, tente novamente mais tarde.");
+    }
+    this.passwordHash = passwordHash;
+  }
+
+  public void ensureAccountEnabled() {
+    this.status.validateEnabled();
+  }
+
+  public void ensurePendingVerification() {
+    if (this.status != AccountStatus.PENDING_VERIFICATION) {
+      throw new AccountStateConflictException(
+          "Atenção: Só é possível reenviar o código para contas pendentes de verificação.");
     }
   }
 
   public void activateAccount() {
-    if (this.enabled) {
-      throw new DomainValidationException("Atenção: Conta já está ativada.");
+    if (!(this.status == AccountStatus.PENDING_VERIFICATION)) {
+      throw new AccountStateConflictException(
+          "Atenção: A conta já está ativada. Você pode fazer login.");
     }
-    this.enabled = true;
+    this.status = AccountStatus.ACTIVE;
   }
 
   public void lockAccount() {
-    this.accountNonLocked = false;
+    if (this.status == AccountStatus.LOCKED) {
+      throw new AccountStateConflictException("Atenção: A conta já está bloqueada.");
+    }
+    this.status = AccountStatus.LOCKED;
   }
 
   public void unlockAccount() {
-    this.accountNonLocked = true;
+    if (this.status != AccountStatus.LOCKED) {
+      throw new AccountStateConflictException("Atenção: A conta já está desbloqueada.");
+    }
+    this.status = AccountStatus.ACTIVE;
   }
 
   public boolean isAdmin() {
@@ -159,11 +185,26 @@ public class User {
     return createdAt;
   }
 
+  public AccountStatus getStatus() {
+    return status;
+  }
+
   public boolean isAccountNonLocked() {
-    return accountNonLocked;
+    return this.status != AccountStatus.LOCKED;
   }
 
   public boolean isEnabled() {
-    return enabled;
+    return this.status == AccountStatus.ACTIVE;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof User user)) return false;
+    return Objects.equals(id, user.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return getClass().hashCode();
   }
 }

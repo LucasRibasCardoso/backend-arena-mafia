@@ -4,6 +4,11 @@ spring:
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
 
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 6379
+
   flyway:
     locations: classpath:db/migration
     clean-disabled: true

@@ -1,4 +1,17 @@
 services:
+  # Serviço de Cache Redis
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "6379:6379"
+    networks:
+      - arena-mafia-network
+
   # Serviço do Banco de Dados
   postgres:
     image: postgres:16-alpine

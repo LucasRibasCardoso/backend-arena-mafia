@@ -1,12 +1,16 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler;
 
-import com.projetoExtensao.arenaMafia.domain.exception.global.DomainValidationException;
-import com.projetoExtensao.arenaMafia.domain.exception.refreshToken.BadRefreshTokenException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadRequestException;
+import com.projetoExtensao.arenaMafia.domain.exception.conflict.ConflictException;
+import com.projetoExtensao.arenaMafia.domain.exception.forbidden.ForbiddenException;
+import com.projetoExtensao.arenaMafia.domain.exception.notFound.NotFoundException;
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.UnauthorizedException;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.FieldErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,99 +24,126 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<ErrorResponseDto> handlerException(HttpServletRequest request) {
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(
-            HttpStatus.INTERNAL_SERVER_ERROR.value(),
-            "Erro interno do servidor. Por favor, tente novamente mais tarde.",
-            request.getRequestURI());
+  private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponseDto);
+  // ===============================================================================================
+  // HANDLERS PARA A HIERARQUIA DE EXCEÇÕES DE NEGÓCIO
+  // ===============================================================================================
+
+  @ExceptionHandler(NotFoundException.class)
+  public ResponseEntity<ErrorResponseDto> handleNotFoundException(
+      NotFoundException e, HttpServletRequest request) {
+    return createErrorResponse(HttpStatus.NOT_FOUND, e.getMessage(), request.getRequestURI());
   }
 
+  @ExceptionHandler(ConflictException.class)
+  public ResponseEntity<ErrorResponseDto> handleConflictException(
+      ConflictException e, HttpServletRequest request) {
+    return createErrorResponse(HttpStatus.CONFLICT, e.getMessage(), request.getRequestURI());
+  }
+
+  @ExceptionHandler(ForbiddenException.class)
+  public ResponseEntity<ErrorResponseDto> handleForbiddenException(
+      ForbiddenException e, HttpServletRequest request) {
+    return createErrorResponse(HttpStatus.FORBIDDEN, e.getMessage(), request.getRequestURI());
+  }
+
+  @ExceptionHandler(UnauthorizedException.class)
+  public ResponseEntity<ErrorResponseDto> handleUnauthorizedException(
+      UnauthorizedException e, HttpServletRequest request) {
+    return createErrorResponse(HttpStatus.UNAUTHORIZED, e.getMessage(), request.getRequestURI());
+  }
+
+  @ExceptionHandler(BadRequestException.class)
+  public ResponseEntity<ErrorResponseDto> handleBadRequestException(
+      BadRequestException e, HttpServletRequest request) {
+    return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request.getRequestURI());
+  }
+
+  // ===============================================================================================
+  // HANDLERS PARA EXCEÇÕES ESPECÍFICAS DO SPRING E VALIDAÇÃO
+  // ===============================================================================================
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponseDto> handleValidationException(
       MethodArgumentNotValidException e, HttpServletRequest request) {
 
+    Map<String, String> errorMap = new LinkedHashMap<>();
+
+    // Itera sobre todos os erros (de campo e globais)
+    e.getBindingResult()
+        .getAllErrors()
+        .forEach(
+            error -> {
+              String key;
+              if (error instanceof FieldError fieldError) {
+                key = fieldError.getField();
+              } else {
+                key = error.getObjectName();
+              }
+              errorMap.putIfAbsent(key, error.getDefaultMessage());
+            });
+
+    // Converte o mapa para a lista de DTOs de erro
     List<FieldErrorResponseDto> fieldErrors =
-        e.getBindingResult().getFieldErrors().stream()
-            .collect(
-                Collectors.toMap(
-                    FieldError::getField, // Key: field name
-                    FieldError::getDefaultMessage, // Value: error message
-                    (existingValue, newValue) -> existingValue) // mantém o valor existente
-                )
-            .entrySet() // Converte o Map em um SET de FieldErrorResponseDto
-            .stream()
+        errorMap.entrySet().stream()
             .map(entry -> new FieldErrorResponseDto(entry.getKey(), entry.getValue()))
-            .toList(); // Converte o SET de Map.Entry em uma lista de FieldErrorResponseDto
+            .toList();
 
     ErrorResponseDto errorResponseDto =
         ErrorResponseDto.forValidationErrors(
-            "Erro de validação nos campos informados.", request.getRequestURI(), fieldErrors);
+            "Erro de validação. Verifique os campos informados.",
+            request.getRequestURI(),
+            fieldErrors);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDto);
-  }
-
-  @ExceptionHandler(DataIntegrityViolationException.class)
-  public ResponseEntity<ErrorResponseDto> handleDataIntegrityViolationException(
-      HttpServletRequest request) {
-
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(
-            HttpStatus.CONFLICT.value(),
-            "Erro de integridade de dados. Verifique os dados informados.",
-            request.getRequestURI());
-
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponseDto);
-  }
-
-  @ExceptionHandler(AccessDeniedException.class)
-  public ResponseEntity<ErrorResponseDto> handleAccessDeniedException(HttpServletRequest request) {
-
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(
-            HttpStatus.FORBIDDEN.value(),
-            "Acesso negado. Você não tem permissão para acessar este recurso.",
-            request.getRequestURI());
-
-    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponseDto);
   }
 
   @ExceptionHandler(BadCredentialsException.class)
   public ResponseEntity<ErrorResponseDto> handleBadCredentialsException(
       HttpServletRequest request) {
-
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(
-            HttpStatus.UNAUTHORIZED.value(),
-            "Credenciais inválidas. Por favor, verifique seu usuário e senha.",
-            request.getRequestURI());
-
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponseDto);
+    return createErrorResponse(
+        HttpStatus.UNAUTHORIZED,
+        "Credenciais inválidas. Por favor, verifique seu usuário e senha.",
+        request.getRequestURI());
   }
 
-  @ExceptionHandler(BadRefreshTokenException.class)
-  public ResponseEntity<ErrorResponseDto> handleBadRefreshTokenException(
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorResponseDto> handleAccessDeniedException(HttpServletRequest request) {
+    return createErrorResponse(
+        HttpStatus.FORBIDDEN,
+        "Acesso negado. Você não tem permissão para acessar este recurso.",
+        request.getRequestURI());
+  }
+
+  // ===============================================================================================
+  // HANDLERS GENÉRICOS
+  // ===============================================================================================
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ErrorResponseDto> handleDataIntegrityViolationException(
       HttpServletRequest request) {
-
-    String message = "Token de atualização inválido ou expirado. Por favor, faça login novamente.";
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(
-            HttpStatus.UNAUTHORIZED.value(), message, request.getRequestURI());
-
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponseDto);
+    return createErrorResponse(
+        HttpStatus.CONFLICT,
+        "Conflito de dados. O recurso que você está tentando criar ou atualizar já existe.",
+        request.getRequestURI());
   }
 
-  @ExceptionHandler(DomainValidationException.class)
-  public ResponseEntity<ErrorResponseDto> handleDomainValidationException(
-      DomainValidationException e, HttpServletRequest request) {
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ErrorResponseDto> handleGenericException(
+      Exception e, HttpServletRequest request) {
+
+    logger.error("Ocorreu um erro inesperado", e);
+    return createErrorResponse(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "Erro interno do servidor. Por favor, tente novamente mais tarde.",
+        request.getRequestURI());
+  }
+
+  private ResponseEntity<ErrorResponseDto> createErrorResponse(
+      HttpStatus status, String message, String path) {
 
     ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(
-            HttpStatus.BAD_REQUEST.value(), e.getMessage(), request.getRequestURI());
+        ErrorResponseDto.forGeneralError(status.value(), message, path);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDto);
+    return ResponseEntity.status(status).body(errorResponseDto);
   }
 }

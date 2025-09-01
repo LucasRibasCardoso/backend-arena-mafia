@@ -1,11 +1,13 @@
 package com.projetoExtensao.arenaMafia.domain.model;
 
-import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenExpiredException;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 public class RefreshToken {
 
+  private final Long id;
   private final RefreshTokenVO token;
   private final Instant expiryDate;
   private final User user;
@@ -22,7 +24,7 @@ public class RefreshToken {
     RefreshTokenVO token = RefreshTokenVO.generate();
     Instant expiryDate = Instant.now().plus(expirationTimeInDays, ChronoUnit.DAYS);
     Instant createdAt = Instant.now();
-    return new RefreshToken(token, expiryDate, user, createdAt);
+    return new RefreshToken(null, token, expiryDate, user, createdAt);
   }
 
   /**
@@ -36,23 +38,31 @@ public class RefreshToken {
    * @return uma nova instância de RefreshToken reconstituída
    */
   public static RefreshToken reconstitute(
-      RefreshTokenVO token, Instant expiryDate, User user, Instant createdAt) {
-    return new RefreshToken(token, expiryDate, user, createdAt);
+      Long id, RefreshTokenVO token, Instant expiryDate, User user, Instant createdAt) {
+    return new RefreshToken(id, token, expiryDate, user, createdAt);
   }
 
-  private RefreshToken(RefreshTokenVO token, Instant expiryDate, User user, Instant createdAt) {
+  private RefreshToken(
+      Long id, RefreshTokenVO token, Instant expiryDate, User user, Instant createdAt) {
+    this.id = id;
     this.token = token;
     this.expiryDate = expiryDate;
     this.user = user;
     this.createdAt = createdAt;
   }
 
-  // --- Métodos de Negócio ---
-  public boolean isExpired() {
-    return Instant.now().isAfter(expiryDate);
+  public void verifyIfNotExpired() {
+    if (Instant.now().isAfter(expiryDate)) {
+      throw new RefreshTokenExpiredException(
+          "Sua sessão expirou. Por favor, faça login novamente.");
+    }
   }
 
   // --- Getters ---
+  public Long getId() {
+    return id;
+  }
+
   public RefreshTokenVO getToken() {
     return token;
   }

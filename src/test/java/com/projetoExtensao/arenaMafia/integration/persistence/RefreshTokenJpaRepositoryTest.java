@@ -2,8 +2,9 @@ package com.projetoExtensao.arenaMafia.integration.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
-import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.RefreshTokenEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.RefreshTokenJpaRepository;
@@ -88,8 +89,7 @@ public class RefreshTokenJpaRepositoryTest {
     userEntity.setPasswordHash("hashedPassword");
     userEntity.setRole(RoleEnum.ROLE_USER);
     userEntity.setCreatedAt(Instant.now());
-    userEntity.setAccountNonLocked(true);
-    userEntity.setEnabled(true);
+    userEntity.setStatus(AccountStatus.ACTIVE);
     testEntityManager.persistAndFlush(userEntity);
 
     var refreshToken = new RefreshTokenEntity();

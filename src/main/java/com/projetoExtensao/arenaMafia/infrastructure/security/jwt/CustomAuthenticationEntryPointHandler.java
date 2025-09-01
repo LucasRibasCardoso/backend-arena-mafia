@@ -37,7 +37,7 @@ public class CustomAuthenticationEntryPointHandler implements AuthenticationEntr
   }
 
   private ErrorResponseDto createErrorResponse(HttpServletRequest request) {
-    String errorMessage = "Ocorreu um erro de autenticação: acesso não autorizado.";
+    String errorMessage = "Sua sessão é inválida ou expirou. Por favor, faça login novamente.";
 
     return ErrorResponseDto.forGeneralError(
         UNAUTHORIZED_STATUS, errorMessage, request.getRequestURI());

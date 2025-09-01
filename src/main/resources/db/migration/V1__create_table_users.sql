@@ -5,8 +5,7 @@ CREATE TABLE tb_users
     full_name          TEXT               NOT NULL,
     phone              VARCHAR(20) UNIQUE NOT NULL,
     password_hash      TEXT               NOT NULL,
-    account_non_locked BOOLEAN            NOT NULL,
-    enabled            BOOLEAN            NOT NULL,
+    status             VARCHAR(30)        NOT NULL,
     role               VARCHAR(20)        NOT NULL,
     created_at         TIMESTAMP          NOT NULL
 );

@@ -48,13 +48,13 @@ public class NotificationEventListenerTest {
 
     String generatedOtp = "123456";
 
-    when(otpPort.generateAndSaveOtp(userId)).thenReturn(generatedOtp);
+    when(otpPort.generateCodeOTP(userId)).thenReturn(generatedOtp);
 
     // Act
     eventListener.osUserRegistration(event);
 
     // Assert
-    verify(otpPort, times(1)).generateAndSaveOtp(userId);
+    verify(otpPort, times(1)).generateCodeOTP(userId);
 
     ArgumentCaptor<String> phoneCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
@@ -83,7 +83,7 @@ public class NotificationEventListenerTest {
             Instant.now());
     OnVerificationRequiredEvent event = new OnVerificationRequiredEvent(user);
 
-    when(otpPort.generateAndSaveOtp(user.getId()))
+    when(otpPort.generateCodeOTP(user.getId()))
         .thenThrow(new RuntimeException("Falha ao conectar com o Redis"));
 
     // Act & Assert

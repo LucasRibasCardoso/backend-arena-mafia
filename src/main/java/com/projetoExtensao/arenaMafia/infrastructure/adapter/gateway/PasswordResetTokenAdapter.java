@@ -1,7 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordResetTokenPort;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPasswordResetTokenException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,11 +28,9 @@ public class PasswordResetTokenAdapter implements PasswordResetTokenPort {
   }
 
   @Override
-  public UUID getUserIdByTokenOrElseThrow(String token) {
+  public Optional<UUID> findUserIdByResetToken(String token) {
     String userId = redisTemplate.opsForValue().get(TOKEN_PREFIX + token);
-    return Optional.ofNullable(userId)
-        .map(UUID::fromString)
-        .orElseThrow(() -> new InvalidPasswordResetTokenException("Token inválido ou expirado"));
+    return Optional.ofNullable(userId).map(UUID::fromString);
   }
 
   @Override

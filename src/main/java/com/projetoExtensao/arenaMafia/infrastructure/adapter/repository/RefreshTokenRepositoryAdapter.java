@@ -3,7 +3,7 @@ package com.projetoExtensao.arenaMafia.infrastructure.adapter.repository;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.RefreshTokenEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper.RefreshTokenMapper;

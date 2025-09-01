@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.RefreshTokenInvalidFormatException;
-import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

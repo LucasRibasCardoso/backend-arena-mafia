@@ -2,7 +2,7 @@ package com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper;
 
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.RefreshTokenEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

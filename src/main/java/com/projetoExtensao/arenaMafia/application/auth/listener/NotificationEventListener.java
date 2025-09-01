@@ -30,7 +30,7 @@ public class NotificationEventListener {
       User user = event.user();
 
       // Gerar código OTP
-      String otpCode = otpPort.generateAndSaveOtp(user.getId());
+      String otpCode = otpPort.generateCodeOTP(user.getId());
 
       // Enviar SMS com o código OTP
       String message =

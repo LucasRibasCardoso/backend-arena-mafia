@@ -4,7 +4,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpExce
 import java.util.UUID;
 
 public interface OtpPort {
-  String generateAndSaveOtp(UUID userId);
+  String generateCodeOTP(UUID userId);
 
   void validateOtp(UUID uuid, String otpCode) throws InvalidOtpException;
 }

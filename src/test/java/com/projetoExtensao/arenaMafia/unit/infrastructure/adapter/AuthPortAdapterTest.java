@@ -65,7 +65,7 @@ public class AuthPortAdapterTest {
   void generateTokens_ShouldSucceed() {
     // Arrange
     String expectedAccessToken = "fake-access-token";
-    User user = User.create("testuser", "Test User", "5547912345678", "hash");
+    User user = User.create("testuser", "Test User", "+5547912345678", "hash");
     ReflectionTestUtils.setField(authAdapter, "refreshTokenExpirationDays", 30L);
 
     RefreshToken refreshToken = RefreshToken.create(30L, user);
@@ -78,9 +78,13 @@ public class AuthPortAdapterTest {
 
     // Assert
     assertThat(result).isNotNull();
-    assertThat(result.username()).isEqualTo(user.getUsername());
+    assertThat(result.user()).isNotNull();
+    assertThat(result.user().getUsername()).isEqualTo(user.getUsername());
+    assertThat(result.user().getPhone()).isEqualTo(user.getPhone());
+    assertThat(result.user().getFullName()).isEqualTo(user.getFullName());
+    assertThat(result.user().getRole()).isEqualTo(user.getRole());
     assertThat(result.accessToken()).isEqualTo(expectedAccessToken);
-    assertThat(result.refreshToken()).isNotNull();
+    assertThat(result.refreshToken()).isEqualTo(refreshToken.getToken().toString());
 
     verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
     verify(refreshTokenRepository, times(1)).deleteByUser(user);

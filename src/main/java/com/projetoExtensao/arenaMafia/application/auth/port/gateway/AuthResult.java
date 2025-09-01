@@ -1,3 +1,5 @@
 package com.projetoExtensao.arenaMafia.application.auth.port.gateway;
 
-public record AuthResult(String username, String accessToken, String refreshToken) {}
+import com.projetoExtensao.arenaMafia.domain.model.User;
+
+public record AuthResult(User user, String accessToken, String refreshToken) {}

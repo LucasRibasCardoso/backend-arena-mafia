@@ -1,5 +1,6 @@
 package com.projetoExtensao.arenaMafia.domain.model;
 
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPasswordHashException;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidUsernameFormatException;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
@@ -65,6 +66,7 @@ public class User {
       RoleEnum role,
       Instant createdAt) {
 
+    validateUsername(username);
     return new User(id, username, fullName, phone, passwordHash, status, role, createdAt);
   }
 
@@ -78,7 +80,6 @@ public class User {
       RoleEnum role,
       Instant createdAt) {
 
-    validateUsername(username);
     this.id = id;
     this.username = username;
     this.fullName = fullName;
@@ -102,20 +103,29 @@ public class User {
     }
   }
 
-  public void checkIfPendingVerification() {
-    if (this.status != AccountStatus.PENDING_VERIFICATION) {
-      throw new AccountStateConflictException(
-          "Atenção: Está conta não está pendente para verificação.");
-    }
-  }
-
   public void updatePasswordHash(String passwordHash) {
+    if (passwordHash == null || passwordHash.isBlank()) {
+      throw new InvalidPasswordHashException(
+          "Não foi possível atualizar sua senha no momento. Por favor, tente novamente mais tarde.");
+    }
     this.passwordHash = passwordHash;
   }
 
-  public void activateAccount() {
+  public void ensureAccountEnabled() {
+    this.status.validateEnabled();
+  }
+
+  public void ensurePendingVerification() {
     if (this.status != AccountStatus.PENDING_VERIFICATION) {
-      throw new AccountStateConflictException("Atenção: A conta já está ativada.");
+      throw new AccountStateConflictException(
+          "Atenção: Só é possível reenviar o código para contas pendentes de verificação.");
+    }
+  }
+
+  public void activateAccount() {
+    if (!(this.status == AccountStatus.PENDING_VERIFICATION)) {
+      throw new AccountStateConflictException(
+          "Atenção: A conta já está ativada. Você pode fazer login.");
     }
     this.status = AccountStatus.ACTIVE;
   }
@@ -129,7 +139,7 @@ public class User {
 
   public void unlockAccount() {
     if (this.status != AccountStatus.LOCKED) {
-      throw new AccountStateConflictException("Atenção: A conta não está bloqueada.");
+      throw new AccountStateConflictException("Atenção: A conta já está desbloqueada.");
     }
     this.status = AccountStatus.ACTIVE;
   }

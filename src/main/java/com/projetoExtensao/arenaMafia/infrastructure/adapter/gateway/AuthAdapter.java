@@ -45,7 +45,7 @@ public class AuthAdapter implements AuthPort {
     refreshTokenRepositoryPort.deleteByUser(user);
     String accessToken = generateAccessToken(user);
     String refreshToken = generateRefreshToken(user);
-    return new AuthResult(user.getUsername(), accessToken, refreshToken);
+    return new AuthResult(user, accessToken, refreshToken);
   }
 
   private String generateRefreshToken(User user) {

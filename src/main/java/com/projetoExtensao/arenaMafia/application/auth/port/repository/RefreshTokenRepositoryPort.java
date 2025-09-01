@@ -2,7 +2,7 @@ package com.projetoExtensao.arenaMafia.application.auth.port.repository;
 
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import java.util.Optional;
 
 public interface RefreshTokenRepositoryPort {

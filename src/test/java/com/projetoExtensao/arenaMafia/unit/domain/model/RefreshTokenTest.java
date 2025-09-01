@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenExpiredException;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.domain.valueObjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.BeforeEach;

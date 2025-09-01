@@ -6,6 +6,9 @@ import jakarta.validation.constraints.Size;
 
 public record LoginRequestDto(
     @NotBlank(message = "O usuario é obrigatório")
+        @Pattern(
+            regexp = "^[a-zA-Z0-9_]{3,20}$",
+            message = "O nome de usuário deve conter apenas letras, números e underscore (_).")
         @Size(min = 4, max = 50, message = "O campo usuário deve ter entre 4 e 50 caracteres")
         String username,
     @NotBlank(message = "A senha é obrigatória")

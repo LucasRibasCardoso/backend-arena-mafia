@@ -3,10 +3,10 @@ package com.projetoExtensao.arenaMafia.unit.application.listener;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.projetoExtensao.arenaMafia.application.auth.event.OnVerificationRequiredEvent;
-import com.projetoExtensao.arenaMafia.application.auth.listener.NotificationEventListener;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.SmsPort;
+import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
+import com.projetoExtensao.arenaMafia.application.notification.listener.NotificationEventListener;
+import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.application.notification.gateway.SmsPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;

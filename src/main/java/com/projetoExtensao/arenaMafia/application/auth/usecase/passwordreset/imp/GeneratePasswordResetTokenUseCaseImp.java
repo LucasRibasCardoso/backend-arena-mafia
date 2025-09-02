@@ -1,9 +1,9 @@
 package com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.imp;
 
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordResetTokenPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
+import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.GeneratePasswordResetTokenUseCase;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;

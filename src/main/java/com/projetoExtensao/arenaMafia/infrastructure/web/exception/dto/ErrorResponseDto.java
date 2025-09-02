@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto;
+package com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;

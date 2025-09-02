@@ -1,8 +1,8 @@
-package com.projetoExtensao.arenaMafia.application.auth.listener;
+package com.projetoExtensao.arenaMafia.application.notification.listener;
 
-import com.projetoExtensao.arenaMafia.application.auth.event.OnVerificationRequiredEvent;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.SmsPort;
+import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
+import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.application.notification.gateway.SmsPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

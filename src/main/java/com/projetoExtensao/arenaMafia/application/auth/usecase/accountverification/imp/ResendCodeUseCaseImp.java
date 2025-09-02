@@ -1,8 +1,8 @@
 package com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification.imp;
 
-import com.projetoExtensao.arenaMafia.application.auth.event.OnVerificationRequiredEvent;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
+import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
+import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification.ResendCodeUseCase;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendCodeRequestDto;
 import org.springframework.context.ApplicationEventPublisher;

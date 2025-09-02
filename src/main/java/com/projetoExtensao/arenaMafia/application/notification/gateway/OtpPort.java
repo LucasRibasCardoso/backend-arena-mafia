@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.application.auth.port.gateway;
+package com.projetoExtensao.arenaMafia.application.notification.gateway;
 
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
 import java.util.UUID;

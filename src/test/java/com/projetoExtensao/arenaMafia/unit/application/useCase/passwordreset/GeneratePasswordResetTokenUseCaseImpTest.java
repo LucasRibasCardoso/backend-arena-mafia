@@ -4,10 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordResetTokenPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
+import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.imp.GeneratePasswordResetTokenUseCaseImp;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadPhoneNumberException;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;

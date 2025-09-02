@@ -4,10 +4,10 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import com.projetoExtensao.arenaMafia.application.auth.event.OnVerificationRequiredEvent;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordEncoderPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
+import com.projetoExtensao.arenaMafia.application.security.port.gateway.PasswordEncoderPort;
+import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
+import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.imp.SignUpUseCaseImp;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadPhoneNumberException;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;

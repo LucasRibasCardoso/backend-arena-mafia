@@ -3,8 +3,8 @@ package com.projetoExtensao.arenaMafia.integration.controller;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
@@ -12,7 +12,7 @@ import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.Resend
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.dto.SimpleMessageResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.integration.config.WebIntegrationTestConfig;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.Cookie;

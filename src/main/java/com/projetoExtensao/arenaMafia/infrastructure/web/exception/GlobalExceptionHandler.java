@@ -1,12 +1,12 @@
-package com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler;
+package com.projetoExtensao.arenaMafia.infrastructure.web.exception;
 
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadRequestException;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.ConflictException;
 import com.projetoExtensao.arenaMafia.domain.exception.forbidden.ForbiddenException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.NotFoundException;
 import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.UnauthorizedException;
-import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.FieldErrorResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.FieldErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.*;
 import org.slf4j.Logger;

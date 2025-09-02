@@ -1,7 +1,7 @@
 package com.projetoExtensao.arenaMafia.infrastructure.security.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.projetoExtensao.arenaMafia.infrastructure.web.exceptionHandler.dto.ErrorResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;

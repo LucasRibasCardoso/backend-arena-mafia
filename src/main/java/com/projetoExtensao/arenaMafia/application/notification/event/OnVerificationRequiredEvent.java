@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.application.auth.event;
+package com.projetoExtensao.arenaMafia.application.notification.event;
 
 import com.projetoExtensao.arenaMafia.domain.model.User;
 

@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.application.auth.port.gateway;
+package com.projetoExtensao.arenaMafia.application.auth.model;
 
 import com.projetoExtensao.arenaMafia.domain.model.User;
 

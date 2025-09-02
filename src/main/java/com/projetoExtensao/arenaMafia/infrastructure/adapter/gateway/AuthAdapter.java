@@ -1,7 +1,7 @@
 package com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
+import com.projetoExtensao.arenaMafia.application.auth.model.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;

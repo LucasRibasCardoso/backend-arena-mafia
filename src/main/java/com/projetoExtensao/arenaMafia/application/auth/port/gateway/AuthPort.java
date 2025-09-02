@@ -1,5 +1,6 @@
 package com.projetoExtensao.arenaMafia.application.auth.port.gateway;
 
+import com.projetoExtensao.arenaMafia.application.auth.model.AuthResult;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 
 public interface AuthPort {

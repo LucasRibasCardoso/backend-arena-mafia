@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.application.auth.port.gateway;
+package com.projetoExtensao.arenaMafia.application.security.port.gateway;
 
 public interface PasswordEncoderPort {
   String encode(String password);

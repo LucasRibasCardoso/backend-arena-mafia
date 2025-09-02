@@ -384,17 +384,11 @@ paths:
             type: string
             example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
       responses:
-        "200":
-          description: "Logout realizado com sucesso."
+        "204":
+          description: "Logout realizado com sucesso. O refresh token foi invalidado e o cookie do navegador foi expirado."
           headers:
             ExpiredToken:
               $ref: "#/components/headers/ExpiredCookie"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SimpleMessageResponseDto"
-              example:
-                message: "Logout realizado com sucesso."
         "400":
           description: "Requisição inválida. Ocorre se o formato do 'refreshToken' for inválido (não é um UUID válido)."
           content:
@@ -669,14 +663,8 @@ paths:
             schema:
               $ref: "#/components/schemas/ResendCodeRequestDto"
         responses:
-          "200":
-            description: "Solicitação de reenvio processada. Uma mensagem de sucesso é retornada independentemente da existência do usuário."
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/SimpleMessageResponseDto"
-                example:
-                  message: "Código de verificação reenviado com sucesso."
+          "204":
+            description: "Sucesso. A solicitação foi validada e um novo código de verificação foi enviado para o número de telefone associado à conta. O cliente deve agora permitir que o usuário insira o novo código."
           "400":
             description: "Requisição inválida. Ocorre se o formato do telefone for inválido."
             content:

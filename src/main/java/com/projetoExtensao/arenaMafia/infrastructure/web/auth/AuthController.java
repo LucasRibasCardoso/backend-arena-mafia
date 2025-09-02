@@ -90,11 +90,9 @@ public class AuthController {
     logoutUseCase.execute(requestDto);
     ResponseCookie expiredCookie = cookieUtils.createRefreshTokenExpiredCookie();
 
-    SimpleMessageResponseDto responseDto =
-        new SimpleMessageResponseDto("Logout realizado com sucesso.");
-    return ResponseEntity.ok()
+    return ResponseEntity.noContent()
         .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
-        .body(responseDto);
+        .build();
   }
 
   @PostMapping("/refresh-token")

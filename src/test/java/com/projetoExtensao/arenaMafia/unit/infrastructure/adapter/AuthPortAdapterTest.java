@@ -41,7 +41,7 @@ public class AuthPortAdapterTest {
     String username = "testuser";
     String password = "password123";
 
-    User expectedUser = User.create(username, "Test User", "5547912345678", "hash");
+    User expectedUser = User.create(username, "Test User", "+5547912345678", "hash");
     UserDetailsAdapter userDetails = new UserDetailsAdapter(expectedUser);
     Authentication mockAuthentication = mock(Authentication.class);
 

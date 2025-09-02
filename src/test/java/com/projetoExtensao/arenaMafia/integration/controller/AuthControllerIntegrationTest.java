@@ -270,8 +270,8 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
   class LogoutTests {
 
     @Test
-    @DisplayName("Deve retornar 200 OK quando o logout for realizado com sucesso")
-    void logout_shouldReturn200_whenLogoutIsSuccessfully() {
+    @DisplayName("Deve retornar 204 No Content quando o logout for realizado com sucesso")
+    void logout_shouldReturn204_whenLogoutIsSuccessfully() {
       // Arrange
       mockPersistUser(defaultStatus);
       LoginRequestDto loginRequest = new LoginRequestDto(defaultUsername, defaultPassword);
@@ -303,13 +303,9 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .when()
               .post("/logout")
               .then()
-              .statusCode(200)
+              .statusCode(204)
               .extract()
               .response();
-
-      // Assert
-      SimpleMessageResponseDto responseBody = response.as(SimpleMessageResponseDto.class);
-      assertThat(responseBody.message()).isEqualTo("Logout realizado com sucesso.");
 
       // Verifica se o servidor instruiu o navegador a apagar o cookie.
       Cookie expiredCookie = response.getDetailedCookie("refreshToken");

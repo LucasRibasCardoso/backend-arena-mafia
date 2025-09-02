@@ -11,7 +11,6 @@ import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.*;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.SignupResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.util.CookieUtils;
-import com.projetoExtensao.arenaMafia.infrastructure.web.dto.SimpleMessageResponseDto;
 import jakarta.validation.Valid;
 import java.net.URI;
 import org.springframework.http.HttpHeaders;
@@ -84,7 +83,7 @@ public class AuthController {
   }
 
   @PostMapping("/logout")
-  public ResponseEntity<SimpleMessageResponseDto> logout(
+  public ResponseEntity<Void> logout(
       @CookieValue(value = "refreshToken", required = false) String requestDto) {
 
     logoutUseCase.execute(requestDto);

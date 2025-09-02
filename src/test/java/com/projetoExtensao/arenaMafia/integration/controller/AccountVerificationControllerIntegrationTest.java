@@ -11,7 +11,6 @@ import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendCodeRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.dto.SimpleMessageResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.integration.config.WebIntegrationTestConfig;
 import io.restassured.builder.RequestSpecBuilder;
@@ -254,49 +253,25 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
   class ResendCodeTests {
 
     @Test
-    @DisplayName("Deve retornar 200 OK quando o código for reenviado com sucesso")
-    void resendCode_shouldReturn200_whenSuccessful() {
+    @DisplayName("Deve retornar 204 No Content quando o código for reenviado com sucesso")
+    void resendCode_shouldReturn204_whenSuccessful() {
       // Arrange
       mockPersistUser(defaultStatus);
       ResendCodeRequestDto request = new ResendCodeRequestDto(defaultPhone);
 
       // Act
-      SimpleMessageResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/resend-code")
-              .then()
-              .statusCode(200)
-              .extract()
-              .as(SimpleMessageResponseDto.class);
-
-      // Assert
-      assertThat(response.message()).isEqualTo("Código de verificação reenviado com sucesso.");
+      given().spec(specification).body(request).when().post("/resend-code").then().statusCode(204);
     }
 
     @Test
-    @DisplayName("Deve retornar 200 OK mesmo quando o telefone não existir, por segurança")
-    void resendCode_shouldReturn200_whenPhoneDoesNotExist() {
+    @DisplayName("Deve retornar 204 No Content mesmo quando o telefone não existir, por segurança")
+    void resendCode_shouldReturn204_whenPhoneDoesNotExist() {
       // Arrange
       String nonExistentPhone = "+558320548181";
       var request = new ResendCodeRequestDto(nonExistentPhone);
 
       // Act
-      SimpleMessageResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/resend-code")
-              .then()
-              .statusCode(200)
-              .extract()
-              .as(SimpleMessageResponseDto.class);
-
-      // Assert
-      assertThat(response.message()).isEqualTo("Código de verificação reenviado com sucesso.");
+      given().spec(specification).body(request).when().post("/resend-code").then().statusCode(204);
     }
 
     @Test

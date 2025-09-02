@@ -77,8 +77,8 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
   class ForgotPasswordTests {
 
     @Test
-    @DisplayName("Deve retornar 200 OK quando o telefone existir")
-    void forgotPassword_shouldReturn200_whenPhoneExists() {
+    @DisplayName("Deve retornar 202 Accept quando o telefone existir")
+    void forgotPassword_shouldReturn202_whenPhoneExists() {
       // Arrange
       mockPersistUser(defaultStatus);
       var request = new ForgotPasswordRequestDto(defaultPhone);
@@ -91,7 +91,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .when()
               .post("/forgot-password")
               .then()
-              .statusCode(200)
+              .statusCode(202)
               .extract()
               .as(SimpleMessageResponseDto.class);
 
@@ -102,8 +102,8 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     }
 
     @Test
-    @DisplayName("Deve retornar 200 OK quando o telefone não existir")
-    void forgotPassword_shouldReturn200_whenPhoneNotExists() {
+    @DisplayName("Deve retornar 202 Accept quando o telefone não existir")
+    void forgotPassword_shouldReturn202_whenPhoneNotExists() {
       // Arrange
       mockPersistUser(defaultStatus);
       var request = new ForgotPasswordRequestDto(defaultPhone);
@@ -116,7 +116,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .when()
               .post("/forgot-password")
               .then()
-              .statusCode(200)
+              .statusCode(202)
               .extract()
               .as(SimpleMessageResponseDto.class);
 

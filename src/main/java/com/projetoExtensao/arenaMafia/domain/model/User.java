@@ -1,6 +1,8 @@
 package com.projetoExtensao.arenaMafia.domain.model;
 
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidFullNameException;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPasswordHashException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPhoneException;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidUsernameFormatException;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
@@ -12,9 +14,9 @@ import java.util.UUID;
 public class User {
 
   private final UUID id;
-  private final String username;
-  private final String fullName;
-  private final String phone;
+  private String username;
+  private String fullName;
+  private String phone;
   private final RoleEnum role;
   private final Instant createdAt;
 
@@ -23,16 +25,13 @@ public class User {
 
   /**
    * Factory Method para criar uma instância de User. Por padrão um usuário será criado com a role
-   * ROLE_USER, conta desbloqueada e desativada.
-   *
-   * @param username o nome de usuário (único)
-   * @param fullName o nome completo do usuário
-   * @param phone o telefone do usuário
-   * @param passwordHash o hash da senha do usuário
-   * @return uma nova instância de User
+   * ROLE_USER e a conta pendente de verificação
    */
   public static User create(String username, String fullName, String phone, String passwordHash) {
     validateUsername(username);
+    validateFullName(fullName);
+    validatePhone(phone);
+    validatePasswordHash(passwordHash);
 
     UUID newId = UUID.randomUUID();
     Instant now = Instant.now();
@@ -43,18 +42,8 @@ public class User {
   }
 
   /**
-   * Factory Method para RECONSTRUIR um usuário a partir de dados existentes (do banco). Esse metodo
-   * é usado pelo MapStruct para mapear uma entidade para User.
-   *
-   * @param id o ID do usuário
-   * @param username o nome de usuário (único)
-   * @param fullName o nome completo do usuário
-   * @param phone o telefone do usuário
-   * @param passwordHash o hash da senha do usuário
-   * @param status o status da conta do usuário
-   * @param role a role do usuário
-   * @param createdAt a data de criação do usuário
-   * @return uma instância de User
+   * Factory Method para RECONSTRUIR um usuário a partir de dados existentes do banco. Esse metodo é
+   * usado pelo MapStruct para mapear uma entidade para User.
    */
   public static User reconstitute(
       UUID id,
@@ -67,6 +56,9 @@ public class User {
       Instant createdAt) {
 
     validateUsername(username);
+    validateFullName(fullName);
+    validatePhone(phone);
+    validatePasswordHash(passwordHash);
     return new User(id, username, fullName, phone, passwordHash, status, role, createdAt);
   }
 
@@ -90,27 +82,67 @@ public class User {
     this.createdAt = createdAt;
   }
 
+  // Validações
   public static void validateUsername(String username) {
     if (username == null || username.isBlank()) {
       throw new InvalidUsernameFormatException("O nome de usuário não pode ser nulo ou vazio.");
     }
-    if (username.chars().anyMatch(Character::isWhitespace)) {
-      throw new InvalidUsernameFormatException("O nome de usuário não pode conter espaços.");
-    }
-    if (username.length() < 4 || username.length() > 50) {
+    if (username.length() < 3 || username.length() > 50) {
       throw new InvalidUsernameFormatException(
-          "O nome de usuário deve ter entre 4 e 50 caracteres.");
+          "O nome de usuário deve ter entre 3 e 50 caracteres.");
+    }
+    if (!username.matches("^[a-zA-Z0-9_]+$")) {
+      throw new InvalidUsernameFormatException(
+          "O nome de usuário deve conter apenas letras, números e underscore (_).");
     }
   }
 
-  public void updatePasswordHash(String passwordHash) {
+  public static void validateFullName(String fullName) {
+    if (fullName == null || fullName.isBlank()) {
+      throw new InvalidFullNameException("O nome completo não pode ser nulo ou vazio.");
+    }
+    if (fullName.length() < 3 || fullName.length() > 100) {
+      throw new InvalidFullNameException("O nome completo deve ter entre 3 e 100 caracteres.");
+    }
+  }
+
+  public static void validatePasswordHash(String passwordHash) {
     if (passwordHash == null || passwordHash.isBlank()) {
-      throw new InvalidPasswordHashException(
-          "Não foi possível atualizar sua senha no momento. Por favor, tente novamente mais tarde.");
+      throw new InvalidPasswordHashException("O hash da senha não pode ser nulo ou vazio.");
     }
-    this.passwordHash = passwordHash;
   }
 
+  public static void validatePhone(String phone) {
+    if (phone == null || phone.isBlank()) {
+      throw new InvalidPhoneException("O número de telefone não pode ser nulo ou vazio.");
+    }
+    if (!phone.matches("^\\+[1-9]\\d{1,14}$")) {
+      throw new InvalidPhoneException("O número de telefone deve estar no formato E.164.");
+    }
+  }
+
+  // Atualizar atributos
+  public void updatePasswordHash(String newPasswordHash) {
+    validatePasswordHash(newPasswordHash);
+    this.passwordHash = newPasswordHash;
+  }
+
+  public void updateUsername(String newUsername) {
+    validateUsername(newUsername);
+    this.username = newUsername;
+  }
+
+  public void updateFullName(String fullName) {
+    validateFullName(fullName);
+    this.fullName = fullName;
+  }
+
+  public void updatePhone(String newPhone) {
+    validatePhone(newPhone);
+    this.phone = newPhone;
+  }
+
+  // Validar status da conta
   public void ensureAccountEnabled() {
     this.status.validateEnabled();
   }
@@ -122,6 +154,7 @@ public class User {
     }
   }
 
+  // Gerenciar status da conta
   public void activateAccount() {
     if (!(this.status == AccountStatus.PENDING_VERIFICATION)) {
       throw new AccountStateConflictException(
@@ -144,6 +177,7 @@ public class User {
     this.status = AccountStatus.ACTIVE;
   }
 
+  // Verificar roles
   public boolean isAdmin() {
     return this.role == RoleEnum.ROLE_ADMIN;
   }
@@ -156,7 +190,7 @@ public class User {
     return this.role == RoleEnum.ROLE_USER;
   }
 
-  // --- Getters ---
+  // Getters
   public UUID getId() {
     return id;
   }
@@ -205,6 +239,6 @@ public class User {
 
   @Override
   public int hashCode() {
-    return getClass().hashCode();
+    return Objects.hashCode(id);
   }
 }

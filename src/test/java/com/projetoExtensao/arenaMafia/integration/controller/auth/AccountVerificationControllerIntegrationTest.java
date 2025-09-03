@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.integration.controller;
+package com.projetoExtensao.arenaMafia.integration.controller.auth;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -7,7 +7,6 @@ import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
-import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendCodeRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
@@ -17,12 +16,9 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.Cookie;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-import java.time.Instant;
-import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -30,17 +26,9 @@ import org.springframework.test.annotation.DirtiesContext;
 public class AccountVerificationControllerIntegrationTest extends WebIntegrationTestConfig {
 
   @Autowired private UserRepositoryPort userRepository;
-  @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private OtpPort otpPort;
 
   private RequestSpecification specification;
-
-  private final String defaultPhone = "+558320548186";
-  private final String defaultUsername = "test_user";
-  private final String defaultFullName = "Test User";
-  private final String defaultPassword = "123456";
-  private final RoleEnum defaultRole = RoleEnum.ROLE_USER;
-  private final AccountStatus defaultStatus = AccountStatus.PENDING_VERIFICATION;
 
   @BeforeEach
   void setup() {
@@ -52,22 +40,6 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
             .build();
   }
 
-  private void mockPersistUser(AccountStatus status) {
-    String passwordEncoded = passwordEncoder.encode(defaultPassword);
-    User user =
-        User.reconstitute(
-            UUID.randomUUID(),
-            defaultUsername,
-            defaultFullName,
-            defaultPhone,
-            passwordEncoded,
-            status,
-            RoleEnum.ROLE_USER,
-            Instant.now());
-
-    userRepository.save(user);
-  }
-
   @Nested
   @DisplayName("Testes para o endpoint /auth/verify-account")
   class VerifyAccountTests {
@@ -76,11 +48,9 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 200 OK quando o código OTP for válido e a conta estiver pendente")
     void verifyAccount_shouldReturn200_whenOtpIsValidForPendingUser() {
       // Arrange
-      mockPersistUser(defaultStatus);
-      User user = userRepository.findByUsername(defaultUsername).orElseThrow();
-
-      String codeOTP = otpPort.generateCodeOTP(user.getId());
-      var request = new ValidateOtpRequestDto(defaultPhone, codeOTP);
+      User mockUser = mockPersistUser(AccountStatus.PENDING_VERIFICATION);
+      String codeOTP = otpPort.generateCodeOTP(mockUser.getId());
+      var request = new ValidateOtpRequestDto(mockUser.getPhone(), codeOTP);
 
       // Act
       Response response =
@@ -96,16 +66,16 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
       TokenResponseDto responseBody = response.as(TokenResponseDto.class);
 
       // Assert
-      assertThat(responseBody.phone()).isEqualTo(defaultPhone);
-      assertThat(responseBody.username()).isEqualTo(defaultUsername);
-      assertThat(responseBody.fullName()).isEqualTo(defaultFullName);
-      assertThat(responseBody.role()).isEqualTo(defaultRole.name());
+      assertThat(responseBody.phone()).isEqualTo(mockUser.getPhone());
+      assertThat(responseBody.username()).isEqualTo(mockUser.getUsername());
+      assertThat(responseBody.fullName()).isEqualTo(mockUser.getFullName());
+      assertThat(responseBody.role()).isEqualTo(mockUser.getRole().name());
       assertThat(responseBody.accessToken()).isNotBlank();
 
       Cookie refreshTokenCookie = response.getDetailedCookie("refreshToken");
       assertThat(refreshTokenCookie.getValue()).hasSize(36);
 
-      User activatedUser = userRepository.findById(user.getId()).orElseThrow();
+      User activatedUser = userRepository.findById(mockUser.getId()).orElseThrow();
       assertThat(activatedUser.getStatus()).isEqualTo(AccountStatus.ACTIVE);
     }
 
@@ -141,7 +111,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     void validateResetToken_shouldReturn400_whenPhoneIsInvalid() {
       // Arrange
       String invalidPhone = "+999123456789";
-      var request = new ValidateOtpRequestDto(invalidPhone, defaultPassword);
+      var request = new ValidateOtpRequestDto(invalidPhone, "123456");
 
       // Act
       ErrorResponseDto response =
@@ -167,7 +137,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido")
     void verifyAccount_shouldReturn400_whenOtpIsInvalid() {
       // Arrange
-      mockPersistUser(defaultStatus);
+      mockPersistUser();
       String invalidCodeOTP = "111222";
       var request = new ValidateOtpRequestDto(defaultPhone, invalidCodeOTP);
 
@@ -194,7 +164,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 404 Not Found quando o usuário não for encontrado")
     void verifyAccount_shouldReturn404_whenUserNotFound() {
       // Arrange
-      var request = new ValidateOtpRequestDto(defaultPhone, defaultPassword);
+      var request = new ValidateOtpRequestDto(defaultPhone, "123456");
 
       // Act
       ErrorResponseDto response =
@@ -221,11 +191,10 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 409 Conflict ao tentar ativar uma conta que já está ativa")
     void verifyAccount_shouldReturn409_whenAccountIsAlreadyActive() {
       // Arrange
-      mockPersistUser(AccountStatus.ACTIVE);
-      User user = userRepository.findByUsername(defaultUsername).orElseThrow();
+      User mockUser = mockPersistUser();
 
-      String codeOTP = otpPort.generateCodeOTP(user.getId());
-      var request = new ValidateOtpRequestDto(defaultPhone, codeOTP);
+      String codeOTP = otpPort.generateCodeOTP(mockUser.getId());
+      var request = new ValidateOtpRequestDto(mockUser.getPhone(), codeOTP);
 
       // Act
       ErrorResponseDto response =
@@ -256,8 +225,8 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 204 No Content quando o código for reenviado com sucesso")
     void resendCode_shouldReturn204_whenSuccessful() {
       // Arrange
-      mockPersistUser(defaultStatus);
-      ResendCodeRequestDto request = new ResendCodeRequestDto(defaultPhone);
+      User mockUser = mockPersistUser(AccountStatus.PENDING_VERIFICATION);
+      ResendCodeRequestDto request = new ResendCodeRequestDto(mockUser.getPhone());
 
       // Act
       given().spec(specification).body(request).when().post("/resend-code").then().statusCode(204);
@@ -332,8 +301,8 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 409 Conflict ao tentar reenviar código para uma conta já ativa")
     void resendCode_shouldReturn409_whenAccountIsAlreadyActive() {
       // Arrange
-      mockPersistUser(AccountStatus.ACTIVE);
-      var request = new ResendCodeRequestDto(defaultPhone);
+      User mockUser = mockPersistUser();
+      var request = new ResendCodeRequestDto(mockUser.getPhone());
 
       // Act
       ErrorResponseDto response =

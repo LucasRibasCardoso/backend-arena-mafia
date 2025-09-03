@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.infrastructure.security;
+package com.projetoExtensao.arenaMafia.infrastructure.security.userDetails;
 
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import java.util.Collection;

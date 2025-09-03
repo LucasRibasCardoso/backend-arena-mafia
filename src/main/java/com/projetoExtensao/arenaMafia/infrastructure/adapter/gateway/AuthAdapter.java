@@ -5,7 +5,7 @@ import com.projetoExtensao.arenaMafia.application.auth.model.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.security.UserDetailsAdapter;
+import com.projetoExtensao.arenaMafia.infrastructure.security.userDetails.UserDetailsAdapter;
 import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -55,6 +55,6 @@ public class AuthAdapter implements AuthPort {
   }
 
   private String generateAccessToken(User user) {
-    return jwtTokenProvider.generateAccessToken(user.getUsername(), user.getRole());
+    return jwtTokenProvider.generateAccessToken(user.getId(), user.getUsername(), user.getRole());
   }
 }

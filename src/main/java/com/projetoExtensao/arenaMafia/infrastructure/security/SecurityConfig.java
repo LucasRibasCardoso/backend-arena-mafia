@@ -52,8 +52,8 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             auth ->
                 auth
-                    // Endpoints públicos para autenticação e cadastro
-                    .requestMatchers("/api/auth/logout")
+                    // Endpoints privados
+                    .requestMatchers("/api/auth/logout", "/api/users/**")
                     .authenticated()
 
                     // Endpoints públicos para autenticação e cadastro

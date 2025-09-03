@@ -484,21 +484,21 @@ paths:
                     timestamp: "2025-08-15T13:55:00Z"
                     status: 409
                     message: "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro."
-                    path: "/api/auth/forgot-password"
+                    path: "/api/auth/refresh-token"
                 Locked:
                   summary: "Conta bloqueada"
                   value:
                     timestamp: "2025-08-15T13:55:00Z"
                     status: 409
                     message: "Atenção: Sua conta está bloqueada. Por favor, contate o suporte."
-                    path: "/api/auth/forgot-password"
+                    path: "/api/auth/refresh-token"
                 Disabled:
                   summary: "Conta desativada"
                   value:
                     timestamp: "2025-08-15T13:55:00Z"
                     status: 409
                     message: "Atenção: Sua conta está desativada."
-                    path: "/api/auth/forgot-password"
+                    path: "/api/auth/refresh-token"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"
 
@@ -717,7 +717,7 @@ paths:
             schema:
               $ref: "#/components/schemas/ForgotPasswordRequestDto"
       responses:
-        "200":
+        "202":
           description: "Solicitação processada. A mensagem não indica se o telefone foi encontrado, para proteger a privacidade do usuário."
           content:
             application/json:

@@ -325,8 +325,20 @@ components:
             message: "Erro interno do servidor. Por favor, tente novamente mais tarde."
             path: "/api/some/endpoint"
 
+    AuthenticationExceptionResponse:
+      description: "Exceção lançada quando o usuário não está autenticado ou o token é inválido/expirado."
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponseDto"
+          example:
+            timestamp: "2025-08-15T13:55:00Z"
+            status: 401
+            message: "Sua sessão é inválida ou expirou. Por favor, faça login novamente."
+            path: "/api/auth/logout"
+
     TokenResponseDto:
-      description: Usuário autenticado com sucesso.
+      description: "Usuário autenticado com sucesso."
       content:
         application/json:
           schema:
@@ -373,8 +385,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/UserProfileResponseDTO'
-
-
 
 # Mapeamento dos endpoints da API
 paths:
@@ -493,16 +503,7 @@ paths:
                 message: "Formato inválido para o refresh token."
                 path: "/api/auth/logout"
         "401":
-          description: "Não autorizado. Ocorre ao tentar acessar o endpoint sem um token de acesso válido ou com uma sessão expirada."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 401
-                message: "Sua sessão é inválida ou expirou. Por favor, faça login novamente."
-                path: "/api/auth/logout"
+          $ref: "#/components/responses/AuthenticationExceptionResponse"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"
 
@@ -1101,16 +1102,7 @@ paths:
                   - fieldName: "fullName"
                     message: "O nome completo deve ter entre 3 e 100 caracteres."
         "401":
-          description: "Não autorizado. Ocorre ao tentar acessar o endpoint sem um token de acesso válido ou com uma sessão expirada."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 401
-                message: "Sua sessão é inválida ou expirou. Por favor, faça login novamente."
-                path: "/api/users/me/profile"
+          $ref: "#/components/responses/AuthenticationExceptionResponse"
         "404":
           description: "Não encontrado. Ocorre se o usuário autenticado não for encontrado para ser atualizado."
           content:
@@ -1161,16 +1153,7 @@ paths:
                   - fieldName: "username"
                     message: "Por favor, informe um novo nome de usuário."
         "401":
-          description: "Não autorizado. Ocorre ao tentar acessar o endpoint sem um token de acesso válido ou com uma sessão expirada."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 401
-                message: "Sua sessão é inválida ou expirou. Por favor, faça login novamente."
-                path: "/api/users/me/username"
+          $ref: "#/components/responses/AuthenticationExceptionResponse"
         "404":
           description: "Não encontrado. Ocorre se o usuário autenticado não for encontrado para ser atualizado."
           content:
@@ -1248,16 +1231,7 @@ paths:
                     path: "/api/users/me/password"
                     message: "A Senha atual está incorreta"
         "401":
-          description: "Não autorizado. Ocorre ao tentar acessar o endpoint sem um token de acesso válido ou com uma sessão expirada."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 401
-                message: "Sua sessão é inválida ou expirou. Por favor, faça login novamente."
-                path: "/api/users/me/password"
+          $ref: "#/components/responses/AuthenticationExceptionResponse"
         "404":
           description: "Não encontrado. Ocorre se o usuário autenticado não for encontrado para ser atualizado."
           content:
@@ -1314,16 +1288,7 @@ paths:
                     path: "/api/users/me/phone/verification"
                     message: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
         "401":
-          description: "Não autorizado. Ocorre ao tentar acessar o endpoint sem um token de acesso válido ou com uma sessão expirada."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 401
-                message: "Sua sessão é inválida ou expirou. Por favor, faça login novamente."
-                path: "/api/users/me/phone/verification"
+          $ref: "#/components/responses/AuthenticationExceptionResponse"
         "404":
           description: "Não encontrado. Retornado quando o usuário autenticado não for encontrado para atualizar o telefone"
           content:
@@ -1402,16 +1367,7 @@ paths:
                     message: "Sua solicitação de alteração de telefone já expirou. Tente novamente."
                     path: "/api/users/me/phone/verification"
         "401":
-          description: "Não autorizado. Ocorre ao tentar acessar o endpoint sem um token de acesso válido ou com uma sessão expirada."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 401
-                message: "Sua sessão é inválida ou expirou. Por favor, faça login novamente."
-                path: "/api/users/me/phone/verification/confirm"
+          $ref: "#/components/responses/AuthenticationExceptionResponse"
         "404":
           description: "Não encontrado. Retornado quando o usuário autenticado não for encontrado para atualizar o telefone"
           content:

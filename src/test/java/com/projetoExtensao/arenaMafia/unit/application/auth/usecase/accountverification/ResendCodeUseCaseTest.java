@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.unit.application.useCase.accountverification;
+package com.projetoExtensao.arenaMafia.unit.application.auth.usecase.accountverification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

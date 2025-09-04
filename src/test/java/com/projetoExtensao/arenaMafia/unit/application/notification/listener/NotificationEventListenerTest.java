@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.unit.application.listener;
+package com.projetoExtensao.arenaMafia.unit.application.notification.listener;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

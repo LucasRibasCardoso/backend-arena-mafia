@@ -32,6 +32,8 @@ public class CompleteChangePhoneUseCaseImp implements CompleteChangePhoneUseCase
   @Override
   public User execute(UUID idCurrentUser, CompletePhoneChangeRequestDTO request) {
     String newPhone = getPhoneOrElseThrow(idCurrentUser);
+    User.validatePhone(newPhone);
+
     otpPort.validateOtp(idCurrentUser, request.code());
     pendingPhoneChangePort.deleteByUserId(idCurrentUser);
 

@@ -8,7 +8,7 @@ import com.projetoExtensao.arenaMafia.application.user.usecase.phone.InitiateCha
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.ChangePhoneRequestDTO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.InitiateChangePhoneRequestDTO;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -35,11 +35,11 @@ public class InitiateChangePhoneUseCaseImp implements InitiateChangePhoneUseCase
   }
 
   @Override
-  public void execute(UUID idCurrentUser, ChangePhoneRequestDTO request) {
+  public void execute(UUID idCurrentUser, InitiateChangePhoneRequestDTO request) {
     String formattedPhone = phoneValidatorPort.formatToE164(request.newPhone());
 
-    User user = getUserOrElseThrow(idCurrentUser);
     checkIfPhoneAlreadyExists(idCurrentUser, formattedPhone);
+    User user = getUserOrElseThrow(idCurrentUser);
 
     pendingPhoneChangePort.save(user.getId(), formattedPhone);
     eventPublisher.publishEvent((new OnVerificationRequiredEvent(user)));

@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.unit.application.useCase.authentication;
+package com.projetoExtensao.arenaMafia.unit.application.auth.usecase.authentication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,7 +26,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes unitários para LoginUseCase")
-public class LoginUseCaseImpTest {
+public class LoginUseCaseTest {
 
   @Mock private AuthPort authPort;
   @Mock private UserRepositoryPort userRepository;

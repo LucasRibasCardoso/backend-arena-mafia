@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.unit.application.useCase.passwordreset;
+package com.projetoExtensao.arenaMafia.unit.application.auth.usecase.passwordreset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,7 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes unitários para GeneratePasswordResetToken")
-public class GeneratePasswordResetTokenUseCaseImpTest {
+public class GeneratePasswordResetTokenUseCaseTest {
 
   @Mock private OtpPort otpPort;
   @Mock private PhoneValidatorPort phoneValidator;

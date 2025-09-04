@@ -9,6 +9,7 @@ import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.LoginRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
 import io.restassured.RestAssured;
@@ -27,6 +28,7 @@ public abstract class WebIntegrationTestConfig extends BaseTestContainersConfig 
 
   @Autowired private PasswordEncoderPort passwordEncoder;
   @Autowired private UserRepositoryPort userRepository;
+  @Autowired private UserJpaRepository userJpaRepository;
 
   public final String defaultUsername = "test_user";
   public final String defaultPassword = "123456";
@@ -78,6 +80,25 @@ public abstract class WebIntegrationTestConfig extends BaseTestContainersConfig 
             RoleEnum.ROLE_USER,
             Instant.now());
     return userRepository.save(user);
+  }
+
+  public User mockPersistUser(String username, String fullName, String phone, String password) {
+    String passwordEncoded = passwordEncoder.encode(password);
+    User user =
+        User.reconstitute(
+            UUID.randomUUID(),
+            username,
+            fullName,
+            phone,
+            passwordEncoded,
+            AccountStatus.ACTIVE,
+            RoleEnum.ROLE_USER,
+            Instant.now());
+    return userRepository.save(user);
+  }
+
+  public void deleteMockUser(UUID uuid) {
+    userRepository.findById(uuid).ifPresent(user -> userJpaRepository.deleteById(user.getId()));
   }
 
   public void alterAccountStatus(String userPhone, AccountStatus status) {

@@ -97,15 +97,6 @@ public class User {
     }
   }
 
-  public static void validateFullName(String fullName) {
-    if (fullName == null || fullName.isBlank()) {
-      throw new InvalidFullNameException("O nome completo não pode ser nulo ou vazio.");
-    }
-    if (fullName.length() < 3 || fullName.length() > 100) {
-      throw new InvalidFullNameException("O nome completo deve ter entre 3 e 100 caracteres.");
-    }
-  }
-
   public static void validatePasswordHash(String passwordHash) {
     if (passwordHash == null || passwordHash.isBlank()) {
       throw new InvalidPasswordHashException("O hash da senha não pode ser nulo ou vazio.");
@@ -121,6 +112,15 @@ public class User {
     }
   }
 
+  public static void validateFullName(String fullName) {
+    if (fullName.isBlank()) {
+      throw new InvalidFullNameException("O nome completo não pode ser vazio ou conter espaços.");
+    }
+    if (fullName.length() < 3 || fullName.length() > 100) {
+      throw new InvalidFullNameException("O nome completo deve ter entre 3 e 100 caracteres.");
+    }
+  }
+
   // Atualizar atributos
   public void updatePasswordHash(String newPasswordHash) {
     validatePasswordHash(newPasswordHash);
@@ -133,8 +133,10 @@ public class User {
   }
 
   public void updateFullName(String fullName) {
-    validateFullName(fullName);
-    this.fullName = fullName;
+    if (fullName != null) {
+      validateFullName(fullName);
+      this.fullName = fullName;
+    }
   }
 
   public void updatePhone(String newPhone) {

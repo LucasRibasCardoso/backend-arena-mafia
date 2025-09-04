@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.unit.application.useCase.authentication;
+package com.projetoExtensao.arenaMafia.unit.application.auth.usecase.authentication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,7 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes unitários para RefreshTokenUseCase")
-public class RefreshTokenUseCaseImpTest {
+public class RefreshTokenUseCaseTest {
 
   @Mock private AuthPort authPort;
   @Mock private RefreshTokenRepositoryPort refreshTokenRepository;

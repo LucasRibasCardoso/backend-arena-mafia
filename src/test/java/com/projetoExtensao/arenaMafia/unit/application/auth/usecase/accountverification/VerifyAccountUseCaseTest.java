@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.unit.application.useCase.accountverification;
+package com.projetoExtensao.arenaMafia.unit.application.auth.usecase.accountverification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,7 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes unitários para VerifyAccountUseCase")
-public class VerifyAccountUseCaseImpTest {
+public class VerifyAccountUseCaseTest {
 
   @Mock private AuthPort authPort;
   @Mock private OtpPort otpPort;

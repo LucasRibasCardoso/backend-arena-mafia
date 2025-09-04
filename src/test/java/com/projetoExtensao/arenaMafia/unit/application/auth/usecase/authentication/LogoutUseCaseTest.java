@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.unit.application.useCase.authentication;
+package com.projetoExtensao.arenaMafia.unit.application.auth.usecase.authentication;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,7 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes unitários para LogoutUseCase")
-public class LogoutUseCaseImpTest {
+public class LogoutUseCaseTest {
 
   @Mock private RefreshTokenRepositoryPort refreshTokenRepository;
 

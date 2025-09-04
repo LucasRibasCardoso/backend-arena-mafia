@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.unit.application.useCase.passwordreset;
+package com.projetoExtensao.arenaMafia.unit.application.auth.usecase.passwordreset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,7 +28,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes unitários para ForgotPasswordUseCase")
-public class ForgotPasswordUseCaseImpTest {
+public class ForgotPasswordUseCaseTest {
 
   @Mock private UserRepositoryPort userRepository;
   @Mock private PhoneValidatorPort phoneValidator;

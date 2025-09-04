@@ -41,9 +41,9 @@ public class ChangePasswordUseCaseImp implements ChangePasswordUseCase {
   }
 
   private void checkIfCurrentPasswordIsEqualExisting(
-      String currentPassword, String existingPassword) {
-    if (!passwordEncoder.matches(currentPassword, existingPassword)) {
-      throw new IncorrectPasswordException("Senha atual inválida");
+      String currentPasswordRequest, String existingPassword) {
+    if (!passwordEncoder.matches(currentPasswordRequest, existingPassword)) {
+      throw new IncorrectPasswordException("A Senha atual está incorreta");
     }
   }
 }

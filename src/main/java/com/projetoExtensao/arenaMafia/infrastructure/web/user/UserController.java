@@ -55,7 +55,7 @@ public class UserController {
 
   @PatchMapping("/username")
   public ResponseEntity<UserProfileResponseDTO> changeUsername(
-      @Valid @RequestBody ChangeUsernameDTO request) {
+      @Valid @RequestBody ChangeUsernameRequestDTO request) {
 
     User authenticatedUser = getAuthenticatedUser();
     User updatedUser = changeUsernameUseCase.execute(authenticatedUser.getId(), request);
@@ -77,15 +77,15 @@ public class UserController {
   }
 
   @PostMapping("/phone/verification")
-  public ResponseEntity<UserProfileResponseDTO> initiatePhoneVerification(
-      @Valid @RequestBody ChangePhoneRequestDTO request) {
+  public ResponseEntity<Void> initiatePhoneVerification(
+      @Valid @RequestBody InitiateChangePhoneRequestDTO request) {
 
     User authenticatedUser = getAuthenticatedUser();
     initiateChangePhoneUseCase.execute(authenticatedUser.getId(), request);
     return ResponseEntity.accepted().build();
   }
 
-  @PatchMapping("/phone/verification")
+  @PatchMapping("/phone/verification/confirm")
   public ResponseEntity<UserProfileResponseDTO> completePhoneVerification(
       @Valid @RequestBody CompletePhoneChangeRequestDTO request) {
 

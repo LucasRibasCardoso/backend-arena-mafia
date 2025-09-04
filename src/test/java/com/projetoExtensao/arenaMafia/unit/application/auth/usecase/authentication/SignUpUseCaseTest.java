@@ -1,4 +1,4 @@
-package com.projetoExtensao.arenaMafia.unit.application.useCase.authentication;
+package com.projetoExtensao.arenaMafia.unit.application.auth.usecase.authentication;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,7 +23,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Testes unitários para SignUpUseCase")
-public class SignUpUseCaseImpTest {
+public class SignUpUseCaseTest {
 
   @Mock private UserRepositoryPort userRepository;
   @Mock private PhoneValidatorPort phoneValidator;

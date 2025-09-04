@@ -179,19 +179,6 @@ public class User {
     this.status = AccountStatus.ACTIVE;
   }
 
-  // Verificar roles
-  public boolean isAdmin() {
-    return this.role == RoleEnum.ROLE_ADMIN;
-  }
-
-  public boolean isManager() {
-    return this.role == RoleEnum.ROLE_MANAGER;
-  }
-
-  public boolean isUser() {
-    return this.role == RoleEnum.ROLE_USER;
-  }
-
   // Getters
   public UUID getId() {
     return id;

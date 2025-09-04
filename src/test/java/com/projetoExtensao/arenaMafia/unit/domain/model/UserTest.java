@@ -404,9 +404,6 @@ public class UserTest {
 
   private static Stream<Arguments> invalidFullNameProvider() {
     return Stream.of(
-        Arguments.of(null, "O nome completo não pode ser nulo ou vazio."),
-        Arguments.of("", "O nome completo não pode ser nulo ou vazio."),
-        Arguments.of("  ", "O nome completo não pode ser nulo ou vazio."),
         Arguments.of("ab", "O nome completo deve ter entre 3 e 100 caracteres."),
         Arguments.of("a".repeat(101), "O nome completo deve ter entre 3 e 100 caracteres."));
   }

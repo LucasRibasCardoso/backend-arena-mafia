@@ -11,8 +11,7 @@ import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.*;
 import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.response.UserProfileResponseDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -40,10 +39,11 @@ public class UserController {
 
   @PatchMapping("/profile")
   public ResponseEntity<UserProfileResponseDTO> updateProfile(
+      @AuthenticationPrincipal UserDetailsAdapter authenticatedUser,
       @Valid @RequestBody UpdateProfileRequestDTO requestDTO) {
 
-    User authenticatedUser = getAuthenticatedUser();
-    User updatedUser = updateProfileUseCase.execute(authenticatedUser.getId(), requestDTO);
+    User updatedUser =
+        updateProfileUseCase.execute(authenticatedUser.getUser().getId(), requestDTO);
     UserProfileResponseDTO response =
         new UserProfileResponseDTO(
             updatedUser.getUsername(),
@@ -55,10 +55,10 @@ public class UserController {
 
   @PatchMapping("/username")
   public ResponseEntity<UserProfileResponseDTO> changeUsername(
+      @AuthenticationPrincipal UserDetailsAdapter authenticatedUser,
       @Valid @RequestBody ChangeUsernameRequestDTO request) {
 
-    User authenticatedUser = getAuthenticatedUser();
-    User updatedUser = changeUsernameUseCase.execute(authenticatedUser.getId(), request);
+    User updatedUser = changeUsernameUseCase.execute(authenticatedUser.getUser().getId(), request);
     UserProfileResponseDTO response =
         new UserProfileResponseDTO(
             updatedUser.getUsername(),
@@ -69,28 +69,30 @@ public class UserController {
   }
 
   @PostMapping("/password")
-  public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequestDTO request) {
+  public ResponseEntity<Void> changePassword(
+      @AuthenticationPrincipal UserDetailsAdapter authenticatedUser,
+      @Valid @RequestBody ChangePasswordRequestDTO request) {
 
-    User authenticatedUser = getAuthenticatedUser();
-    changePasswordUseCase.execute(authenticatedUser.getId(), request);
+    changePasswordUseCase.execute(authenticatedUser.getUser().getId(), request);
     return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/phone/verification")
   public ResponseEntity<Void> initiatePhoneVerification(
+      @AuthenticationPrincipal UserDetailsAdapter authenticatedUser,
       @Valid @RequestBody InitiateChangePhoneRequestDTO request) {
 
-    User authenticatedUser = getAuthenticatedUser();
-    initiateChangePhoneUseCase.execute(authenticatedUser.getId(), request);
+    initiateChangePhoneUseCase.execute(authenticatedUser.getUser().getId(), request);
     return ResponseEntity.accepted().build();
   }
 
   @PatchMapping("/phone/verification/confirm")
   public ResponseEntity<UserProfileResponseDTO> completePhoneVerification(
+      @AuthenticationPrincipal UserDetailsAdapter authenticatedUser,
       @Valid @RequestBody CompletePhoneChangeRequestDTO request) {
 
-    User authenticatedUser = getAuthenticatedUser();
-    User updatedUser = completeChangePhoneUseCase.execute(authenticatedUser.getId(), request);
+    User updatedUser =
+        completeChangePhoneUseCase.execute(authenticatedUser.getUser().getId(), request);
     UserProfileResponseDTO response =
         new UserProfileResponseDTO(
             updatedUser.getUsername(),
@@ -98,11 +100,5 @@ public class UserController {
             updatedUser.getPhone(),
             updatedUser.getRole().name());
     return ResponseEntity.ok(response);
-  }
-
-  private User getAuthenticatedUser() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserDetailsAdapter userDetails = (UserDetailsAdapter) authentication.getPrincipal();
-    return userDetails.getUser();
   }
 }

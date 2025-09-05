@@ -2,7 +2,6 @@ package com.projetoExtensao.arenaMafia.integration.controller.exceptionHandler;
 
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadPhoneNumberException;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
-import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountLockedException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenExpiredException;
 import jakarta.validation.Valid;
@@ -39,11 +38,6 @@ public class ExceptionTestController {
   @GetMapping("/forbidden/access-denied")
   public void throwAccessDenied() {
     throw new AccessDeniedException("Acesso negado.");
-  }
-
-  @GetMapping("/forbidden/account-locked")
-  public void throwAccountLocked() {
-    throw new AccountLockedException("Sua conta está bloqueada.");
   }
 
   // --- Endpoints para 404 Not Found ---

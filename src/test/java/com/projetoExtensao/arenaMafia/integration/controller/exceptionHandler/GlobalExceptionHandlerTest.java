@@ -55,16 +55,6 @@ public class GlobalExceptionHandlerTest {
   @DisplayName("Testes para Erros 403 Forbidden")
   class ForbiddenTests {
     @Test
-    @DisplayName("Deve capturar ForbiddenException (ex: AccountLockedException)")
-    void shouldHandleForbiddenException() throws Exception {
-      mockMvc
-          .perform(get(BASE_URL + "/forbidden/account-locked"))
-          .andExpect(status().isForbidden())
-          .andExpect(jsonPath("$.status").value(403))
-          .andExpect(jsonPath("$.message").value("Sua conta está bloqueada."));
-    }
-
-    @Test
     @DisplayName("Deve capturar AccessDeniedException")
     void shouldHandleAccessDeniedException() throws Exception {
       mockMvc

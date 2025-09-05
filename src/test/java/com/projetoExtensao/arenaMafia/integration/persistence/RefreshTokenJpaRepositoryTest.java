@@ -10,8 +10,10 @@ import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEnti
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.RefreshTokenJpaRepository;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,8 +25,9 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 @DisplayName("Testes de integração de persistência para RefreshTokenRepository")
 public class RefreshTokenJpaRepositoryTest {
 
-  @Autowired private TestEntityManager testEntityManager;
+  private static final AtomicInteger userCounter = new AtomicInteger(0);
 
+  @Autowired private TestEntityManager testEntityManager;
   @Autowired private RefreshTokenJpaRepository refreshTokenJpaRepository;
 
   @Nested
@@ -80,25 +83,88 @@ public class RefreshTokenJpaRepositoryTest {
     }
   }
 
-  private RefreshTokenEntity createAndPersistRefreshToken(String token) {
-    Instant now = Instant.now();
-    UserEntity userEntity = new UserEntity();
-    userEntity.setId(UUID.randomUUID());
-    userEntity.setUsername("testUser");
-    userEntity.setFullName("Test User");
-    userEntity.setPhone("5547912345678");
-    userEntity.setPasswordHash("hashedPassword");
-    userEntity.setRole(RoleEnum.ROLE_USER);
-    userEntity.setCreatedAt(now);
-    userEntity.setUpdatedAt(now);
-    userEntity.setStatus(AccountStatus.ACTIVE);
-    testEntityManager.persistAndFlush(userEntity);
+  @Nested
+  @DisplayName("Testes para o método deleteAllByUserIn")
+  class DeleteAllByUserInTests {
 
+    @Test
+    @DisplayName("Deve deletar todos os tokens associados a uma lista de usuários")
+    void deleteAllByUserIn_shouldDeleteAllTokensFromUserList() {
+      // Arrange
+      RefreshTokenEntity refreshToken1 = createAndPersistRefreshToken("token1");
+      RefreshTokenEntity refreshToken2 = createAndPersistRefreshToken("token2");
+      RefreshTokenEntity refreshToken3 = createAndPersistRefreshToken("token3");
+
+      UserEntity user1 = refreshToken1.getUser();
+      UserEntity user2 = refreshToken2.getUser();
+
+      // Act
+      // Deleta os tokens associados apenas aos usuários 1 e 2
+      refreshTokenJpaRepository.deleteAllByUserIn(List.of(user1, user2));
+      testEntityManager.flush();
+      testEntityManager.clear();
+
+      // Assert
+      // Verifica se os tokens dos usuários 1 e 2 foram deletados
+      Optional<RefreshTokenEntity> deletedToken1 =
+          refreshTokenJpaRepository.findById(refreshToken1.getId());
+      Optional<RefreshTokenEntity> deletedToken2 =
+          refreshTokenJpaRepository.findById(refreshToken2.getId());
+
+      // Verifica se o token do usuário 3 NÃO foi deletado
+      Optional<RefreshTokenEntity> remainingToken3 =
+          refreshTokenJpaRepository.findById(refreshToken3.getId());
+
+      assertThat(deletedToken1).isEmpty();
+      assertThat(deletedToken2).isEmpty();
+      assertThat(remainingToken3).isPresent();
+      assertThat(remainingToken3.get().getId()).isEqualTo(refreshToken3.getId());
+    }
+
+    @Test
+    @DisplayName("Não deve fazer nada quando a lista de usuários for vazia")
+    void deleteAllByUserIn_shouldDoNothingWhenUserListIsEmpty() {
+      // Arrange
+      RefreshTokenEntity refreshToken = createAndPersistRefreshToken("token");
+      long countBefore = refreshTokenJpaRepository.count();
+
+      // Act
+      refreshTokenJpaRepository.deleteAllByUserIn(List.of());
+
+      // Assert
+      long countAfter = refreshTokenJpaRepository.count();
+      Optional<RefreshTokenEntity> notDeletedToken =
+          refreshTokenJpaRepository.findById(refreshToken.getId());
+
+      assertThat(countAfter).isEqualTo(countBefore).isEqualTo(1);
+      assertThat(notDeletedToken).isPresent();
+    }
+  }
+
+  private RefreshTokenEntity createAndPersistRefreshToken(String token) {
+    UserEntity userEntity = createAndPersistUser();
     var refreshToken = new RefreshTokenEntity();
     refreshToken.setToken(token);
     refreshToken.setUser(userEntity);
     refreshToken.setCreatedAt(Instant.now());
     refreshToken.setExpiryDate(Instant.now().plus(7L, ChronoUnit.DAYS));
     return testEntityManager.persist(refreshToken);
+  }
+
+  private UserEntity createAndPersistUser() {
+    Instant now = Instant.now();
+    int count = userCounter.incrementAndGet();
+
+    UserEntity userEntity = new UserEntity();
+    userEntity.setId(UUID.randomUUID());
+    userEntity.setUsername("user_" + count); // Gera user_1, user_2, etc.
+    userEntity.setFullName("Test User " + count);
+    userEntity.setPhone("+551190000000" + count);
+    userEntity.setPasswordHash("hashedPassword");
+    userEntity.setRole(RoleEnum.ROLE_USER);
+    userEntity.setCreatedAt(now);
+    userEntity.setUpdatedAt(now);
+    userEntity.setStatus(AccountStatus.ACTIVE);
+    return testEntityManager.persistAndFlush(userEntity);
   }
 }

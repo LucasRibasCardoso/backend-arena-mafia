@@ -137,7 +137,8 @@ public class LoginUseCaseTest {
   }
 
   @Test
-  @DisplayName("Deve lançar AccountLockedException quando a conta do usuário estiver bloqueada")
+  @DisplayName(
+      "Deve lançar AccountStateConflictException quando a conta do usuário estiver bloqueada")
   void execute_shouldThrowAccountStateConflictException_whenAccountIsLocked() {
     // Arrange
     LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);

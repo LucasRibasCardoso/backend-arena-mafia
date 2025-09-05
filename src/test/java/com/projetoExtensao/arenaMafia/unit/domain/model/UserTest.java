@@ -67,7 +67,8 @@ public class UserTest {
         assertThat(user.getPasswordHash()).isEqualTo(defaultPasswordHash);
         assertThat(user.getRole()).isEqualTo(RoleEnum.ROLE_USER);
         assertThat(user.getStatus()).isEqualTo(AccountStatus.PENDING_VERIFICATION);
-        assertThat(user.getCreatedAt()).isNotNull();
+        assertThat(user.getCreatedAt()).isBefore(Instant.now());
+        assertThat(user.getUpdatedAt()).isEqualTo(user.getCreatedAt());
       }
     }
 
@@ -140,119 +141,137 @@ public class UserTest {
   @DisplayName("Testes para os Métodos de Atualização (update...)")
   class AttributeUpdateTests {
 
-    @Test
-    @DisplayName("updateUsername() deve alterar o username com um valor válido")
-    void updateUsername_shouldUpdateUsername_whenValid() {
-      // Arrange
-      User user = createDefaultUser();
-      String newUsername = "new_valid_user";
+    @Nested
+    @DisplayName("Cenários de Sucesso")
+    class Success {
+      @Test
+      @DisplayName("updateUsername() deve alterar o username com um valor válido")
+      void updateUsername_shouldUpdateUsername_whenValid() {
+        // Arrange
+        User user = createDefaultUser();
+        String newUsername = "new_valid_user";
 
-      // Act
-      user.updateUsername(newUsername);
+        // Act
+        user.updateUsername(newUsername);
 
-      // Assert
-      assertThat(user.getUsername()).isEqualTo(newUsername);
+        // Assert
+        assertThat(user.getUsername()).isEqualTo(newUsername);
+        assertThat(user.getUpdatedAt()).isAfter(user.getCreatedAt());
+        assertThat(user.getUpdatedAt()).isBefore(Instant.now());
+      }
+
+      @Test
+      @DisplayName("updateFullName() deve alterar o fullName com um valor válido")
+      void updateFullName_shouldUpdateFullName_whenValid() {
+        // Arrange
+        User user = createDefaultUser();
+        String newFullName = "New Valid Name";
+
+        // Act
+        user.updateFullName(newFullName);
+
+        // Assert
+        assertThat(user.getFullName()).isEqualTo(newFullName);
+        assertThat(user.getUpdatedAt()).isAfter(user.getCreatedAt());
+        assertThat(user.getUpdatedAt()).isBefore(Instant.now());
+      }
+
+      @Test
+      @DisplayName("updatePhone() deve alterar o phone com um valor válido")
+      void updatePhone_shouldUpdatePhone_whenValid() {
+        // Arrange
+        User user = createDefaultUser();
+        String newPhone = "+5583999999999";
+
+        // Act
+        user.updatePhone(newPhone);
+
+        // Assert
+        assertThat(user.getPhone()).isEqualTo(newPhone);
+        assertThat(user.getUpdatedAt()).isAfter(user.getCreatedAt());
+        assertThat(user.getUpdatedAt()).isBefore(Instant.now());
+      }
+
+      @Test
+      @DisplayName("updatePasswordHash() deve alterar o passwordHash com um valor válido")
+      void updatePasswordHash_shouldUpdatePasswordHash_whenValid() {
+        // Arrange
+        User user = createDefaultUser();
+        String newPasswordHash = "newHashedPassword";
+
+        // Act
+        user.updatePasswordHash(newPasswordHash);
+
+        // Assert
+        assertThat(user.getPasswordHash()).isEqualTo(newPasswordHash);
+        assertThat(user.getUpdatedAt()).isAfter(user.getCreatedAt());
+        assertThat(user.getUpdatedAt()).isBefore(Instant.now());
+      }
     }
 
-    @ParameterizedTest(name = "username: \"{0}\"")
-    @MethodSource(
-        "com.projetoExtensao.arenaMafia.unit.domain.model.UserTest#invalidUsernameProvider")
-    @DisplayName("updateUsername() deve lançar exceção para valores inválidos")
-    void updateUsername_shouldThrowException_whenInvalid(
-        String invalidUsername, String expectedMessage) {
-      // Arrange
-      User user = createDefaultUser();
+    @Nested
+    @DisplayName("Cenários de Falha (Validações)")
+    class Failure {
+      @ParameterizedTest(name = "username: \"{0}\"")
+      @MethodSource(
+          "com.projetoExtensao.arenaMafia.unit.domain.model.UserTest#invalidUsernameProvider")
+      @DisplayName("updateUsername() deve lançar exceção para valores inválidos")
+      void updateUsername_shouldThrowException_whenInvalid(
+          String invalidUsername, String expectedMessage) {
+        // Arrange
+        User user = createDefaultUser();
 
-      // Act & Assert
-      assertThatThrownBy(() -> user.updateUsername(invalidUsername))
-          .isInstanceOf(InvalidUsernameFormatException.class)
-          .hasMessage(expectedMessage);
-    }
+        // Act & Assert
+        assertThatThrownBy(() -> user.updateUsername(invalidUsername))
+            .isInstanceOf(InvalidUsernameFormatException.class)
+            .hasMessage(expectedMessage);
+      }
 
-    @Test
-    @DisplayName("updateFullName() deve alterar o fullName com um valor válido")
-    void updateFullName_shouldUpdateFullName_whenValid() {
-      // Arrange
-      User user = createDefaultUser();
-      String newFullName = "New Valid Name";
+      @ParameterizedTest(name = "fullName: \"{0}\"")
+      @MethodSource(
+          "com.projetoExtensao.arenaMafia.unit.domain.model.UserTest#invalidFullNameProvider")
+      @DisplayName("updateFullName() deve lançar exceção para valores inválidos")
+      void updateFullName_shouldThrowException_whenInvalid(
+          String invalidFullName, String expectedMessage) {
+        // Arrange
+        User user = createDefaultUser();
 
-      // Act
-      user.updateFullName(newFullName);
+        // Act & Assert
+        assertThatThrownBy(() -> user.updateFullName(invalidFullName))
+            .isInstanceOf(InvalidFullNameException.class)
+            .hasMessage(expectedMessage);
+      }
 
-      // Assert
-      assertThat(user.getFullName()).isEqualTo(newFullName);
-    }
+      @ParameterizedTest
+      @MethodSource(
+          "com.projetoExtensao.arenaMafia.unit.domain.model.UserTest#invalidPhoneProvider")
+      @DisplayName("updatePhone() deve lançar exceção para valores inválidos")
+      void updatePhone_shouldThrowException_whenInvalid(
+          String invalidPhone, String expectedMessage) {
 
-    @ParameterizedTest(name = "fullName: \"{0}\"")
-    @MethodSource(
-        "com.projetoExtensao.arenaMafia.unit.domain.model.UserTest#invalidFullNameProvider")
-    @DisplayName("updateFullName() deve lançar exceção para valores inválidos")
-    void updateFullName_shouldThrowException_whenInvalid(
-        String invalidFullName, String expectedMessage) {
-      // Arrange
-      User user = createDefaultUser();
+        // Arrange
+        User user = createDefaultUser();
 
-      // Act & Assert
-      assertThatThrownBy(() -> user.updateFullName(invalidFullName))
-          .isInstanceOf(InvalidFullNameException.class)
-          .hasMessage(expectedMessage);
-    }
+        // Act
+        assertThatThrownBy(() -> user.updatePhone(invalidPhone))
+            .isInstanceOf(InvalidPhoneException.class)
+            .hasMessage(expectedMessage);
+      }
 
-    @Test
-    @DisplayName("updatePhone() deve alterar o phone com um valor válido")
-    void updatePhone_shouldUpdatePhone_whenValid() {
-      // Arrange
-      User user = createDefaultUser();
-      String newPhone = "+5583999999999";
+      @ParameterizedTest
+      @MethodSource(
+          "com.projetoExtensao.arenaMafia.unit.domain.model.UserTest#invalidPasswordHashProvider")
+      @DisplayName("updatePasswordHash() deve lançar exceção para valores inválidos")
+      void updatePasswordHash_shouldThrowException_whenInvalid(
+          String invalidPasswordHash, String expectedMessage) {
+        // Arrange
+        User user = createDefaultUser();
 
-      // Act
-      user.updatePhone(newPhone);
-
-      // Assert
-      assertThat(user.getPhone()).isEqualTo(newPhone);
-    }
-
-    @ParameterizedTest
-    @MethodSource("com.projetoExtensao.arenaMafia.unit.domain.model.UserTest#invalidPhoneProvider")
-    @DisplayName("updatePhone() deve lançar exceção para valores inválidos")
-    void updatePhone_shouldThrowException_whenInvalid(String invalidPhone, String expectedMessage) {
-
-      // Arrange
-      User user = createDefaultUser();
-
-      // Act
-      assertThatThrownBy(() -> user.updatePhone(invalidPhone))
-          .isInstanceOf(InvalidPhoneException.class)
-          .hasMessage(expectedMessage);
-    }
-
-    @Test
-    @DisplayName("updatePasswordHash() deve alterar o passwordHash com um valor válido")
-    void updatePasswordHash_shouldUpdatePasswordHash_whenValid() {
-      // Arrange
-      User user = createDefaultUser();
-      String newPasswordHash = "newHashedPassword";
-
-      // Act
-      user.updatePasswordHash(newPasswordHash);
-
-      // Assert
-      assertThat(user.getPasswordHash()).isEqualTo(newPasswordHash);
-    }
-
-    @ParameterizedTest
-    @MethodSource(
-        "com.projetoExtensao.arenaMafia.unit.domain.model.UserTest#invalidPasswordHashProvider")
-    @DisplayName("updatePasswordHash() deve lançar exceção para valores inválidos")
-    void updatePasswordHash_shouldThrowException_whenInvalid(
-        String invalidPasswordHash, String expectedMessage) {
-      // Arrange
-      User user = createDefaultUser();
-
-      // Act & Assert
-      assertThatThrownBy(() -> user.updatePasswordHash(invalidPasswordHash))
-          .isInstanceOf(InvalidPasswordHashException.class)
-          .hasMessage(expectedMessage);
+        // Act & Assert
+        assertThatThrownBy(() -> user.updatePasswordHash(invalidPasswordHash))
+            .isInstanceOf(InvalidPasswordHashException.class)
+            .hasMessage(expectedMessage);
+      }
     }
   }
 
@@ -260,105 +279,120 @@ public class UserTest {
   @DisplayName("Testes para Gerenciamento da Conta (status)")
   class AccountManagementTests {
 
-    @Test
-    @DisplayName("activateAccount() deve ativar a conta se o status for PENDING_VERIFICATION")
-    void activateAccount_shouldActivateAccount_whenPendingVerification() {
-      // Arrange
-      User user = createDefaultUser(); // 'create' já define o status como PENDING
+    @Nested
+    @DisplayName("Cenários de Sucesso")
+    class Success {
+      @Test
+      @DisplayName("activateAccount() deve ativar a conta se o status for PENDING_VERIFICATION")
+      void activateAccount_shouldActivateAccount_whenPendingVerification() {
+        // Arrange
+        User user = createDefaultUser(); // 'create' já define o status como PENDING
 
-      // Act
-      user.activateAccount();
+        // Act
+        user.activateAccount();
 
-      // Assert
-      assertThat(user.getStatus()).isEqualTo(AccountStatus.ACTIVE);
+        // Assert
+        assertThat(user.getStatus()).isEqualTo(AccountStatus.ACTIVE);
+        assertThat(user.getUpdatedAt()).isAfter(user.getCreatedAt());
+        assertThat(user.getUpdatedAt()).isBefore(Instant.now());
+      }
+
+      @Test
+      @DisplayName("unlockAccount() deve ativar a conta se o status for LOCKED")
+      void unlockAccount_shouldActivateAccount_whenStatusIsLocked() {
+        // Arrange
+        User user = createUserWithStatus(AccountStatus.LOCKED);
+
+        // Act
+        user.unlockAccount();
+
+        // Assert
+        assertThat(user.getStatus()).isEqualTo(AccountStatus.ACTIVE);
+        assertThat(user.getUpdatedAt()).isAfter(user.getCreatedAt());
+        assertThat(user.getUpdatedAt()).isBefore(Instant.now());
+      }
+
+      @ParameterizedTest
+      @EnumSource(
+          value = AccountStatus.class,
+          names = {"PENDING_VERIFICATION", "ACTIVE", "DISABLED"})
+      @DisplayName("lockAccount() deve bloquear a conta se ela não estiver bloqueada")
+      void lockAccount_shouldLockAccount_whenStatusIsValid(AccountStatus status) {
+        // Arrange
+        User user = createUserWithStatus(status);
+
+        // Act
+        user.lockAccount();
+
+        // Assert
+        assertThat(user.getStatus()).isEqualTo(AccountStatus.LOCKED);
+        assertThat(user.getUpdatedAt()).isAfter(user.getCreatedAt());
+        assertThat(user.getUpdatedAt()).isBefore(Instant.now());
+      }
     }
 
-    @ParameterizedTest
-    @EnumSource(
-        value = AccountStatus.class,
-        names = {"ACTIVE", "LOCKED"})
-    @DisplayName(
-        "activateAccount() deve lançar exceção quando o status não for PENDING_VERIFICATION")
-    void activateAccount_shouldThrowException_whenStatusIsNotPending(AccountStatus invalidStatus) {
-      // Arrange
-      User user = createUserWithStatus(invalidStatus);
+    @Nested
+    @DisplayName("Cenários de Falha")
+    class Failure {
+      @ParameterizedTest
+      @EnumSource(
+          value = AccountStatus.class,
+          names = {"ACTIVE", "LOCKED"})
+      @DisplayName(
+          "activateAccount() deve lançar exceção quando o status não for PENDING_VERIFICATION")
+      void activateAccount_shouldThrowException_whenStatusIsNotPending(
+          AccountStatus invalidStatus) {
+        // Arrange
+        User user = createUserWithStatus(invalidStatus);
 
-      // Act & Assert
-      assertThatThrownBy(user::activateAccount)
-          .isInstanceOf(AccountStateConflictException.class)
-          .hasMessage("Atenção: A conta já está ativada. Você pode fazer login.");
-    }
+        // Act & Assert
+        assertThatThrownBy(user::activateAccount)
+            .isInstanceOf(AccountStateConflictException.class)
+            .hasMessage("Atenção: A conta já está ativada. Você pode fazer login.");
+      }
 
-    @ParameterizedTest
-    @EnumSource(
-        value = AccountStatus.class,
-        names = {"ACTIVE", "LOCKED", "DISABLED"})
-    @DisplayName(
-        "activateAccount() deve lançar exceção quando o status não for PENDING_VERIFICATION")
-    void activateAccount_shouldThrowException_whenStatusIsInvalid(AccountStatus invalidStatus) {
-      // Arrange
-      User user = createUserWithStatus(invalidStatus);
+      @ParameterizedTest
+      @EnumSource(
+          value = AccountStatus.class,
+          names = {"ACTIVE", "LOCKED", "DISABLED"})
+      @DisplayName(
+          "activateAccount() deve lançar exceção quando o status não for PENDING_VERIFICATION")
+      void activateAccount_shouldThrowException_whenStatusIsInvalid(AccountStatus invalidStatus) {
+        // Arrange
+        User user = createUserWithStatus(invalidStatus);
 
-      // Act & Assert
-      assertThatThrownBy(user::activateAccount)
-          .isInstanceOf(AccountStateConflictException.class)
-          .hasMessage("Atenção: A conta já está ativada. Você pode fazer login.");
-    }
+        // Act & Assert
+        assertThatThrownBy(user::activateAccount)
+            .isInstanceOf(AccountStateConflictException.class)
+            .hasMessage("Atenção: A conta já está ativada. Você pode fazer login.");
+      }
 
-    @ParameterizedTest
-    @EnumSource(
-        value = AccountStatus.class,
-        names = {"PENDING_VERIFICATION", "ACTIVE", "DISABLED"})
-    @DisplayName("lockAccount() deve bloquear a conta se ela não estiver bloqueada")
-    void lockAccount_shouldLockAccount_whenStatusIsValid(AccountStatus status) {
-      // Arrange
-      User user = createUserWithStatus(status);
+      @Test
+      @DisplayName("lockAccount() deve lançar exceção se a conta já estiver bloqueada")
+      void lockAccount_shouldThrowException_whenStatusIsLocked() {
+        // Arrange
+        User user = createUserWithStatus(AccountStatus.LOCKED);
 
-      // Act
-      user.lockAccount();
+        // Act & Assert
+        assertThatThrownBy(user::lockAccount)
+            .isInstanceOf(AccountStateConflictException.class)
+            .hasMessage("Atenção: A conta já está bloqueada.");
+      }
 
-      // Assert
-      assertThat(user.getStatus()).isEqualTo(AccountStatus.LOCKED);
-    }
+      @ParameterizedTest
+      @EnumSource(
+          value = AccountStatus.class,
+          names = {"ACTIVE", "PENDING_VERIFICATION", "DISABLED"})
+      @DisplayName("unlockAccount() deve lançar exceção para status inválidos")
+      void unlockAccount_shouldThrowException_whenStatusIsInvalid(AccountStatus invalidStatus) {
+        // Arrange
+        User user = createUserWithStatus(invalidStatus);
 
-    @Test
-    @DisplayName("lockAccount() deve lançar exceção se a conta já estiver bloqueada")
-    void lockAccount_shouldThrowException_whenStatusIsLocked() {
-      // Arrange
-      User user = createUserWithStatus(AccountStatus.LOCKED);
-
-      // Act & Assert
-      assertThatThrownBy(user::lockAccount)
-          .isInstanceOf(AccountStateConflictException.class)
-          .hasMessage("Atenção: A conta já está bloqueada.");
-    }
-
-    @Test
-    @DisplayName("unlockAccount() deve ativar a conta se o status for LOCKED")
-    void unlockAccount_shouldActivateAccount_whenStatusIsLocked() {
-      // Arrange
-      User user = createUserWithStatus(AccountStatus.LOCKED);
-
-      // Act
-      user.unlockAccount();
-
-      // Assert
-      assertThat(user.getStatus()).isEqualTo(AccountStatus.ACTIVE);
-    }
-
-    @ParameterizedTest
-    @EnumSource(
-        value = AccountStatus.class,
-        names = {"ACTIVE", "PENDING_VERIFICATION", "DISABLED"})
-    @DisplayName("unlockAccount() deve lançar exceção para status inválidos")
-    void unlockAccount_shouldThrowException_whenStatusIsInvalid(AccountStatus invalidStatus) {
-      // Arrange
-      User user = createUserWithStatus(invalidStatus);
-
-      // Act & Assert
-      assertThatThrownBy(user::unlockAccount)
-          .isInstanceOf(AccountStateConflictException.class)
-          .hasMessage("Atenção: A conta já está desbloqueada.");
+        // Act & Assert
+        assertThatThrownBy(user::unlockAccount)
+            .isInstanceOf(AccountStateConflictException.class)
+            .hasMessage("Atenção: A conta já está desbloqueada.");
+      }
     }
   }
 

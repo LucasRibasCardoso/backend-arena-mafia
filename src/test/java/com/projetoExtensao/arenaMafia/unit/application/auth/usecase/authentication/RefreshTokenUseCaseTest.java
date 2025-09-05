@@ -40,6 +40,7 @@ public class RefreshTokenUseCaseTest {
   @InjectMocks private RefreshTokenUseCaseImp refreshTokenUseCase;
 
   private User createUser(AccountStatus accountStatus) {
+    Instant now = Instant.now();
     return User.reconstitute(
         UUID.randomUUID(),
         "testuser",
@@ -48,7 +49,8 @@ public class RefreshTokenUseCaseTest {
         "hashedPassword",
         accountStatus,
         RoleEnum.ROLE_USER,
-        Instant.now());
+        now,
+        now);
   }
 
   @Test

@@ -37,6 +37,7 @@ public class LoginUseCaseTest {
   private final String defaultPassword = "password123";
 
   private User createUser(AccountStatus accountStatus) {
+    Instant now = Instant.now();
     return User.reconstitute(
         UUID.randomUUID(),
         "testuser",
@@ -45,7 +46,8 @@ public class LoginUseCaseTest {
         "hashedPassword",
         accountStatus,
         RoleEnum.ROLE_USER,
-        Instant.now());
+        now,
+        now);
   }
 
   @Test

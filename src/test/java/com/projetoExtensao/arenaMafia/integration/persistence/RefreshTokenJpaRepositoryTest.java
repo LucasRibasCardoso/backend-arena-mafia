@@ -81,6 +81,7 @@ public class RefreshTokenJpaRepositoryTest {
   }
 
   private RefreshTokenEntity createAndPersistRefreshToken(String token) {
+    Instant now = Instant.now();
     UserEntity userEntity = new UserEntity();
     userEntity.setId(UUID.randomUUID());
     userEntity.setUsername("testUser");
@@ -88,15 +89,16 @@ public class RefreshTokenJpaRepositoryTest {
     userEntity.setPhone("5547912345678");
     userEntity.setPasswordHash("hashedPassword");
     userEntity.setRole(RoleEnum.ROLE_USER);
-    userEntity.setCreatedAt(Instant.now());
+    userEntity.setCreatedAt(now);
+    userEntity.setUpdatedAt(now);
     userEntity.setStatus(AccountStatus.ACTIVE);
     testEntityManager.persistAndFlush(userEntity);
 
     var refreshToken = new RefreshTokenEntity();
     refreshToken.setToken(token);
     refreshToken.setUser(userEntity);
-    refreshToken.setCreatedAt(java.time.Instant.now());
-    refreshToken.setExpiryDate(java.time.Instant.now().plus(7L, ChronoUnit.DAYS));
+    refreshToken.setCreatedAt(Instant.now());
+    refreshToken.setExpiryDate(Instant.now().plus(7L, ChronoUnit.DAYS));
     return testEntityManager.persist(refreshToken);
   }
 }

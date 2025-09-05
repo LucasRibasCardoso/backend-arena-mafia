@@ -9,6 +9,7 @@ import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.User
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ public class UserJpaRepositoryTest {
     @DisplayName("Deve encontrar um usuário com sucesso pelo seu username")
     void findByUsername_shouldReturnUserWhenUsernameExists() {
       // Arrange
-      createAndPersistUser("usernameTest", "5547912345678");
+      createAndPersistUser("5547912345678");
 
       // Act
       Optional<UserEntity> foundUser = userJpaRepository.findByUsername("usernameTest");
@@ -61,7 +62,7 @@ public class UserJpaRepositoryTest {
     @DisplayName("Deve encontrar um usuário com sucesso pelo seu telefone")
     void findByUsername_shouldReturnUserWhenUsernameExists() {
       // Arrange
-      createAndPersistUser("usernameTest", "+5547912345678");
+      createAndPersistUser("+5547912345678");
 
       // Act
       Optional<UserEntity> foundUser = userJpaRepository.findByPhone("+5547912345678");
@@ -90,7 +91,7 @@ public class UserJpaRepositoryTest {
     @DisplayName("Deve encontrar um usuário com sucesso pelo seu ID")
     void findById_shouldReturnUserWhenIdExists() {
       // Arrange
-      UserEntity userEntity = createAndPersistUser("usernameTest", "5547912345678");
+      UserEntity userEntity = createAndPersistUser("5547912345678");
 
       // Act
       Optional<UserEntity> foundUser = userJpaRepository.findById(userEntity.getId());
@@ -119,7 +120,7 @@ public class UserJpaRepositoryTest {
     @DisplayName("Deve retornar true quando o username existe no banco de dados")
     void existsByUsername_shouldReturnTrue_whenUsernameExists() {
       // Arrange
-      createAndPersistUser("usernameTest", "+5547988887777");
+      createAndPersistUser("+5547988887777");
 
       // Act
       boolean exists = userJpaRepository.existsByUsername("usernameTest");
@@ -149,7 +150,7 @@ public class UserJpaRepositoryTest {
     @DisplayName("Deve retornar true quando o telefone existe no banco de dados")
     void existsByPhone_shouldReturnTrue_whenPhoneExists() {
       // Arrange
-      createAndPersistUser("usernameTest", "+5547988887777");
+      createAndPersistUser("+5547988887777");
 
       // Act
       boolean exists = userJpaRepository.existsByPhone("+5547988887777");
@@ -172,16 +173,18 @@ public class UserJpaRepositoryTest {
   }
 
   // Metodo auxiliar para criar e persistir um usuário no banco de dados
-  private UserEntity createAndPersistUser(String username, String phone) {
+  private UserEntity createAndPersistUser(String phone) {
+    Instant now = Instant.now();
     UserEntity userEntity = new UserEntity();
     userEntity.setId(UUID.randomUUID());
-    userEntity.setUsername(username);
+    userEntity.setUsername("usernameTest");
     userEntity.setFullName("Test User");
     userEntity.setPhone(phone);
     userEntity.setPasswordHash("hashedPassword");
     userEntity.setRole(RoleEnum.ROLE_USER);
-    userEntity.setCreatedAt(Instant.now());
     userEntity.setStatus(AccountStatus.ACTIVE);
+    userEntity.setCreatedAt(now);
+    userEntity.setUpdatedAt(now);
     return entityManager.persistAndFlush(userEntity);
   }
 }

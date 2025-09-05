@@ -53,6 +53,7 @@ public class VerifyAccountUseCaseTest {
   }
 
   private User createUser(AccountStatus accountStatus) {
+    Instant now = Instant.now();
     return User.reconstitute(
         UUID.randomUUID(),
         defaultUsername,
@@ -61,7 +62,8 @@ public class VerifyAccountUseCaseTest {
         defaultPassword,
         accountStatus,
         RoleEnum.ROLE_USER,
-        Instant.now());
+        now,
+        now);
   }
 
   @Test

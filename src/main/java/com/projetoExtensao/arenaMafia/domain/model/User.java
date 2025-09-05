@@ -17,11 +17,11 @@ public class User {
   private String username;
   private String fullName;
   private String phone;
-  private final RoleEnum role;
-  private final Instant createdAt;
-
   private String passwordHash;
   private AccountStatus status;
+  private final RoleEnum role;
+  private final Instant createdAt;
+  private Instant updatedAt;
 
   /**
    * Factory Method para criar uma instância de User. Por padrão um usuário será criado com a role
@@ -38,7 +38,7 @@ public class User {
     AccountStatus status = AccountStatus.PENDING_VERIFICATION;
 
     return new User(
-        newId, username, fullName, phone, passwordHash, status, RoleEnum.ROLE_USER, now);
+        newId, username, fullName, phone, passwordHash, status, RoleEnum.ROLE_USER, now, now);
   }
 
   /**
@@ -53,13 +53,14 @@ public class User {
       String passwordHash,
       AccountStatus status,
       RoleEnum role,
-      Instant createdAt) {
-
+      Instant createdAt,
+      Instant updatedAt) {
     validateUsername(username);
     validateFullName(fullName);
     validatePhone(phone);
     validatePasswordHash(passwordHash);
-    return new User(id, username, fullName, phone, passwordHash, status, role, createdAt);
+    return new User(
+        id, username, fullName, phone, passwordHash, status, role, createdAt, updatedAt);
   }
 
   private User(
@@ -70,7 +71,8 @@ public class User {
       String passwordHash,
       AccountStatus status,
       RoleEnum role,
-      Instant createdAt) {
+      Instant createdAt,
+      Instant updatedAt) {
 
     this.id = id;
     this.username = username;
@@ -80,6 +82,7 @@ public class User {
     this.status = status;
     this.role = role;
     this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
   }
 
   // Validações
@@ -125,23 +128,27 @@ public class User {
   public void updatePasswordHash(String newPasswordHash) {
     validatePasswordHash(newPasswordHash);
     this.passwordHash = newPasswordHash;
+    markAsUpdated();
   }
 
   public void updateUsername(String newUsername) {
     validateUsername(newUsername);
     this.username = newUsername;
+    markAsUpdated();
   }
 
   public void updateFullName(String fullName) {
     if (fullName != null) {
       validateFullName(fullName);
       this.fullName = fullName;
+      markAsUpdated();
     }
   }
 
   public void updatePhone(String newPhone) {
     validatePhone(newPhone);
     this.phone = newPhone;
+    markAsUpdated();
   }
 
   // Validar status da conta
@@ -163,6 +170,7 @@ public class User {
           "Atenção: A conta já está ativada. Você pode fazer login.");
     }
     this.status = AccountStatus.ACTIVE;
+    markAsUpdated();
   }
 
   public void lockAccount() {
@@ -170,6 +178,7 @@ public class User {
       throw new AccountStateConflictException("Atenção: A conta já está bloqueada.");
     }
     this.status = AccountStatus.LOCKED;
+    markAsUpdated();
   }
 
   public void unlockAccount() {
@@ -177,6 +186,12 @@ public class User {
       throw new AccountStateConflictException("Atenção: A conta já está desbloqueada.");
     }
     this.status = AccountStatus.ACTIVE;
+    markAsUpdated();
+  }
+
+  // Métodos auxiliares
+  private void markAsUpdated() {
+    this.updatedAt = Instant.now();
   }
 
   // Getters
@@ -206,6 +221,10 @@ public class User {
 
   public Instant getCreatedAt() {
     return createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
   }
 
   public AccountStatus getStatus() {

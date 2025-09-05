@@ -35,6 +35,9 @@ public class UserEntity {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
+
   // Construtor padrão necessário para JPA
   public UserEntity() {}
 
@@ -101,5 +104,13 @@ public class UserEntity {
 
   public void setCreatedAt(Instant createdAt) {
     this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
   }
 }

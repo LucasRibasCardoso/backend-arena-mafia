@@ -42,6 +42,7 @@ public class ResendCodeUseCaseTest {
   private final String formattedPhone = defaultPhone;
 
   private User createUser(AccountStatus status) {
+    Instant now = Instant.now();
     return User.reconstitute(
         UUID.randomUUID(),
         "testuser",
@@ -50,7 +51,8 @@ public class ResendCodeUseCaseTest {
         "hashedpassword",
         status,
         RoleEnum.ROLE_USER,
-        Instant.now());
+        now,
+        now);
   }
 
   @Test

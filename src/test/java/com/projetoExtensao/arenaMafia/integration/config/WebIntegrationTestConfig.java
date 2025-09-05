@@ -69,6 +69,7 @@ public abstract class WebIntegrationTestConfig extends BaseTestContainersConfig 
 
   public User mockPersistUser(AccountStatus status) {
     String passwordEncoded = passwordEncoder.encode(defaultPassword);
+    Instant now = Instant.now();
     User user =
         User.reconstitute(
             UUID.randomUUID(),
@@ -78,12 +79,14 @@ public abstract class WebIntegrationTestConfig extends BaseTestContainersConfig 
             passwordEncoded,
             status,
             RoleEnum.ROLE_USER,
-            Instant.now());
+            now,
+            now);
     return userRepository.save(user);
   }
 
   public User mockPersistUser(String username, String fullName, String phone, String password) {
     String passwordEncoded = passwordEncoder.encode(password);
+    Instant now = Instant.now();
     User user =
         User.reconstitute(
             UUID.randomUUID(),
@@ -93,7 +96,8 @@ public abstract class WebIntegrationTestConfig extends BaseTestContainersConfig 
             passwordEncoded,
             AccountStatus.ACTIVE,
             RoleEnum.ROLE_USER,
-            Instant.now());
+            now,
+            now);
     return userRepository.save(user);
   }
 
@@ -109,6 +113,7 @@ public abstract class WebIntegrationTestConfig extends BaseTestContainersConfig 
                 () ->
                     new UserNotFoundException(
                         "Usuário de teste não encontrado com o telefone: " + userPhone));
+
     User lockedUser =
         User.reconstitute(
             user.getId(),
@@ -118,7 +123,8 @@ public abstract class WebIntegrationTestConfig extends BaseTestContainersConfig 
             user.getPasswordHash(),
             status,
             user.getRole(),
-            user.getCreatedAt());
+            user.getCreatedAt(),
+            user.getUpdatedAt());
     userRepository.save(lockedUser);
   }
 }

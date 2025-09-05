@@ -41,6 +41,7 @@ public class ForgotPasswordUseCaseTest {
   private final String formattedPhone = defaultPhone;
 
   private User createUser(AccountStatus accountStatus) {
+    Instant now = Instant.now();
     return User.reconstitute(
         UUID.randomUUID(),
         "testuser",
@@ -49,7 +50,8 @@ public class ForgotPasswordUseCaseTest {
         "hashedPassword",
         accountStatus,
         RoleEnum.ROLE_USER,
-        Instant.now());
+        now,
+        now);
   }
 
   @Test

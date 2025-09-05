@@ -34,6 +34,7 @@ public class NotificationEventListenerTest {
   void osUserRegistration_shouldGenerateOtpAndSendSms_onEvent() {
     // Arrange
     UUID userId = UUID.randomUUID();
+    Instant now = Instant.now();
     User user =
         User.reconstitute(
             userId,
@@ -43,7 +44,8 @@ public class NotificationEventListenerTest {
             "hashedPassword",
             AccountStatus.ACTIVE,
             RoleEnum.ROLE_USER,
-            Instant.now());
+            now,
+            now);
     OnVerificationRequiredEvent event = new OnVerificationRequiredEvent(user);
 
     String generatedOtp = "123456";
@@ -71,6 +73,7 @@ public class NotificationEventListenerTest {
   void osUserRegistration_shouldNotSendSms_whenOtpGenerationFails() {
     // Arrange
     UUID userId = UUID.randomUUID();
+    Instant now = Instant.now();
     User user =
         User.reconstitute(
             userId,
@@ -80,7 +83,8 @@ public class NotificationEventListenerTest {
             "hashedPassword",
             AccountStatus.ACTIVE,
             RoleEnum.ROLE_USER,
-            Instant.now());
+            now,
+            now);
     OnVerificationRequiredEvent event = new OnVerificationRequiredEvent(user);
 
     when(otpPort.generateCodeOTP(user.getId()))

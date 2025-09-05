@@ -37,7 +37,7 @@ public class VerifyAccountUseCaseImp implements VerifyAccountUseCase {
     String formattedPhone = phoneValidator.formatToE164(requestDto.phone());
     User user = getUserByPhoneOrElseThrow(formattedPhone);
     otpPort.validateOtp(user.getId(), requestDto.code());
-    user.activateAccount();
+    user.confirmVerification();
     userRepository.save(user);
     return authPort.generateTokens(user);
   }

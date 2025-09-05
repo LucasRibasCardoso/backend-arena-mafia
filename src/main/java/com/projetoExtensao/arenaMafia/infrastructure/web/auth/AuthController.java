@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth;
 
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
+import com.projetoExtensao.arenaMafia.application.auth.model.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.LoginUseCase;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.LogoutUseCase;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.RefreshTokenUseCase;
@@ -11,7 +11,6 @@ import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.*;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.SignupResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.util.CookieUtils;
-import com.projetoExtensao.arenaMafia.infrastructure.web.dto.SimpleMessageResponseDto;
 import jakarta.validation.Valid;
 import java.net.URI;
 import org.springframework.http.HttpHeaders;
@@ -84,17 +83,15 @@ public class AuthController {
   }
 
   @PostMapping("/logout")
-  public ResponseEntity<SimpleMessageResponseDto> logout(
+  public ResponseEntity<Void> logout(
       @CookieValue(value = "refreshToken", required = false) String requestDto) {
 
     logoutUseCase.execute(requestDto);
     ResponseCookie expiredCookie = cookieUtils.createRefreshTokenExpiredCookie();
 
-    SimpleMessageResponseDto responseDto =
-        new SimpleMessageResponseDto("Logout realizado com sucesso.");
-    return ResponseEntity.ok()
+    return ResponseEntity.noContent()
         .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
-        .body(responseDto);
+        .build();
   }
 
   @PostMapping("/refresh-token")

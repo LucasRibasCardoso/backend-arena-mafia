@@ -3,7 +3,7 @@ package com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.i18n.phonenumbers.Phonenumber;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
+import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadPhoneNumberException;
 import org.springframework.stereotype.Component;
 

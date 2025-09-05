@@ -4,13 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
+import com.projetoExtensao.arenaMafia.application.auth.model.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway.AuthAdapter;
-import com.projetoExtensao.arenaMafia.infrastructure.security.UserDetailsAdapter;
 import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.JwtTokenProvider;
+import com.projetoExtensao.arenaMafia.infrastructure.security.userDetails.UserDetailsAdapter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,7 +41,7 @@ public class AuthPortAdapterTest {
     String username = "testuser";
     String password = "password123";
 
-    User expectedUser = User.create(username, "Test User", "5547912345678", "hash");
+    User expectedUser = User.create(username, "Test User", "+5547912345678", "hash");
     UserDetailsAdapter userDetails = new UserDetailsAdapter(expectedUser);
     Authentication mockAuthentication = mock(Authentication.class);
 
@@ -70,7 +70,7 @@ public class AuthPortAdapterTest {
 
     RefreshToken refreshToken = RefreshToken.create(30L, user);
     when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(refreshToken);
-    when(tokenProvider.generateAccessToken(user.getUsername(), user.getRole()))
+    when(tokenProvider.generateAccessToken(user.getId(), user.getUsername(), user.getRole()))
         .thenReturn(expectedAccessToken);
 
     // Act
@@ -88,6 +88,7 @@ public class AuthPortAdapterTest {
 
     verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
     verify(refreshTokenRepository, times(1)).deleteByUser(user);
-    verify(tokenProvider, times(1)).generateAccessToken(user.getUsername(), user.getRole());
+    verify(tokenProvider, times(1))
+        .generateAccessToken(user.getId(), user.getUsername(), user.getRole());
   }
 }

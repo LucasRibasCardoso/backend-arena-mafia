@@ -1,10 +1,10 @@
 package com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.imp;
 
-import com.projetoExtensao.arenaMafia.application.auth.event.OnVerificationRequiredEvent;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordEncoderPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PhoneValidatorPort;
-import com.projetoExtensao.arenaMafia.application.auth.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.SignUpUseCase;
+import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
+import com.projetoExtensao.arenaMafia.application.security.port.gateway.PasswordEncoderPort;
+import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
+import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;

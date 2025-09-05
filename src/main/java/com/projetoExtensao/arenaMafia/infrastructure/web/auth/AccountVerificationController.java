@@ -1,13 +1,12 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth;
 
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthResult;
+import com.projetoExtensao.arenaMafia.application.auth.model.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification.ResendCodeUseCase;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification.VerifyAccountUseCase;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendCodeRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.dto.SimpleMessageResponseDto;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,14 +64,10 @@ public class AccountVerificationController {
   }
 
   @PostMapping("/resend-code")
-  public ResponseEntity<SimpleMessageResponseDto> resendVerificationCode(
+  public ResponseEntity<Void> resendVerificationCode(
       @Valid @RequestBody ResendCodeRequestDto requestDto) {
 
     resendCodeUseCase.execute(requestDto);
-
-    SimpleMessageResponseDto responseDto =
-        new SimpleMessageResponseDto("Código de verificação reenviado com sucesso.");
-
-    return ResponseEntity.ok(responseDto);
+    return ResponseEntity.noContent().build();
   }
 }

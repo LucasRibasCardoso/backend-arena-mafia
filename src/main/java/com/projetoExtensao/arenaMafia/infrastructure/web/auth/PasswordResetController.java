@@ -43,10 +43,10 @@ public class PasswordResetController {
       @Valid @RequestBody ForgotPasswordRequestDto requestDto) {
 
     forgotPasswordUseCase.execute(requestDto);
-    SimpleMessageResponseDto responseDto =
+    SimpleMessageResponseDto response =
         new SimpleMessageResponseDto(
             "Se o telefone informado for válido, enviaremos um código para verificação da conta.");
-    return ResponseEntity.ok(responseDto);
+    return ResponseEntity.accepted().body(response);
   }
 
   @PostMapping("/password-reset-token")

@@ -38,7 +38,7 @@ public class UserRepositoryAdapterTest {
     @DisplayName("Deve mapear corretamente um User para userEntity, salvar e retornar um User")
     void save_shouldMapperUserAndSave() {
       // Arrange
-      User userToSave = User.create("usernameTest", "User Test", "55912345678", "password_hash");
+      User userToSave = User.create("usernameTest", "User Test", "+55912345678", "password_hash");
       UserEntity userEntityMapped = new UserEntity();
       UserEntity userEntitySaved = new UserEntity();
       User userReturned = userToSave;
@@ -74,7 +74,7 @@ public class UserRepositoryAdapterTest {
       // Arrange
       String username = "usernameTest";
       UserEntity userEntity = new UserEntity();
-      User userMapped = User.create("usernameTest", "User Test", "55912345678", "password_hash");
+      User userMapped = User.create("usernameTest", "User Test", "+55912345678", "password_hash");
 
       when(userJpaRepository.findByUsername(username)).thenReturn(Optional.of(userEntity));
       when(userMapper.toDomain(userEntity)).thenReturn(userMapped);
@@ -166,7 +166,7 @@ public class UserRepositoryAdapterTest {
     @DisplayName("Deve encontrar um userEntity pelo ID e retornar um optional de User mapeado")
     void findById_shouldReturnOptionalUser() {
       // Arrange
-      User userMapped = User.create("usernameTest", "User Test", "55912345678", "password_hash");
+      User userMapped = User.create("usernameTest", "User Test", "+55912345678", "password_hash");
       UUID userId = userMapped.getId();
       UserEntity userEntity = new UserEntity();
 

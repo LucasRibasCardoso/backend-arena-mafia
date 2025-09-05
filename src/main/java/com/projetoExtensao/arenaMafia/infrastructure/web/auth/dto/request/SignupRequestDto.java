@@ -14,7 +14,9 @@ public record SignupRequestDto(
             message = "O nome de usuário deve conter apenas letras, números e underscore (_).")
         @Size(min = 3, max = 20, message = "O nome de usuário deve ter entre 3 e 20 caracteres.")
         String username,
-    @NotBlank(message = "Por favor, informe seu nome completo.") String fullName,
+    @NotBlank(message = "Por favor, informe seu nome completo.")
+        @Size(min = 3, max = 100, message = "O nome completo deve ter entre 3 e 100 caracteres.")
+        String fullName,
     @NotBlank(message = "Por favor, informe seu telefone.")
         @Pattern(
             regexp = "^\\+\\d{10,15}$",

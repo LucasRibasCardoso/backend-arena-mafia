@@ -23,7 +23,7 @@ public class RefreshTokenTest {
 
   @BeforeEach
   void setUp() {
-    testUser = User.create("testuser", "Test User", "5547912345678", "hash");
+    testUser = User.create("testuser", "Test User", "+5547912345678", "hash");
   }
 
   @Test

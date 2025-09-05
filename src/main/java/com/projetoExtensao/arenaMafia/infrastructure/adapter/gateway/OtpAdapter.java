@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway;
 
-import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
 import java.security.SecureRandom;
 import java.time.Duration;

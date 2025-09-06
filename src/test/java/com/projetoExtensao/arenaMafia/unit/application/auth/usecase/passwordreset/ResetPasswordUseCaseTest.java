@@ -169,7 +169,8 @@ public class ResetPasswordUseCaseTest {
     // Act & Assert
     assertThatThrownBy(() -> resetPasswordUseCase.execute(request))
         .isInstanceOf(AccountStateConflictException.class)
-        .hasMessageContaining("Atenção: Sua conta está desativada.");
+        .hasMessageContaining(
+            "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
 
     verify(passwordResetToken, times(1)).findUserIdByResetToken(token);
     verify(userRepository, times(1)).findById(user.getId());

@@ -221,7 +221,8 @@ public class RefreshTokenUseCaseTest {
     // Act & Assert
     assertThatThrownBy(() -> refreshTokenUseCase.execute(request))
         .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Atenção: Sua conta está desativada.");
+        .hasMessage(
+            "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
 
     verify(refreshTokenRepository, times(1)).findByToken(any(RefreshTokenVO.class));
     verify(authPort, never()).generateTokens(any(User.class));

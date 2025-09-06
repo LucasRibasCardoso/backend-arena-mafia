@@ -463,7 +463,7 @@ paths:
                   value:
                     timestamp: "2025-08-15T13:55:00Z"
                     status: 409
-                    message: "Atenção: Sua conta está desativada."
+                    message: "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte."
                     path: "/api/auth/login"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"
@@ -590,7 +590,7 @@ paths:
                   value:
                     timestamp: "2025-08-15T13:55:00Z"
                     status: 409
-                    message: "Atenção: Sua conta está desativada."
+                    message: "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte."
                     path: "/api/auth/refresh-token"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"
@@ -737,7 +737,7 @@ paths:
               example:
                 timestamp: "2025-08-15T13:55:00Z"
                 status: 409
-                message: "Atenção: A conta já está ativada. Você pode fazer login."
+                message: "Não é possível ativar uma conta que não está pendente de verificação."
                 path: "/api/auth/verify-account"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"
@@ -748,7 +748,9 @@ paths:
       tags:
         - "Autenticação"
       summary: "Reenviar código de verificação"
-      description: "Gera e reenvia um novo código de verificação (OTP) para o telefone de um usuário com conta em estado 'PENDING_VERIFICATION'. Por segurança, este endpoint sempre retorna sucesso, mesmo que o telefone não esteja cadastrado, para evitar a enumeração de usuários."
+      description: "Gera e reenvia um novo código de verificação (OTP) para o telefone de um 
+      usuário com conta em estado 'PENDING_VERIFICATION'. Por segurança, este endpoint sempre 
+      retorna sucesso, mesmo que o telefone não esteja cadastrado, para evitar a enumeração de usuários."
       requestBody:
         required: true
         content:
@@ -757,7 +759,9 @@ paths:
               $ref: "#/components/schemas/ResendCodeRequestDto"
         responses:
           "204":
-            description: "Sucesso. A solicitação foi validada e um novo código de verificação foi enviado para o número de telefone associado à conta. O cliente deve agora permitir que o usuário insira o novo código."
+            description: "Sucesso. A solicitação foi validada e um novo código de verificação 
+            foi enviado para o número de telefone associado à conta. O cliente deve agora permitir 
+            que o usuário insira o novo código."
           "400":
             description: "Requisição inválida. Ocorre se o formato do telefone for inválido."
             content:
@@ -783,7 +787,8 @@ paths:
                       message: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
                       path: "/api/auth/resend-code"
           "409":
-            description: "Conflito de estado. Ocorre ao tentar reenviar um código para uma conta que não está com status 'PENDING_VERIFICATION'."
+            description: "Conflito de estado. Ocorre ao tentar reenviar um código para uma conta 
+            que não está com status 'PENDING_VERIFICATION'."
             content:
               application/json:
                 schema:
@@ -802,7 +807,9 @@ paths:
       tags:
         - "Autenticação"
       summary: "Iniciar redefinição de senha"
-      description: "Inicia o fluxo de redefinição de senha. Se o usuário existir e estiver ativo, um código OTP é enviado para o seu telefone. Por segurança, a resposta é sempre a mesma para evitar a enumeração de contas."
+      description: "Inicia o fluxo de redefinição de senha. Se o usuário existir e estiver ativo,
+       um código OTP é enviado para o seu telefone. Por segurança, a resposta é sempre a mesma para 
+       evitar a enumeração de contas."
       requestBody:
         required: true
         content:
@@ -811,7 +818,8 @@ paths:
               $ref: "#/components/schemas/ForgotPasswordRequestDto"
       responses:
         "202":
-          description: "Solicitação processada. A mensagem não indica se o telefone foi encontrado, para proteger a privacidade do usuário."
+          description: "Solicitação processada. A mensagem não indica se o telefone foi encontrado, 
+          para proteger a privacidade do usuário."
           content:
             application/json:
               schema:
@@ -868,18 +876,21 @@ paths:
                   value:
                     timestamp: "2025-08-15T13:55:00Z"
                     status: 409
-                    message: "Atenção: Sua conta está desativada."
+                    message: "Atenção: Sua conta está desativada e será deletada em breve. 
+                    Para reativá-la, por favor, entre em contato com o suporte."
                     path: "/api/auth/forgot-password"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"
 
-  /api/auth/password-reset-token:
+  /api/auth/reset-password-token:
     post:
       operationId: "passwordResetToken"
       tags:
         - "Autenticação"
       summary: "Validar código e gerar token de redefinição de senha"
-      description: "Segunda etapa do fluxo de redefinição de senha. Valida o código OTP recebido pelo usuário. Se o código for válido, gera e retorna um token temporário de uso único para a redefinição de senha."
+      description: "Segunda etapa do fluxo de redefinição de senha. Valida o código OTP recebido 
+        pelo usuário. Se o código for válido, gera e retorna um token temporário de uso único para a 
+        redefinição de senha."
       requestBody:
         required: true
         content:
@@ -894,7 +905,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/PasswordResetTokenResponseDto"
         "400":
-          description: "Requisição inválida. Ocorre se houver erros de validação (código em branco) ou se o código OTP for inválido/expirado."
+          description: "Requisição inválida. Ocorre se houver erros de validação (código em branco) 
+            ou se o código OTP for inválido/expirado."
           content:
             application/json:
               schema:
@@ -957,11 +969,12 @@ paths:
                   message: "Atenção: Sua conta está bloqueada. Por favor, contate o suporte."
                   path: "/api/auth/password-reset-token"
               Disabled:
-                summary: "Conta pendente de verificação"
+                summary: "Conta desativada"
                 value:
                   timestamp: "2025-08-15T13:55:00Z"
                   status: 409
-                  message: "Atenção: Sua conta está desativada."
+                  message: "Atenção: Sua conta está desativada e será deletada em breve. 
+                    Para reativá-la, por favor, entre em contato com o suporte."
                   path: "/api/auth/password-reset-token"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"
@@ -972,7 +985,8 @@ paths:
       tags:
         - "Autenticação"
       summary: "Redefinir a senha do usuário"
-      description: "Etapa final do fluxo de redefinição de senha. Recebe o token temporário gerado na etapa anterior e a nova senha para efetivar a alteração no sistema."
+      description: "Etapa final do fluxo de redefinição de senha. Recebe o token temporário gerado 
+      na etapa anterior e a nova senha para efetivar a alteração no sistema."
       requestBody:
         required: true
         content:
@@ -989,7 +1003,8 @@ paths:
               example:
                 message: "Senha redefinida com sucesso. Você já pode fazer o login com sua nova senha."
         "400":
-          description: "Requisição inválida. Ocorre se o token de redefinição for inválido/expirado, as senhas não coincidirem ou houver erros de validação."
+          description: "Requisição inválida. Ocorre se o token de redefinição for inválido/expirado,
+          as senhas não coincidirem ou houver erros de validação."
           content:
             application/json:
               schema:
@@ -1056,12 +1071,13 @@ paths:
                     message: "Atenção: Sua conta está bloqueada. Por favor, contate o suporte."
                     path: "/api/auth/reset-password"
                 Disabled:
-                  summary: "Conta pendente de verificação"
+                  summary: "Conta desativada"
                   value:
                     timestamp: "2025-08-15T13:55:00Z"
                     status: 409
-                    message: "Atenção: Sua conta está desativada."
-                    path: "/api/auth/reset-password"
+                    message: "Atenção: Sua conta está desativada e será deletada em breve. 
+                    Para reativá-la, por favor, entre em contato com o suporte."
+                    path: "/api/auth/password-reset-token"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"
 
@@ -1379,5 +1395,46 @@ paths:
                 status: 404
                 message: "Usuário não encontrado."
                 path: "/api/users/me/phone/verification"
+        "500":
+          $ref: "#/components/responses/ErrorResponseInternalServerError"
+
+  /api/users/me/disable:
+    post:
+      operationId: disableUserAccount
+      tags: [ "Usuário" ]
+      summary: "Desativar conta do usuário"
+      description: "Desativa a conta do usuário atualmente autenticado. A desativação é uma ação 
+      permanente que impede o acesso futuro à conta, mas os dados do usuário são mantidos no 
+      sistema durante 7 dias, período durante o qual o usuário pode reativar a conta entrando em 
+      contato com o suporte. Após esse período, os dados são excluídos permanentemente."
+      security:
+        - bearerAuth: [ ]
+      responses:
+        "204":
+          description: "Não há conteúdo a ser retornado. Conta desativada com sucesso."
+        "401":
+          $ref: "#/components/responses/AuthenticationExceptionResponse"
+        "404":
+          description: "Não encontrado. Ocorre se o usuário autenticado não for encontrado."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseDto"
+              example:
+                timestamp: "2025-08-15T13:55:00Z"
+                status: 404
+                message: "Usuário não encontrado."
+                path: "/api/users/me/disable"
+        "409":
+          description: "Conflito de estado. Ocorre se a conta do usuário não estiver ativada no momento."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseDto"
+              example:
+                timestamp: "2025-08-15T13:55:00Z"
+                status: 409
+                message: "Sua conta não pode ser desativada, pois não está ativa no momento."
+                path: "/api/users/me/disable"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"

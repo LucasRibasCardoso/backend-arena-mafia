@@ -211,7 +211,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
       // Assert
       assertThat(response.status()).isEqualTo(409);
       assertThat(response.message())
-          .isEqualTo("Atenção: A conta já está ativada. Você pode fazer login.");
+          .isEqualTo("Não é possível ativar uma conta que não está pendente de verificação.");
       assertThat(response.path()).isEqualTo("/api/auth/verify-account");
       assertThat(response.fieldErrors()).isNull();
     }

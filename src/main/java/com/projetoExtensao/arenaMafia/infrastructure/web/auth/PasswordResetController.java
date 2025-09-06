@@ -49,7 +49,7 @@ public class PasswordResetController {
     return ResponseEntity.accepted().body(response);
   }
 
-  @PostMapping("/password-reset-token")
+  @PostMapping("/reset-password-token")
   public ResponseEntity<PasswordResetTokenResponseDto> forgotPasswordVerify(
       @Valid @RequestBody ValidateOtpRequestDto requestDto) {
 

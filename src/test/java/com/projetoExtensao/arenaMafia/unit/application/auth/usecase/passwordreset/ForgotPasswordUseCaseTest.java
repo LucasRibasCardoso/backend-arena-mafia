@@ -179,7 +179,8 @@ public class ForgotPasswordUseCaseTest {
     // Act & Assert
     assertThatThrownBy(() -> forgotPasswordUseCase.execute(requestDto))
         .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Atenção: Sua conta está desativada.");
+        .hasMessage(
+            "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
 
     // Verify
     verify(phoneValidator, times(1)).formatToE164(unformattedPhone);

@@ -499,4 +499,54 @@ public class UserControllerTest extends WebIntegrationTestConfig {
       }
     }
   }
+
+  @Nested
+  @DisplayName("Teste para o endpoint /api/users/me/disable")
+  class DisableMyAccountTest {
+
+    @Test
+    @DisplayName("Deve retornar 204 No Content quando a desativação da conta for bem-sucedida")
+    void disableMyAccount_shouldReturn204_whenSuccessful() {
+      // Arrange
+      User mockUser = mockPersistUser();
+      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+
+      // Act & Assert
+      given()
+          .spec(specification)
+          .header("Authorization", "Bearer " + tokens.accessToken())
+          .when()
+          .post("/disable")
+          .then()
+          .statusCode(204);
+
+      User updatedUser = userRepository.findById(mockUser.getId()).orElseThrow();
+      assertThat(updatedUser.isEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Deve retornar 409 Conflict quando a conta já estiver desativada")
+    void disableMyAccount_shouldReturn409_whenAccountAlreadyDisabled() {
+      // Arrange
+      User mockUser = mockPersistUser();
+      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+      mockUser.disableAccount();
+      userRepository.save(mockUser);
+
+      // Act & Assert
+      var response =
+          given()
+              .spec(specification)
+              .header("Authorization", "Bearer " + tokens.accessToken())
+              .when()
+              .post("/disable")
+              .then()
+              .statusCode(409)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      assertThat(response.message())
+          .isEqualTo("Sua conta precisa estar ativa para ser desativada.");
+    }
+  }
 }

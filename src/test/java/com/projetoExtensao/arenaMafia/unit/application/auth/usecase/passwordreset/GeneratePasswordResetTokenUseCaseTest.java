@@ -207,7 +207,8 @@ public class GeneratePasswordResetTokenUseCaseTest {
     // Act & Assert
     assertThatThrownBy(() -> generatePasswordResetTokenUseCase.execute(request))
         .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Atenção: Sua conta está desativada.");
+        .hasMessage(
+            "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
 
     verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
     verify(userRepository, times(1)).findByPhone(formattedPhone);

@@ -169,7 +169,8 @@ public class LoginUseCaseTest {
     // Act & Assert
     assertThatThrownBy(() -> loginUseCase.execute(request))
         .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Atenção: Sua conta está desativada.");
+        .hasMessage(
+            "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
 
     verify(userRepository, times(1)).findByUsername(defaultUsername);
     verify(authPort, never()).authenticate(anyString(), anyString());

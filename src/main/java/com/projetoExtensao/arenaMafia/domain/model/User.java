@@ -164,18 +164,37 @@ public class User {
   }
 
   // Gerenciar status da conta
-  public void activateAccount() {
-    if (!(this.status == AccountStatus.PENDING_VERIFICATION)) {
+  public void confirmVerification() {
+    if (this.status != AccountStatus.PENDING_VERIFICATION) {
       throw new AccountStateConflictException(
-          "Atenção: A conta já está ativada. Você pode fazer login.");
+          "Não é possível ativar uma conta que não está pendente de verificação.");
+    }
+    this.status = AccountStatus.ACTIVE;
+    markAsUpdated();
+  }
+
+  public void disableAccount() {
+    if (this.status != AccountStatus.ACTIVE) {
+      throw new AccountStateConflictException("Sua conta precisa estar ativa para ser desativada.");
+    }
+    this.status = AccountStatus.DISABLED;
+    markAsUpdated();
+  }
+
+  // TODO: Métodos utilizados por administradores
+  public void enableAccount() {
+    if (this.status != AccountStatus.DISABLED) {
+      throw new AccountStateConflictException(
+          "Atenção: Apenas contas com status 'desativada' podem ser reativadas.");
     }
     this.status = AccountStatus.ACTIVE;
     markAsUpdated();
   }
 
   public void lockAccount() {
-    if (this.status == AccountStatus.LOCKED) {
-      throw new AccountStateConflictException("Atenção: A conta já está bloqueada.");
+    if (this.status != AccountStatus.ACTIVE) {
+      throw new AccountStateConflictException(
+          "Não é possível bloquear uma conta que não está ativa.");
     }
     this.status = AccountStatus.LOCKED;
     markAsUpdated();
@@ -183,7 +202,8 @@ public class User {
 
   public void unlockAccount() {
     if (this.status != AccountStatus.LOCKED) {
-      throw new AccountStateConflictException("Atenção: A conta já está desbloqueada.");
+      throw new AccountStateConflictException(
+          "Não é possível desbloquear uma conta que não está bloqueada.");
     }
     this.status = AccountStatus.ACTIVE;
     markAsUpdated();

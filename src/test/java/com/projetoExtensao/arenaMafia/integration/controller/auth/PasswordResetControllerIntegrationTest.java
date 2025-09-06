@@ -231,14 +231,16 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
 
       // Assert
       assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message()).isEqualTo("Atenção: Sua conta está desativada.");
+      assertThat(response.message())
+          .isEqualTo(
+              "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
       assertThat(response.path()).isEqualTo("/api/auth/forgot-password");
       assertThat(response.fieldErrors()).isNull();
     }
   }
 
   @Nested
-  @DisplayName("Etapa 2: Testes para o endpoint /auth/password-reset-token")
+  @DisplayName("Etapa 2: Testes para o endpoint /auth/reset-password-token")
   class GeneratePasswordResetTokenTests {
 
     @Test
@@ -255,7 +257,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .spec(specification)
               .body(request)
               .when()
-              .post("/password-reset-token")
+              .post("/reset-password-token")
               .then()
               .statusCode(200)
               .extract()
@@ -277,7 +279,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .spec(specification)
               .body(request)
               .when()
-              .post("/password-reset-token")
+              .post("/reset-password-token")
               .then()
               .statusCode(400)
               .extract()
@@ -287,7 +289,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.message())
           .isEqualTo("Erro de validação. Verifique os campos informados.");
-      assertThat(response.path()).isEqualTo("/api/auth/password-reset-token");
+      assertThat(response.path()).isEqualTo("/api/auth/reset-password-token");
       assertThat(response.fieldErrors()).hasSize(1);
       assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("code");
     }
@@ -305,7 +307,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .spec(specification)
               .body(request)
               .when()
-              .post("/password-reset-token")
+              .post("/reset-password-token")
               .then()
               .statusCode(400)
               .extract()
@@ -315,7 +317,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.message())
           .isEqualTo("Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
-      assertThat(response.path()).isEqualTo("/api/auth/password-reset-token");
+      assertThat(response.path()).isEqualTo("/api/auth/reset-password-token");
       assertThat(response.fieldErrors()).isNull();
     }
 
@@ -333,7 +335,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .spec(specification)
               .body(request)
               .when()
-              .post("/password-reset-token")
+              .post("/reset-password-token")
               .then()
               .statusCode(400)
               .extract()
@@ -342,7 +344,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
       // Assert
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.message()).isEqualTo("Código de verificação inválido ou expirado.");
-      assertThat(response.path()).isEqualTo("/api/auth/password-reset-token");
+      assertThat(response.path()).isEqualTo("/api/auth/reset-password-token");
       assertThat(response.fieldErrors()).isNull();
     }
 
@@ -358,7 +360,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .spec(specification)
               .body(request)
               .when()
-              .post("/password-reset-token")
+              .post("/reset-password-token")
               .then()
               .statusCode(404)
               .extract()
@@ -369,7 +371,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
       assertThat(response.message())
           .isEqualTo(
               "Usuário não encontrado. Verifique o número de telefone informado e tente novamente.");
-      assertThat(response.path()).isEqualTo("/api/auth/password-reset-token");
+      assertThat(response.path()).isEqualTo("/api/auth/reset-password-token");
       assertThat(response.fieldErrors()).isNull();
     }
 
@@ -387,7 +389,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .spec(specification)
               .body(request)
               .when()
-              .post("/password-reset-token")
+              .post("/reset-password-token")
               .then()
               .statusCode(409)
               .extract()
@@ -397,7 +399,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
       assertThat(response.status()).isEqualTo(409);
       assertThat(response.message())
           .isEqualTo("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
-      assertThat(response.path()).isEqualTo("/api/auth/password-reset-token");
+      assertThat(response.path()).isEqualTo("/api/auth/reset-password-token");
       assertThat(response.fieldErrors()).isNull();
     }
 
@@ -416,7 +418,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .spec(specification)
               .body(request)
               .when()
-              .post("/password-reset-token")
+              .post("/reset-password-token")
               .then()
               .statusCode(409)
               .extract()
@@ -427,7 +429,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
       assertThat(response.message())
           .isEqualTo(
               "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
-      assertThat(response.path()).isEqualTo("/api/auth/password-reset-token");
+      assertThat(response.path()).isEqualTo("/api/auth/reset-password-token");
       assertThat(response.fieldErrors()).isNull();
     }
 
@@ -445,7 +447,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .spec(specification)
               .body(request)
               .when()
-              .post("/password-reset-token")
+              .post("/reset-password-token")
               .then()
               .statusCode(409)
               .extract()
@@ -453,8 +455,10 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
 
       // Assert
       assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message()).isEqualTo("Atenção: Sua conta está desativada.");
-      assertThat(response.path()).isEqualTo("/api/auth/password-reset-token");
+      assertThat(response.message())
+          .isEqualTo(
+              "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
+      assertThat(response.path()).isEqualTo("/api/auth/reset-password-token");
       assertThat(response.fieldErrors()).isNull();
     }
   }
@@ -673,7 +677,9 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
 
       // Assert
       assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message()).isEqualTo("Atenção: Sua conta está desativada.");
+      assertThat(response.message())
+          .isEqualTo(
+              "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
       assertThat(response.path()).isEqualTo("/api/auth/reset-password");
       assertThat(response.fieldErrors()).isNull();
     }

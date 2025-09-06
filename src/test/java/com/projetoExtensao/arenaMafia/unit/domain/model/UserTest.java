@@ -283,13 +283,13 @@ public class UserTest {
     @DisplayName("Cenários de Sucesso")
     class Success {
       @Test
-      @DisplayName("activateAccount() deve ativar a conta se o status for PENDING_VERIFICATION")
-      void activateAccount_shouldActivateAccount_whenPendingVerification() {
+      @DisplayName("confirmVerification() deve ativar a conta se o status for PENDING_VERIFICATION")
+      void confirmVerification_shouldActivateAccount_whenPendingVerification() {
         // Arrange
         User user = createDefaultUser(); // 'create' já define o status como PENDING
 
         // Act
-        user.activateAccount();
+        user.confirmVerification();
 
         // Assert
         assertThat(user.getStatus()).isEqualTo(AccountStatus.ACTIVE);
@@ -312,20 +312,32 @@ public class UserTest {
         assertThat(user.getUpdatedAt()).isBefore(Instant.now());
       }
 
-      @ParameterizedTest
-      @EnumSource(
-          value = AccountStatus.class,
-          names = {"PENDING_VERIFICATION", "ACTIVE", "DISABLED"})
-      @DisplayName("lockAccount() deve bloquear a conta se ela não estiver bloqueada")
-      void lockAccount_shouldLockAccount_whenStatusIsValid(AccountStatus status) {
+      @Test
+      @DisplayName("lockAccount() deve bloquear a conta se o status for ACTIVE")
+      void lockAccount_shouldLockAccount_whenStatusIsValid() {
         // Arrange
-        User user = createUserWithStatus(status);
+        User user = createUserWithStatus(AccountStatus.ACTIVE);
 
         // Act
         user.lockAccount();
 
         // Assert
         assertThat(user.getStatus()).isEqualTo(AccountStatus.LOCKED);
+        assertThat(user.getUpdatedAt()).isAfter(user.getCreatedAt());
+        assertThat(user.getUpdatedAt()).isBefore(Instant.now());
+      }
+
+      @Test
+      @DisplayName("disableAccount() deve desativar a conta se o status for ACTIVE")
+      void disableAccount_shouldDisableAccount_whenStatusIsActive() {
+        // Arrange
+        User user = createUserWithStatus(AccountStatus.ACTIVE);
+
+        // Act
+        user.disableAccount();
+
+        // Assert
+        assertThat(user.getStatus()).isEqualTo(AccountStatus.DISABLED);
         assertThat(user.getUpdatedAt()).isAfter(user.getCreatedAt());
         assertThat(user.getUpdatedAt()).isBefore(Instant.now());
       }
@@ -337,34 +349,18 @@ public class UserTest {
       @ParameterizedTest
       @EnumSource(
           value = AccountStatus.class,
-          names = {"ACTIVE", "LOCKED"})
+          names = {"ACTIVE", "LOCKED", "DISABLED"})
       @DisplayName(
-          "activateAccount() deve lançar exceção quando o status não for PENDING_VERIFICATION")
-      void activateAccount_shouldThrowException_whenStatusIsNotPending(
+          "confirmVerification() deve lançar exceção quando o status não for PENDING_VERIFICATION")
+      void confirmVerification_shouldThrowException_whenStatusIsNotPending(
           AccountStatus invalidStatus) {
         // Arrange
         User user = createUserWithStatus(invalidStatus);
 
         // Act & Assert
-        assertThatThrownBy(user::activateAccount)
+        assertThatThrownBy(user::confirmVerification)
             .isInstanceOf(AccountStateConflictException.class)
-            .hasMessage("Atenção: A conta já está ativada. Você pode fazer login.");
-      }
-
-      @ParameterizedTest
-      @EnumSource(
-          value = AccountStatus.class,
-          names = {"ACTIVE", "LOCKED", "DISABLED"})
-      @DisplayName(
-          "activateAccount() deve lançar exceção quando o status não for PENDING_VERIFICATION")
-      void activateAccount_shouldThrowException_whenStatusIsInvalid(AccountStatus invalidStatus) {
-        // Arrange
-        User user = createUserWithStatus(invalidStatus);
-
-        // Act & Assert
-        assertThatThrownBy(user::activateAccount)
-            .isInstanceOf(AccountStateConflictException.class)
-            .hasMessage("Atenção: A conta já está ativada. Você pode fazer login.");
+            .hasMessage("Não é possível ativar uma conta que não está pendente de verificação.");
       }
 
       @Test
@@ -376,7 +372,7 @@ public class UserTest {
         // Act & Assert
         assertThatThrownBy(user::lockAccount)
             .isInstanceOf(AccountStateConflictException.class)
-            .hasMessage("Atenção: A conta já está bloqueada.");
+            .hasMessage("Não é possível bloquear uma conta que não está ativa.");
       }
 
       @ParameterizedTest
@@ -391,7 +387,22 @@ public class UserTest {
         // Act & Assert
         assertThatThrownBy(user::unlockAccount)
             .isInstanceOf(AccountStateConflictException.class)
-            .hasMessage("Atenção: A conta já está desbloqueada.");
+            .hasMessage("Não é possível desbloquear uma conta que não está bloqueada.");
+      }
+
+      @ParameterizedTest
+      @EnumSource(
+          value = AccountStatus.class,
+          names = {"PENDING_VERIFICATION", "LOCKED", "DISABLED"})
+      @DisplayName("disableAccount() deve lançar exceção para status inválidos")
+      void disableAccount_shouldThrowException_whenStatusIsInvalid(AccountStatus invalidStatus) {
+        // Arrange
+        User user = createUserWithStatus(invalidStatus);
+
+        // Act & Assert
+        assertThatThrownBy(user::disableAccount)
+            .isInstanceOf(AccountStateConflictException.class)
+            .hasMessage("Sua conta precisa estar ativa para ser desativada.");
       }
     }
   }

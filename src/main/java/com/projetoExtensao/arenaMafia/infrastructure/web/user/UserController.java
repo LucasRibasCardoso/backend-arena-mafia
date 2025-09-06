@@ -1,5 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.user;
 
+import com.projetoExtensao.arenaMafia.application.user.usecase.disable.DisableMyAccountUseCase;
 import com.projetoExtensao.arenaMafia.application.user.usecase.password.ChangePasswordUseCase;
 import com.projetoExtensao.arenaMafia.application.user.usecase.phone.CompleteChangePhoneUseCase;
 import com.projetoExtensao.arenaMafia.application.user.usecase.phone.InitiateChangePhoneUseCase;
@@ -20,6 +21,7 @@ public class UserController {
 
   private final InitiateChangePhoneUseCase initiateChangePhoneUseCase;
   private final CompleteChangePhoneUseCase completeChangePhoneUseCase;
+  private final DisableMyAccountUseCase disableMyAccountUseCase;
   private final ChangeUsernameUseCase changeUsernameUseCase;
   private final ChangePasswordUseCase changePasswordUseCase;
   private final UpdateProfileUseCase updateProfileUseCase;
@@ -27,11 +29,13 @@ public class UserController {
   public UserController(
       CompleteChangePhoneUseCase completeChangePhoneUseCase,
       InitiateChangePhoneUseCase initiateChangePhoneUseCase,
+      DisableMyAccountUseCase disableMyAccountUseCase,
       ChangeUsernameUseCase changeUsernameUseCase,
       ChangePasswordUseCase changePasswordUseCase,
       UpdateProfileUseCase updateProfileUseCase) {
     this.completeChangePhoneUseCase = completeChangePhoneUseCase;
     this.initiateChangePhoneUseCase = initiateChangePhoneUseCase;
+    this.disableMyAccountUseCase = disableMyAccountUseCase;
     this.changeUsernameUseCase = changeUsernameUseCase;
     this.changePasswordUseCase = changePasswordUseCase;
     this.updateProfileUseCase = updateProfileUseCase;
@@ -100,5 +104,12 @@ public class UserController {
             updatedUser.getPhone(),
             updatedUser.getRole().name());
     return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/disable")
+  public ResponseEntity<Void> deactivateAccount(
+      @AuthenticationPrincipal UserDetailsAdapter authenticatedUser) {
+    disableMyAccountUseCase.execute(authenticatedUser.getUser().getId());
+    return ResponseEntity.noContent().build();
   }
 }

@@ -29,7 +29,9 @@ public enum AccountStatus {
           throw new AccountStateConflictException(
               "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
       case ACTIVE -> {}
-      default -> throw new AccountStateConflictException("Atenção: Sua conta está desativada.");
+      default ->
+          throw new AccountStateConflictException(
+              "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
     }
   }
 }

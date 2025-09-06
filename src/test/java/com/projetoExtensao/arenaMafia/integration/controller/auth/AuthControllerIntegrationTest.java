@@ -211,7 +211,9 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
 
       // Assert
       assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message()).isEqualTo("Atenção: Sua conta está desativada.");
+      assertThat(response.message())
+          .isEqualTo(
+              "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
       assertThat(response.path()).isEqualTo("/api/auth/login");
       assertThat(response.fieldErrors()).isNull();
     }
@@ -503,7 +505,9 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
       // Assert
       assertThat(response).isNotNull();
       assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message()).isEqualTo("Atenção: Sua conta está desativada.");
+      assertThat(response.message())
+          .isEqualTo(
+              "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
       assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
       assertThat(response.fieldErrors()).isNull();
     }

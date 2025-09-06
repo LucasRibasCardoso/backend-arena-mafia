@@ -187,7 +187,7 @@ public class VerifyAccountUseCaseTest {
     // Act & Assert
     assertThatThrownBy(() -> verifyAccountUseCase.execute(requestDto))
         .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Atenção: A conta já está ativada. Você pode fazer login.");
+        .hasMessage("Não é possível ativar uma conta que não está pendente de verificação.");
 
     // Verify
     verify(phoneValidator, times(1)).formatToE164(unformattedPhone);

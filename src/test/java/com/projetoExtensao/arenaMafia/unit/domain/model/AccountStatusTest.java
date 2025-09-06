@@ -33,6 +33,7 @@ public class AccountStatusTest {
   void validateEnabled_shouldThrow_whenDisabled() {
     assertThatThrownBy(AccountStatus.DISABLED::validateEnabled)
         .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Atenção: Sua conta está desativada.");
+        .hasMessage(
+            "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
   }
 }

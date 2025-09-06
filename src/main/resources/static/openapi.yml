@@ -1325,8 +1325,8 @@ paths:
               example:
                 timestamp: "2025-08-15T13:55:00Z"
                 status: 400
-                path: "/api/users/me/phone/verification"
                 message: "Esse número de telefone já está em uso."
+                path: "/api/users/me/phone/verification"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"
 
@@ -1434,7 +1434,7 @@ paths:
               example:
                 timestamp: "2025-08-15T13:55:00Z"
                 status: 409
-                message: "Sua conta não pode ser desativada, pois não está ativa no momento."
+                message: "Sua conta precisa estar ativa para ser desativada."
                 path: "/api/users/me/disable"
         "500":
           $ref: "#/components/responses/ErrorResponseInternalServerError"

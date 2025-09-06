@@ -7,7 +7,6 @@ import static org.mockito.Mockito.*;
 
 import com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification.imp.ResendCodeUseCaseImp;
 import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
-import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidUserIdentifierException;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;

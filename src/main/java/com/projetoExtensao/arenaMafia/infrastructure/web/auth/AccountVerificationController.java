@@ -5,7 +5,7 @@ import com.projetoExtensao.arenaMafia.application.auth.usecase.accountverificati
 import com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification.VerifyAccountUseCase;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendCodeRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.VerifyAccountRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
 import jakarta.validation.Valid;
 import java.time.Duration;
@@ -36,9 +36,9 @@ public class AccountVerificationController {
 
   @PostMapping("/verify-account")
   public ResponseEntity<TokenResponseDto> verifyAccount(
-      @Valid @RequestBody ValidateOtpRequestDto requestDto) {
+      @Valid @RequestBody VerifyAccountRequestDto request) {
 
-    AuthResult authResult = verifyAccountUseCase.execute(requestDto);
+    AuthResult authResult = verifyAccountUseCase.execute(request);
 
     ResponseCookie refreshTokenCookie =
         ResponseCookie.from("refreshToken", authResult.refreshToken())
@@ -66,9 +66,9 @@ public class AccountVerificationController {
 
   @PostMapping("/resend-code")
   public ResponseEntity<Void> resendVerificationCode(
-      @Valid @RequestBody ResendCodeRequestDto requestDto) {
+      @Valid @RequestBody ResendCodeRequestDto request) {
 
-    resendCodeUseCase.execute(requestDto);
+    resendCodeUseCase.execute(request);
     return ResponseEntity.noContent().build();
   }
 }

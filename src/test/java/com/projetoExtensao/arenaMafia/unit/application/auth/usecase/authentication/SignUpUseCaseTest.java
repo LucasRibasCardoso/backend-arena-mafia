@@ -65,14 +65,14 @@ public class SignUpUseCaseTest {
     when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
     // Act
-    String response = signUpUseCase.execute(request);
+    User response = signUpUseCase.execute(request);
 
     // Assert
-    assertThat(response).isEqualTo(formattedPhone);
-    assertThat(savedUser.getUsername()).isEqualTo(defaultUsername);
-    assertThat(savedUser.getFullName()).isEqualTo(defaultFullName);
-    assertThat(savedUser.getPhone()).isEqualTo(formattedPhone);
-    assertThat(savedUser.getPasswordHash()).isEqualTo(encodedPassword);
+    assertThat(response.getId()).isEqualTo(savedUser.getId());
+    assertThat(response.getUsername()).isEqualTo(defaultUsername);
+    assertThat(response.getFullName()).isEqualTo(defaultFullName);
+    assertThat(response.getPhone()).isEqualTo(formattedPhone);
+    assertThat(response.getPasswordHash()).isEqualTo(encodedPassword);
 
     verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
     verify(userRepository, times(1)).existsByUsername(defaultUsername);

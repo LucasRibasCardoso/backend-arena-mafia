@@ -44,19 +44,20 @@ public class AuthController {
 
   @PostMapping("/signup")
   public ResponseEntity<SignupResponseDto> signup(@Valid @RequestBody SignupRequestDto requestDto) {
-    String userIdentifier = signUpUseCase.execute(requestDto);
+    User savedUser = signUpUseCase.execute(requestDto);
 
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequestUri()
             .replacePath("/api/users/{identifier}")
-            .buildAndExpand(userIdentifier)
+            .buildAndExpand(savedUser.getId())
             .toUri();
 
     SignupResponseDto signupResponseDto =
         new SignupResponseDto(
+            savedUser.getId().toString(),
+            savedUser.getUsername(),
             AccountStatus.PENDING_VERIFICATION.getValue(),
-            "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone.",
-            userIdentifier);
+            "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone.");
 
     return ResponseEntity.created(location).body(signupResponseDto);
   }
@@ -71,6 +72,7 @@ public class AuthController {
     User user = authResult.user();
     TokenResponseDto tokenResponseDto =
         new TokenResponseDto(
+            user.getId().toString(),
             user.getPhone(),
             user.getUsername(),
             user.getFullName(),
@@ -112,6 +114,7 @@ public class AuthController {
     User user = authResult.user();
     TokenResponseDto tokenResponseDto =
         new TokenResponseDto(
+            user.getId().toString(),
             user.getPhone(),
             user.getUsername(),
             user.getFullName(),

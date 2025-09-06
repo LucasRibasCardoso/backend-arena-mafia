@@ -538,11 +538,12 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(SignupResponseDto.class);
 
       // Assert
+      assertThat(response.userId()).hasSize(36); // UUID tem 36 caracteres
+      assertThat(response.username()).isEqualTo(defaultUsername);
       assertThat(response.status()).isEqualTo(AccountStatus.PENDING_VERIFICATION.getValue());
       assertThat(response.message())
           .isEqualTo(
               "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone.");
-      assertThat(response.identifier()).isEqualTo(request.phone());
     }
 
     @Test

@@ -8,7 +8,7 @@ import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepos
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.UserId;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.VerifyAccountRequestDto;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +29,7 @@ public class VerifyAccountUseCaseImp implements VerifyAccountUseCase {
   }
 
   @Override
-  public AuthResult execute(ValidateOtpRequestDto request) {
+  public AuthResult execute(VerifyAccountRequestDto request) {
     UserId userId = UserId.fromString(request.userId());
     User user = getUserByIdOrElseThrow(userId.value());
     otpPort.validateOtp(user.getId(), request.code());

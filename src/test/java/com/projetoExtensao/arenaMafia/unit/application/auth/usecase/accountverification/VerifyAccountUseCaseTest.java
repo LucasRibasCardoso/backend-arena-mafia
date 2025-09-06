@@ -16,7 +16,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundExce
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.VerifyAccountRequestDto;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -60,7 +60,7 @@ public class VerifyAccountUseCaseTest {
     String accessToken = "access_token";
     String refreshToken = "refresh_token";
     UUID userId = user.getId();
-    var request = new ValidateOtpRequestDto(userId.toString(), defaultOtp);
+    var request = new VerifyAccountRequestDto(userId.toString(), defaultOtp);
     var expectedResponse = new AuthResult(user, accessToken, refreshToken);
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -91,7 +91,7 @@ public class VerifyAccountUseCaseTest {
     // Arrange
     String userId = "invalid-uuid";
     String code = "123456";
-    var requestDto = new ValidateOtpRequestDto(userId, code);
+    var requestDto = new VerifyAccountRequestDto(userId, code);
 
     // Act & Assert
     assertThatThrownBy(() -> verifyAccountUseCase.execute(requestDto))
@@ -109,7 +109,7 @@ public class VerifyAccountUseCaseTest {
   void execute_shouldThrowUserNotFoundException_whenUserIsNotFound() {
     // Arrange
     UUID userId = UUID.randomUUID();
-    var request = new ValidateOtpRequestDto(userId.toString(), defaultOtp);
+    var request = new VerifyAccountRequestDto(userId.toString(), defaultOtp);
 
     when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
@@ -133,7 +133,7 @@ public class VerifyAccountUseCaseTest {
     User user = createUser(AccountStatus.PENDING_VERIFICATION);
     UUID userId = user.getId();
     String invalidCode = "aaabbb";
-    var requestDto = new ValidateOtpRequestDto(userId.toString(), invalidCode);
+    var requestDto = new VerifyAccountRequestDto(userId.toString(), invalidCode);
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     doThrow(new InvalidOtpException(errorMessage))
@@ -157,7 +157,7 @@ public class VerifyAccountUseCaseTest {
     // Arrange
     User activeUser = createUser(AccountStatus.ACTIVE);
     UUID userId = activeUser.getId();
-    var requestDto = new ValidateOtpRequestDto(userId.toString(), defaultOtp);
+    var requestDto = new VerifyAccountRequestDto(userId.toString(), defaultOtp);
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(activeUser));
     doNothing().when(otpPort).validateOtp(activeUser.getId(), defaultOtp);

@@ -33,19 +33,17 @@ public class SignUpUseCaseImp implements SignUpUseCase {
   }
 
   @Override
-  public String execute(SignupRequestDto requestDto) {
-    String formattedPhone = phoneValidator.formatToE164(requestDto.phone());
+  public User execute(SignupRequestDto request) {
+    String formattedPhone = phoneValidator.formatToE164(request.phone());
+    validateUniqueness(request.username(), formattedPhone);
 
-    validateUniqueness(requestDto.username(), formattedPhone);
-
-    String encodedPassword = passwordEncoderPort.encode(requestDto.password());
-
+    String encodedPassword = passwordEncoderPort.encode(request.password());
     User userToSave =
-        User.create(requestDto.username(), requestDto.fullName(), formattedPhone, encodedPassword);
+        User.create(request.username(), request.fullName(), formattedPhone, encodedPassword);
 
     User savedUser = userRepository.save(userToSave);
     eventPublisher.publishEvent(new OnVerificationRequiredEvent(savedUser));
-    return savedUser.getPhone();
+    return savedUser;
   }
 
   private void validateUniqueness(String username, String phone) {

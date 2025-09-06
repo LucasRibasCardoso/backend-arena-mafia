@@ -8,7 +8,7 @@ import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepos
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendCodeRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.VerifyAccountRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.integration.config.WebIntegrationTestConfig;
@@ -51,7 +51,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
       // Arrange
       User mockUser = mockPersistUser(AccountStatus.PENDING_VERIFICATION);
       String codeOTP = otpPort.generateCodeOTP(mockUser.getId());
-      var request = new ValidateOtpRequestDto(mockUser.getId().toString(), codeOTP);
+      var request = new VerifyAccountRequestDto(mockUser.getId().toString(), codeOTP);
 
       // Act
       Response response =
@@ -85,7 +85,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     void verifyAccount_shouldReturn400_whenOtpIsMissing() {
       // Arrange
       String userId = UUID.randomUUID().toString();
-      var request = new ValidateOtpRequestDto(userId, "");
+      var request = new VerifyAccountRequestDto(userId, "");
 
       // Act
       ErrorResponseDto response =
@@ -113,7 +113,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     void validateResetToken_shouldReturn400_whenUserIdIsInvalid() {
       // Arrange
       String userId = "invalid-uuid";
-      var request = new ValidateOtpRequestDto(userId, "123456");
+      var request = new VerifyAccountRequestDto(userId, "123456");
 
       // Act
       ErrorResponseDto response =
@@ -140,7 +140,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
       // Arrange
       User mockUser = mockPersistUser();
       String invalidCodeOTP = "111222";
-      var request = new ValidateOtpRequestDto(mockUser.getId().toString(), invalidCodeOTP);
+      var request = new VerifyAccountRequestDto(mockUser.getId().toString(), invalidCodeOTP);
 
       // Act
       ErrorResponseDto response =
@@ -166,7 +166,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     void verifyAccount_shouldReturn404_whenUserNotFound() {
       // Arrange
       String userId = UUID.randomUUID().toString();
-      var request = new ValidateOtpRequestDto(userId, "123456");
+      var request = new VerifyAccountRequestDto(userId, "123456");
 
       // Act
       ErrorResponseDto response =
@@ -196,7 +196,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
       User mockUser = mockPersistUser();
 
       String codeOTP = otpPort.generateCodeOTP(mockUser.getId());
-      var request = new ValidateOtpRequestDto(mockUser.getId().toString(), codeOTP);
+      var request = new VerifyAccountRequestDto(mockUser.getId().toString(), codeOTP);
 
       // Act
       ErrorResponseDto response =

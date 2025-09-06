@@ -52,6 +52,7 @@ public class AccountVerificationController {
     User user = authResult.user();
     TokenResponseDto tokenResponseDto =
         new TokenResponseDto(
+            user.getId().toString(),
             user.getPhone(),
             user.getUsername(),
             user.getFullName(),

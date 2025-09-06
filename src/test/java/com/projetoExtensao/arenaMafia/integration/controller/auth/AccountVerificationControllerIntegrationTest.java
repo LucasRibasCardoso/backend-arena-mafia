@@ -16,6 +16,7 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.Cookie;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -50,7 +51,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
       // Arrange
       User mockUser = mockPersistUser(AccountStatus.PENDING_VERIFICATION);
       String codeOTP = otpPort.generateCodeOTP(mockUser.getId());
-      var request = new ValidateOtpRequestDto(mockUser.getPhone(), codeOTP);
+      var request = new ValidateOtpRequestDto(mockUser.getId().toString(), codeOTP);
 
       // Act
       Response response =
@@ -80,10 +81,11 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o request DTO for inválido")
+    @DisplayName("Deve retornar 400 Bad Request quando o código OTO for vazio")
     void verifyAccount_shouldReturn400_whenOtpIsMissing() {
       // Arrange
-      var request = new ValidateOtpRequestDto(defaultPhone, "");
+      String userId = UUID.randomUUID().toString();
+      var request = new ValidateOtpRequestDto(userId, "");
 
       // Act
       ErrorResponseDto response =
@@ -107,11 +109,11 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o telefone for inválido")
-    void validateResetToken_shouldReturn400_whenPhoneIsInvalid() {
+    @DisplayName("Deve retornar 400 Bad Request quando o userId for inválido")
+    void validateResetToken_shouldReturn400_whenUserIdIsInvalid() {
       // Arrange
-      String invalidPhone = "+999123456789";
-      var request = new ValidateOtpRequestDto(invalidPhone, "123456");
+      String userId = "invalid-uuid";
+      var request = new ValidateOtpRequestDto(userId, "123456");
 
       // Act
       ErrorResponseDto response =
@@ -127,8 +129,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
 
       // Assert
       assertThat(response.status()).isEqualTo(400);
-      assertThat(response.message())
-          .isEqualTo("Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
+      assertThat(response.message()).isEqualTo("Identificador de usuário inválido.");
       assertThat(response.path()).isEqualTo("/api/auth/verify-account");
       assertThat(response.fieldErrors()).isNull();
     }
@@ -137,9 +138,9 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido")
     void verifyAccount_shouldReturn400_whenOtpIsInvalid() {
       // Arrange
-      mockPersistUser();
+      User mockUser = mockPersistUser();
       String invalidCodeOTP = "111222";
-      var request = new ValidateOtpRequestDto(defaultPhone, invalidCodeOTP);
+      var request = new ValidateOtpRequestDto(mockUser.getId().toString(), invalidCodeOTP);
 
       // Act
       ErrorResponseDto response =
@@ -164,7 +165,8 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     @DisplayName("Deve retornar 404 Not Found quando o usuário não for encontrado")
     void verifyAccount_shouldReturn404_whenUserNotFound() {
       // Arrange
-      var request = new ValidateOtpRequestDto(defaultPhone, "123456");
+      String userId = UUID.randomUUID().toString();
+      var request = new ValidateOtpRequestDto(userId, "123456");
 
       // Act
       ErrorResponseDto response =
@@ -194,7 +196,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
       User mockUser = mockPersistUser();
 
       String codeOTP = otpPort.generateCodeOTP(mockUser.getId());
-      var request = new ValidateOtpRequestDto(mockUser.getPhone(), codeOTP);
+      var request = new ValidateOtpRequestDto(mockUser.getId().toString(), codeOTP);
 
       // Act
       ErrorResponseDto response =
@@ -226,26 +228,26 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     void resendCode_shouldReturn204_whenSuccessful() {
       // Arrange
       User mockUser = mockPersistUser(AccountStatus.PENDING_VERIFICATION);
-      ResendCodeRequestDto request = new ResendCodeRequestDto(mockUser.getPhone());
+      ResendCodeRequestDto request = new ResendCodeRequestDto(mockUser.getId().toString());
 
       // Act
       given().spec(specification).body(request).when().post("/resend-code").then().statusCode(204);
     }
 
     @Test
-    @DisplayName("Deve retornar 204 No Content mesmo quando o telefone não existir, por segurança")
-    void resendCode_shouldReturn204_whenPhoneDoesNotExist() {
+    @DisplayName("Deve retornar 204 No Content mesmo quando o usuário não for encontrado")
+    void resendCode_shouldReturn204_whenUserNotFound() {
       // Arrange
-      String nonExistentPhone = "+558320548181";
-      var request = new ResendCodeRequestDto(nonExistentPhone);
+      String userId = UUID.randomUUID().toString();
+      var request = new ResendCodeRequestDto(userId);
 
       // Act
       given().spec(specification).body(request).when().post("/resend-code").then().statusCode(204);
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o request DTO for inválido")
-    void resendCode_shouldReturn400_whenPhoneIsMissingOrInvalid() {
+    @DisplayName("Deve retornar 400 Bad Request quando o userId for vazio")
+    void resendCode_shouldReturn400_whenUserIdIsBlank() {
       // Arrange
       var request = new ResendCodeRequestDto("");
 
@@ -267,15 +269,15 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
           .isEqualTo("Erro de validação. Verifique os campos informados.");
       assertThat(response.path()).isEqualTo("/api/auth/resend-code");
       assertThat(response.fieldErrors()).hasSize(1);
-      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("phone");
+      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("userId");
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o telefone for inválido")
-    void validateResetToken_shouldReturn400_whenPhoneIsInvalid() {
+    @DisplayName("Deve retornar 400 Bad Request quando o userId for inválido")
+    void validateResetToken_shouldReturn400_whenUserIdIsInvalid() {
       // Arrange
-      String invalidPhone = "+999123456789";
-      var request = new ResendCodeRequestDto(invalidPhone);
+      String userId = "invalid-uuid";
+      var request = new ResendCodeRequestDto(userId);
 
       // Act
       ErrorResponseDto response =
@@ -291,8 +293,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
 
       // Assert
       assertThat(response.status()).isEqualTo(400);
-      assertThat(response.message())
-          .isEqualTo("Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
+      assertThat(response.message()).isEqualTo("Identificador de usuário inválido.");
       assertThat(response.path()).isEqualTo("/api/auth/resend-code");
       assertThat(response.fieldErrors()).isNull();
     }
@@ -302,7 +303,7 @@ public class AccountVerificationControllerIntegrationTest extends WebIntegration
     void resendCode_shouldReturn409_whenAccountIsAlreadyActive() {
       // Arrange
       User mockUser = mockPersistUser();
-      var request = new ResendCodeRequestDto(mockUser.getPhone());
+      var request = new ResendCodeRequestDto(mockUser.getId().toString());
 
       // Act
       ErrorResponseDto response =

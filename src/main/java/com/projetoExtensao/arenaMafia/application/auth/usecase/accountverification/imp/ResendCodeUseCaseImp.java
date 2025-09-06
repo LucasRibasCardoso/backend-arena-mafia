@@ -2,8 +2,8 @@ package com.projetoExtensao.arenaMafia.application.auth.usecase.accountverificat
 
 import com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification.ResendCodeUseCase;
 import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
-import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.UserId;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendCodeRequestDto;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -14,23 +14,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class ResendCodeUseCaseImp implements ResendCodeUseCase {
 
   private final UserRepositoryPort userRepository;
-  private final PhoneValidatorPort phoneValidator;
   private final ApplicationEventPublisher eventPublisher;
 
   public ResendCodeUseCaseImp(
-      UserRepositoryPort userRepository,
-      PhoneValidatorPort phoneValidator,
-      ApplicationEventPublisher eventPublisher) {
+      UserRepositoryPort userRepository, ApplicationEventPublisher eventPublisher) {
     this.userRepository = userRepository;
-    this.phoneValidator = phoneValidator;
     this.eventPublisher = eventPublisher;
   }
 
   @Override
   public void execute(ResendCodeRequestDto requestDto) {
-    String formattedPhone = phoneValidator.formatToE164(requestDto.phone());
+    UserId userId = UserId.fromString(requestDto.userId());
     userRepository
-        .findByPhone(formattedPhone)
+        .findById(userId.value())
         .ifPresent(
             user -> {
               user.ensurePendingVerification();

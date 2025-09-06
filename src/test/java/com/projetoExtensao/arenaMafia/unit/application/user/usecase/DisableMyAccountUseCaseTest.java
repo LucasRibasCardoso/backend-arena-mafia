@@ -30,20 +30,16 @@ public class DisableMyAccountUseCaseTest {
   @Mock private UserRepositoryPort userRepository;
   @InjectMocks private DisableMyAccountUseCaseImp disableMyAccountUseCase;
 
-  private final String defaultUsername = "testuser";
-  private final String defaultFullName = "Test User";
-  private final String defaultPhone = "+558320548181";
-  private final String defaultPassword = "password123";
   private final RoleEnum defaultRole = RoleEnum.ROLE_USER;
 
   private User mockUser(AccountStatus accountStatus) {
     Instant now = Instant.now();
     return User.reconstitute(
         UUID.randomUUID(),
-        defaultUsername,
-        defaultFullName,
-        defaultPhone,
-        defaultPassword,
+        "testuser",
+        "Test User",
+        "+558320548181",
+        "password123",
         accountStatus,
         defaultRole,
         now,

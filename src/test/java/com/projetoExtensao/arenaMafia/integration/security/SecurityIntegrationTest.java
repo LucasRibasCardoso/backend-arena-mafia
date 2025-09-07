@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.UpdateProfileRequestDTO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.UpdateProfileRequestDto;
 import com.projetoExtensao.arenaMafia.integration.config.WebIntegrationTestConfig;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.specification.RequestSpecification;
@@ -57,7 +57,7 @@ public class SecurityIntegrationTest extends WebIntegrationTestConfig {
     AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
     deleteMockUser(persistedUser.getId());
 
-    UpdateProfileRequestDTO request = new UpdateProfileRequestDTO("Novo Nome Completo");
+    UpdateProfileRequestDto request = new UpdateProfileRequestDto("Novo Nome Completo");
 
     // Act & Assert
     ErrorResponseDto response =

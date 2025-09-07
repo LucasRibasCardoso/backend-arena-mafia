@@ -1,6 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response;
 
-public record TokenResponseDto(
+public record AuthResponseDto(
     String userId,
     String phone,
     String username,

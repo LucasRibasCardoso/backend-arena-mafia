@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @PasswordsMatch(message = "A senha de confirmação não corresponde à senha.")
-public record ChangePasswordRequestDTO(
+public record ChangePasswordRequestDto(
     @NotBlank(message = "Por favor, insira a sua senha atual.")
         @Size(min = 6, max = 20, message = "A senha deve ter entre 6 e 20 caracteres.")
         @Pattern(regexp = "^\\S+$", message = "A senha não pode conter espaços em branco.")

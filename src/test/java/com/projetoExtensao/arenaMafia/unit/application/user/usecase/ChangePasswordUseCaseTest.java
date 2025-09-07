@@ -10,7 +10,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.badRequest.IncorrectPassw
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPasswordHashException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.ChangePasswordRequestDTO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.ChangePasswordRequestDto;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -48,7 +48,7 @@ public class ChangePasswordUseCaseTest {
 
     String newPassword = "newPassword123";
     String newPasswordHash = "hashedNewPassword";
-    var request = new ChangePasswordRequestDTO(defaultPassword, newPassword, newPassword);
+    var request = new ChangePasswordRequestDto(defaultPassword, newPassword, newPassword);
 
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(mockUser));
     when(passwordEncoder.matches(defaultPassword, defaultPasswordHash)).thenReturn(true);
@@ -75,7 +75,7 @@ public class ChangePasswordUseCaseTest {
   public void execute_ShouldThrowException_WhenUserNotFound() {
     // Arrange
     UUID idCurrentUser = UUID.randomUUID();
-    var request = new ChangePasswordRequestDTO(defaultPassword, "newPassword", "newPassword");
+    var request = new ChangePasswordRequestDto(defaultPassword, "newPassword", "newPassword");
 
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.empty());
 
@@ -99,7 +99,7 @@ public class ChangePasswordUseCaseTest {
     UUID idCurrentUser = mockUser.getId();
 
     String wrongCurrentPassword = "wrongCurrentPassword";
-    var request = new ChangePasswordRequestDTO(wrongCurrentPassword, "newPassword", "newPassword");
+    var request = new ChangePasswordRequestDto(wrongCurrentPassword, "newPassword", "newPassword");
 
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(mockUser));
     when(passwordEncoder.matches(wrongCurrentPassword, defaultPasswordHash)).thenReturn(false);
@@ -126,7 +126,7 @@ public class ChangePasswordUseCaseTest {
     UUID idCurrentUser = mockUser.getId();
 
     String validNewPassword = "newPassword123";
-    var request = new ChangePasswordRequestDTO(defaultPassword, validNewPassword, validNewPassword);
+    var request = new ChangePasswordRequestDto(defaultPassword, validNewPassword, validNewPassword);
 
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(mockUser));
     when(passwordEncoder.matches(defaultPassword, defaultPasswordHash)).thenReturn(true);

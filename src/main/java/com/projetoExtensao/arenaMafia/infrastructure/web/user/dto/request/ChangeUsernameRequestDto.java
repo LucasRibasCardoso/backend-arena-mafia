@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record ChangeUsernameRequestDTO(
+public record ChangeUsernameRequestDto(
     @NotBlank(message = "Por favor, informe um novo nome de usuário.")
         @Pattern(
             regexp = "^[a-zA-Z0-9_]{3,20}$",

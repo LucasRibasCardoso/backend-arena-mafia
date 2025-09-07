@@ -12,7 +12,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadPhoneNumber
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.InitiateChangePhoneRequestDTO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.InitiateChangePhoneRequestDto;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -47,7 +47,7 @@ public class InitiateChangePhoneUseCaseTest {
     UUID idCurrentUser = mockUser.getId();
 
     String newPhone = "+558320566921";
-    var request = new InitiateChangePhoneRequestDTO(newPhone);
+    var request = new InitiateChangePhoneRequestDto(newPhone);
 
     when(phoneValidatorPort.formatToE164(newPhone)).thenReturn(newPhone);
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(mockUser));
@@ -71,7 +71,7 @@ public class InitiateChangePhoneUseCaseTest {
     String errorMessage = "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.";
     UUID idCurrentUser = UUID.randomUUID();
     String newPhone = "+999999999999";
-    var request = new InitiateChangePhoneRequestDTO(newPhone);
+    var request = new InitiateChangePhoneRequestDto(newPhone);
 
     when(phoneValidatorPort.formatToE164(newPhone))
         .thenThrow(new BadPhoneNumberException(errorMessage));
@@ -95,7 +95,7 @@ public class InitiateChangePhoneUseCaseTest {
     User mockUser = User.create(defaultUsername, defaultFullName, defaultPhone, defaultPassword);
     UUID idCurrentUser = UUID.randomUUID();
     String newPhone = "+558320566921";
-    var request = new InitiateChangePhoneRequestDTO(newPhone);
+    var request = new InitiateChangePhoneRequestDto(newPhone);
 
     when(phoneValidatorPort.formatToE164(newPhone)).thenReturn(newPhone);
     when(userRepository.findByPhone(newPhone)).thenReturn(Optional.of(mockUser));
@@ -119,7 +119,7 @@ public class InitiateChangePhoneUseCaseTest {
     User mockUser = User.create(defaultUsername, defaultFullName, defaultPhone, defaultPassword);
     UUID idCurrentUser = mockUser.getId();
     String newPhone = "+558320566921";
-    var request = new InitiateChangePhoneRequestDTO(newPhone);
+    var request = new InitiateChangePhoneRequestDto(newPhone);
 
     when(phoneValidatorPort.formatToE164(newPhone)).thenReturn(newPhone);
     when(userRepository.findByPhone(newPhone)).thenReturn(Optional.of(mockUser));

@@ -9,7 +9,7 @@ import com.projetoExtensao.arenaMafia.application.user.usecase.profile.imp.Updat
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidFullNameException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.UpdateProfileRequestDTO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.UpdateProfileRequestDto;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +40,7 @@ public class UpdateProfileUseCaseTest {
     String newFullName = "Updated User";
     User mockUser = User.create(defaultUsername, defaultFullName, defaultPhone, defaultPassword);
     UUID idCurrentUser = mockUser.getId();
-    var request = new UpdateProfileRequestDTO(newFullName);
+    var request = new UpdateProfileRequestDto(newFullName);
 
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(mockUser));
     when(userRepository.save(mockUser)).thenReturn(mockUser);
@@ -59,7 +59,7 @@ public class UpdateProfileUseCaseTest {
   void execute_shouldThrowException_whenUserNotFound() {
     // Arrange
     UUID idCurrentUser = UUID.randomUUID();
-    var request = new UpdateProfileRequestDTO("Updated User");
+    var request = new UpdateProfileRequestDto("Updated User");
 
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.empty());
 
@@ -79,7 +79,7 @@ public class UpdateProfileUseCaseTest {
     // Arrange
     User mockUser = User.create(defaultUsername, defaultFullName, defaultPhone, defaultPassword);
     UUID idCurrentUser = mockUser.getId();
-    var request = new UpdateProfileRequestDTO(invalidFullName);
+    var request = new UpdateProfileRequestDto(invalidFullName);
 
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(mockUser));
 

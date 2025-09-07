@@ -7,7 +7,7 @@ import com.projetoExtensao.arenaMafia.application.user.usecase.phone.CompleteCha
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPhoneChangeRequestException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.CompletePhoneChangeRequestDTO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.CompletePhoneChangeRequestDto;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +30,7 @@ public class CompleteChangePhoneUseCaseImp implements CompleteChangePhoneUseCase
   }
 
   @Override
-  public User execute(UUID idCurrentUser, CompletePhoneChangeRequestDTO request) {
+  public User execute(UUID idCurrentUser, CompletePhoneChangeRequestDto request) {
     String newPhone = getPhoneOrElseThrow(idCurrentUser);
     User.validatePhone(newPhone);
 

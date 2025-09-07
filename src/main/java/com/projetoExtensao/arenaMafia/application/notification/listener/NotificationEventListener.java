@@ -27,17 +27,19 @@ public class NotificationEventListener {
   @EventListener
   public void osUserRegistration(OnVerificationRequiredEvent event) {
     try {
-      User user = event.user();
+      User user = event.getUser();
+      String recipientPhone = event.getRecipientPhone();
 
       // Gerar código OTP
-      String otpCode = otpPort.generateCodeOTP(user.getId());
+      String otpCode = otpPort.generateAndSaveOtp(user.getId());
 
       // Enviar SMS com o código OTP
       String message =
           String.format(
               "Seu código de verificação para a Arena Máfia é: %s. Não compartilhe este código.",
               otpCode);
-      smsPort.send(user.getPhone(), message);
+
+      smsPort.send(recipientPhone, message);
 
       logger.info("SMS de verificação enviado para o usuário: {}", user.getUsername());
 

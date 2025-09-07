@@ -10,7 +10,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidUsernam
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.ChangeUsernameRequestDTO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.ChangeUsernameRequestDto;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -42,7 +42,7 @@ public class ChangeUsernameUseCaseTest {
     User mockUser = User.create(defaultUsername, defaultFullName, defaultPhone, defaultPassword);
     UUID idCurrentUser = mockUser.getId();
     String newUsername = "newUsername";
-    var request = new ChangeUsernameRequestDTO(newUsername);
+    var request = new ChangeUsernameRequestDto(newUsername);
 
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(mockUser));
     when(userRepository.findByUsername(newUsername)).thenReturn(Optional.of(mockUser));
@@ -66,7 +66,7 @@ public class ChangeUsernameUseCaseTest {
     // Arrange
     User mockUser = User.create(defaultUsername, defaultFullName, defaultPhone, defaultPassword);
     UUID idCurrentUser = mockUser.getId();
-    var request = new ChangeUsernameRequestDTO(invalidUsername);
+    var request = new ChangeUsernameRequestDto(invalidUsername);
 
     // Act & Assert
     assertThatThrownBy(() -> changeUsernameUseCase.execute(idCurrentUser, request))
@@ -84,7 +84,7 @@ public class ChangeUsernameUseCaseTest {
     User mockUser = User.create(defaultUsername, defaultFullName, defaultPhone, defaultPassword);
     UUID idCurrentUser = UUID.randomUUID();
     String newUsername = defaultUsername;
-    var request = new ChangeUsernameRequestDTO(newUsername);
+    var request = new ChangeUsernameRequestDto(newUsername);
 
     when(userRepository.findByUsername(newUsername)).thenReturn(Optional.of(mockUser));
 
@@ -106,7 +106,7 @@ public class ChangeUsernameUseCaseTest {
     User mockUser = User.create(defaultUsername, defaultFullName, defaultPhone, defaultPassword);
     UUID idCurrentUser = mockUser.getId();
     String newUsername = "newUsername";
-    var request = new ChangeUsernameRequestDTO(newUsername);
+    var request = new ChangeUsernameRequestDto(newUsername);
 
     when(userRepository.findByUsername(newUsername)).thenReturn(Optional.of(mockUser));
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.empty());

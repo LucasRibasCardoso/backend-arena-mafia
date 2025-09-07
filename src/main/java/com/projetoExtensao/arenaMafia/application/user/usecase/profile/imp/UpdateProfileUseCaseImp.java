@@ -4,7 +4,7 @@ import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepos
 import com.projetoExtensao.arenaMafia.application.user.usecase.profile.UpdateProfileUseCase;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.UpdateProfileRequestDTO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.UpdateProfileRequestDto;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +20,7 @@ public class UpdateProfileUseCaseImp implements UpdateProfileUseCase {
   }
 
   @Override
-  public User execute(UUID idCurrentUser, UpdateProfileRequestDTO request) {
+  public User execute(UUID idCurrentUser, UpdateProfileRequestDto request) {
     User user = getUserOrElseThrow(idCurrentUser);
     user.updateFullName(request.fullName());
     return userRepository.save(user);

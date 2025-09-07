@@ -8,7 +8,7 @@ import com.projetoExtensao.arenaMafia.application.auth.model.AuthResult;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.imp.RefreshTokenUseCaseImp;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.RefreshTokenInvalidFormatException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidTokenFormatException;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
 import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenExpiredException;
 import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenNotFoundException;
@@ -127,7 +127,7 @@ public class RefreshTokenUseCaseTest {
 
     // Act & Assert
     assertThatThrownBy(() -> refreshTokenUseCase.execute(invalidRequestDto))
-        .isInstanceOf(RefreshTokenInvalidFormatException.class)
+        .isInstanceOf(InvalidTokenFormatException.class)
         .hasMessage("Formato inválido para o refresh token.");
 
     verify(refreshTokenRepository, never()).findByToken(any(RefreshTokenVO.class));

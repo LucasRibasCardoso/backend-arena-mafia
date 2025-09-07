@@ -3,7 +3,7 @@ package com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
-public record CompletePhoneChangeRequestDTO(
+public record CompletePhoneChangeRequestDto(
     @NotBlank(message = "O código de verificação é obrigatório.")
         @Pattern(
             regexp = "^\\d{6}$",

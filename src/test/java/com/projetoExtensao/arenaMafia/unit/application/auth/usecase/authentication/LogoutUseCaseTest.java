@@ -6,7 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.imp.LogoutUseCaseImp;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.RefreshTokenInvalidFormatException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidTokenFormatException;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
@@ -93,7 +93,7 @@ public class LogoutUseCaseTest {
 
     // Act & Assert
     assertThatThrownBy(() -> logoutUseCase.execute(malformedToken))
-        .isInstanceOf(RefreshTokenInvalidFormatException.class)
+        .isInstanceOf(InvalidTokenFormatException.class)
         .hasMessage("Formato inválido para o refresh token.");
 
     // Verify

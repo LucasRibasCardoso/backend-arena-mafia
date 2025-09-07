@@ -31,20 +31,25 @@ public class ResetPasswordUseCaseImp implements ResetPasswordUseCase {
 
   @Override
   public void execute(ResetPasswordRequestDto requestDto) {
-    User user = findUserByResetToken(requestDto.passwordResetToken());
+    String token = requestDto.passwordResetToken();
+    UUID userId = getUserIdFromToken(token);
+    User user = getUserById(userId);
+
     user.ensureAccountEnabled();
     String newPasswordHash = passwordEncoder.encode(requestDto.newPassword());
     user.updatePasswordHash(newPasswordHash);
     userRepositoryPort.save(user);
+
+    passwordResetTokenPort.delete(token);
   }
 
-  private User findUserByResetToken(String token) {
-    UUID userId =
-        passwordResetTokenPort
-            .findUserIdByResetToken(token)
-            .orElseThrow(
-                () -> new InvalidPasswordResetTokenException("Token inválido ou expirado."));
+  private UUID getUserIdFromToken(String token) {
+    return passwordResetTokenPort
+        .findUserIdByResetToken(token)
+        .orElseThrow(() -> new InvalidPasswordResetTokenException("Token inválido ou expirado."));
+  }
 
+  private User getUserById(UUID userId) {
     return userRepositoryPort
         .findById(userId)
         .orElseThrow(

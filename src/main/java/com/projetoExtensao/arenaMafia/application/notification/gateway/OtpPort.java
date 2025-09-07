@@ -1,10 +1,10 @@
 package com.projetoExtensao.arenaMafia.application.notification.gateway;
 
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
 import java.util.UUID;
 
 public interface OtpPort {
-  String generateCodeOTP(UUID userId);
+  OtpCode generateAndSaveOtp(UUID userId);
 
-  void validateOtp(UUID uuid, String otpCode) throws InvalidOtpException;
+  void validateOtp(UUID uuid, OtpCode code);
 }

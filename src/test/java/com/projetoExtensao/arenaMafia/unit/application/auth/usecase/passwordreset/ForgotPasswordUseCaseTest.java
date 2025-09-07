@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.imp.ForgotPasswordUseCaseImp;
 import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
 import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
@@ -14,10 +15,12 @@ import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ForgotPasswordRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.ForgotPasswordResponseDto;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -30,6 +33,7 @@ import org.springframework.context.ApplicationEventPublisher;
 @DisplayName("Testes unitários para ForgotPasswordUseCase")
 public class ForgotPasswordUseCaseTest {
 
+  @Mock private OtpSessionPort otpSessionPort;
   @Mock private UserRepositoryPort userRepository;
   @Mock private PhoneValidatorPort phoneValidator;
   @Mock private ApplicationEventPublisher eventPublisher;
@@ -46,7 +50,7 @@ public class ForgotPasswordUseCaseTest {
         UUID.randomUUID(),
         "testuser",
         "Test User",
-        "+558320548181",
+        formattedPhone,
         "hashedPassword",
         accountStatus,
         RoleEnum.ROLE_USER,
@@ -55,59 +59,72 @@ public class ForgotPasswordUseCaseTest {
   }
 
   @Test
-  @DisplayName(
-      "Deve publicar um evento para envio de sms quando o usuário for encontrado pelo telefone")
+  @DisplayName("Deve publicar um evento para envio de sms quando o usuário for encontrado")
   void execute_shouldPublishEvent_whenUserIsFoundByPhone() {
     // Arrange
-    var requestDto = new ForgotPasswordRequestDto(unformattedPhone);
+    String otpSessionId = UUID.randomUUID().toString();
     User user = createUser(AccountStatus.ACTIVE);
+    var request = new ForgotPasswordRequestDto(unformattedPhone);
 
     when(phoneValidator.formatToE164(unformattedPhone)).thenReturn(formattedPhone);
     when(userRepository.findByPhone(formattedPhone)).thenReturn(Optional.of(user));
+    when(otpSessionPort.generateOtpSession(user.getId())).thenReturn(otpSessionId);
 
     // Act
-    forgotPasswordUseCase.execute(requestDto);
+    ForgotPasswordResponseDto response = forgotPasswordUseCase.execute(request);
 
     // Assert
+    assertThat(response.otpSessionId()).isEqualTo(otpSessionId);
+    assertThat(response.message())
+        .isEqualTo("Se o número estiver cadastrado, você receberá um código de verificação.");
+
     verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
+    verify(userRepository, times(1)).findByPhone(formattedPhone);
+    verify(otpSessionPort, times(1)).generateOtpSession(user.getId());
+    verify(eventPublisher, times(1)).publishEvent(any(OnVerificationRequiredEvent.class));
+
     ArgumentCaptor<OnVerificationRequiredEvent> eventCaptor =
         ArgumentCaptor.forClass(OnVerificationRequiredEvent.class);
 
-    verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
-    OnVerificationRequiredEvent publishedEvent = eventCaptor.getValue();
-
-    assertThat(publishedEvent.user()).isEqualTo(user);
-    verify(userRepository, times(1)).findByPhone(formattedPhone);
+    verify(eventPublisher).publishEvent(eventCaptor.capture());
+    User publishedUser = eventCaptor.getValue().getUser();
+    assertThat(publishedUser).isEqualTo(user);
   }
 
   @Test
   @DisplayName("Não deve publicar um evento quando o usuário não for encontrado")
   void execute_shouldDoNothing_whenUserIsNotFound() {
     // Arrange
-    var requestDto = new ForgotPasswordRequestDto(unformattedPhone);
+    var request = new ForgotPasswordRequestDto(unformattedPhone);
 
     when(phoneValidator.formatToE164(unformattedPhone)).thenReturn(formattedPhone);
     when(userRepository.findByPhone(formattedPhone)).thenReturn(Optional.empty());
 
     // Act
-    forgotPasswordUseCase.execute(requestDto);
+    ForgotPasswordResponseDto response = forgotPasswordUseCase.execute(request);
 
     // Assert
+    assertThat(response.otpSessionId()).hasSize(36); // UUID Fake
+    assertThat(response.message())
+        .isEqualTo("Se o número estiver cadastrado, você receberá um código de verificação.");
+
     verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
     verify(userRepository, times(1)).findByPhone(formattedPhone);
-    verify(eventPublisher, never()).publishEvent(any());
+    verify(otpSessionPort, never()).generateOtpSession(any(UUID.class));
+    verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
   }
 
   @Test
-  @DisplayName("Deve propagar BadPhoneNumberException para um formato de telefone inválido")
-  void execute_shouldPropagateException_whenPhoneFormatIsInvalid() {
+  @DisplayName("Deve lançar exceção quando o formato do telefone for inválido")
+  void execute_shouldThrowException_whenPhoneFormatIsInvalid() {
     // Arrange
-    String errorMessage = "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.";
     String invalidPhone = "123456789";
     var requestDto = new ForgotPasswordRequestDto(invalidPhone);
 
-    when(phoneValidator.formatToE164(invalidPhone))
-        .thenThrow(new BadPhoneNumberException(errorMessage));
+    String errorMessage = "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.";
+    doThrow(new BadPhoneNumberException(errorMessage))
+        .when(phoneValidator)
+        .formatToE164(invalidPhone);
 
     // Act & Assert
     assertThatThrownBy(() -> forgotPasswordUseCase.execute(requestDto))
@@ -117,74 +134,78 @@ public class ForgotPasswordUseCaseTest {
     // Verify
     verify(phoneValidator, times(1)).formatToE164(invalidPhone);
     verify(userRepository, never()).findByPhone(anyString());
-    verify(eventPublisher, never()).publishEvent(any());
+    verify(otpSessionPort, never()).generateOtpSession(any(UUID.class));
+    verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
   }
 
-  @Test
-  @DisplayName(
-      "Deve lançar AccountStateConflictException quando a conta do usuário estiver bloqueada")
-  void execute_shouldThrowException_whenUserAccountIsBlocked() {
-    // Arrange
-    User user = createUser(AccountStatus.LOCKED);
-    var requestDto = new ForgotPasswordRequestDto(unformattedPhone);
+  @Nested
+  @DisplayName("Exceções lançadas quando a conta do usuário não está ativa")
+  class AccountStatusTests {
 
-    when(phoneValidator.formatToE164(unformattedPhone)).thenReturn(formattedPhone);
-    when(userRepository.findByPhone(formattedPhone)).thenReturn(Optional.of(user));
+    @Test
+    @DisplayName("Deve lançar exceção quando a conta está bloqueada")
+    void execute_shouldThrowException_whenAccountIsBlocked() {
+      // Arrange
+      User user = createUser(AccountStatus.LOCKED);
+      var request = new ForgotPasswordRequestDto(unformattedPhone);
 
-    // Act & Assert
-    assertThatThrownBy(() -> forgotPasswordUseCase.execute(requestDto))
-        .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
+      when(phoneValidator.formatToE164(unformattedPhone)).thenReturn(formattedPhone);
+      when(userRepository.findByPhone(formattedPhone)).thenReturn(Optional.of(user));
 
-    // Verify
-    verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
-    verify(userRepository, times(1)).findByPhone(formattedPhone);
-    verify(eventPublisher, never()).publishEvent(any());
-  }
+      // Act & Assert
+      assertThatThrownBy(() -> forgotPasswordUseCase.execute(request))
+          .isInstanceOf(AccountStateConflictException.class)
+          .hasMessage("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
 
-  @Test
-  @DisplayName(
-      "Deve lançar AccountStateConflictException quando a conta do usuário estiver pendente de verificação")
-  void execute_shouldThrowException_whenUserAccountIsPending() {
-    // Arrange
-    User user = createUser(AccountStatus.PENDING_VERIFICATION);
-    var requestDto = new ForgotPasswordRequestDto(unformattedPhone);
+      verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
+      verify(userRepository, times(1)).findByPhone(formattedPhone);
+      verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
+      verify(otpSessionPort, never()).generateOtpSession(any(UUID.class));
+    }
 
-    when(phoneValidator.formatToE164(unformattedPhone)).thenReturn(formattedPhone);
-    when(userRepository.findByPhone(formattedPhone)).thenReturn(Optional.of(user));
+    @Test
+    @DisplayName("Deve lançar exceção quando a conta está pendente de verificação")
+    void execute_shouldThrowException_whenAccountIsPending() {
+      // Arrange
+      User user = createUser(AccountStatus.PENDING_VERIFICATION);
+      var request = new ForgotPasswordRequestDto(unformattedPhone);
 
-    // Act & Assert
-    assertThatThrownBy(() -> forgotPasswordUseCase.execute(requestDto))
-        .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage(
-            "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
+      when(phoneValidator.formatToE164(unformattedPhone)).thenReturn(formattedPhone);
+      when(userRepository.findByPhone(formattedPhone)).thenReturn(Optional.of(user));
 
-    // Verify
-    verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
-    verify(userRepository, times(1)).findByPhone(formattedPhone);
-    verify(eventPublisher, never()).publishEvent(any());
-  }
+      // Act & Assert
+      assertThatThrownBy(() -> forgotPasswordUseCase.execute(request))
+          .isInstanceOf(AccountStateConflictException.class)
+          .hasMessage(
+              "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
 
-  @Test
-  @DisplayName(
-      "Deve lançar AccountStateConflictException quando a conta do usuário estiver desativada")
-  void execute_shouldThrowException_whenUserAccountIsDisabled() {
-    // Arrange
-    User user = createUser(AccountStatus.DISABLED);
-    var requestDto = new ForgotPasswordRequestDto(unformattedPhone);
+      verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
+      verify(userRepository, times(1)).findByPhone(formattedPhone);
+      verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
+      verify(otpSessionPort, never()).generateOtpSession(any(UUID.class));
+    }
 
-    when(phoneValidator.formatToE164(unformattedPhone)).thenReturn(formattedPhone);
-    when(userRepository.findByPhone(formattedPhone)).thenReturn(Optional.of(user));
+    @Test
+    @DisplayName("Deve lançar exceção quando a conta está desativada")
+    void execute_shouldThrowException_whenAccountIsDisabled() {
+      // Arrange
+      User user = createUser(AccountStatus.DISABLED);
+      var request = new ForgotPasswordRequestDto(unformattedPhone);
 
-    // Act & Assert
-    assertThatThrownBy(() -> forgotPasswordUseCase.execute(requestDto))
-        .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage(
-            "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
+      when(phoneValidator.formatToE164(unformattedPhone)).thenReturn(formattedPhone);
+      when(userRepository.findByPhone(formattedPhone)).thenReturn(Optional.of(user));
 
-    // Verify
-    verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
-    verify(userRepository, times(1)).findByPhone(formattedPhone);
-    verify(eventPublisher, never()).publishEvent(any());
+      // Act & Assert
+      assertThatThrownBy(() -> forgotPasswordUseCase.execute(request))
+          .isInstanceOf(AccountStateConflictException.class)
+          .hasMessage(
+              "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
+
+      // Verify
+      verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
+      verify(userRepository, times(1)).findByPhone(formattedPhone);
+      verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
+      verify(otpSessionPort, never()).generateOtpSession(any(UUID.class));
+    }
   }
 }

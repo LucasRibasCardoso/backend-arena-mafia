@@ -11,7 +11,7 @@ import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.LoginRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.AuthResponseDto;
 import io.restassured.http.Cookie;
 import io.restassured.response.Response;
 import java.time.Instant;
@@ -89,7 +89,7 @@ public abstract class BaseTestContainersConfig {
             .extract()
             .response();
 
-    String accessToken = loginResponse.as(TokenResponseDto.class).accessToken();
+    String accessToken = loginResponse.as(AuthResponseDto.class).accessToken();
     Cookie refreshTokenCookie = loginResponse.getDetailedCookie("refreshToken");
     RefreshTokenVO refreshToken = RefreshTokenVO.fromString(refreshTokenCookie.getValue());
     return new AuthTokensTest(accessToken, refreshToken, refreshTokenCookie);
@@ -154,14 +154,14 @@ public abstract class BaseTestContainersConfig {
     userRepository.findById(uuid).ifPresent(user -> userJpaRepository.deleteById(user.getId()));
   }
 
-  public void alterAccountStatus(String userPhone, AccountStatus status) {
+  public void alterAccountStatus(UUID userId, AccountStatus status) {
     User user =
         userRepository
-            .findByPhone(userPhone)
+            .findById(userId)
             .orElseThrow(
                 () ->
                     new UserNotFoundException(
-                        "Usuário de teste não encontrado com o telefone: " + userPhone));
+                        "Usuário de teste não encontrado com o id: " + userId));
 
     User lockedUser =
         User.reconstitute(

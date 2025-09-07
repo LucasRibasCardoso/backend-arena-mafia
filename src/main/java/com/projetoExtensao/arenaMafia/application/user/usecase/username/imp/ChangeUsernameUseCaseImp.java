@@ -5,7 +5,7 @@ import com.projetoExtensao.arenaMafia.application.user.usecase.username.ChangeUs
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.ChangeUsernameRequestDTO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.ChangeUsernameRequestDto;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +21,7 @@ public class ChangeUsernameUseCaseImp implements ChangeUsernameUseCase {
   }
 
   @Override
-  public User execute(UUID idCurrentUser, ChangeUsernameRequestDTO request) {
+  public User execute(UUID idCurrentUser, ChangeUsernameRequestDto request) {
     User.validateUsername(request.username());
     checkIfUsernameAlreadyExists(idCurrentUser, request.username());
     User user = getUserOrElseThrow(idCurrentUser);

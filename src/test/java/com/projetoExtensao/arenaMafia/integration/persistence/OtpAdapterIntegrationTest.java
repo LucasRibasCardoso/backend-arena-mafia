@@ -27,13 +27,13 @@ public class OtpAdapterIntegrationTest extends BaseTestContainersConfig {
 
   @Test
   @DisplayName("Deve gerar e salvar o código OTP com expiração no Redis")
-  void generateCodeOTPWithExpirationInRedis() {
+  void generateAndSaveOtpWithExpirationInRedis() {
     // Arrange
     UUID userId = UUID.randomUUID();
     String redisKey = OTP_PREFIX + userId;
 
     // Act
-    String otpCode = otpAdapter.generateCodeOTP(userId);
+    String otpCode = otpAdapter.generateAndSaveOtp(userId);
 
     // Assert
     assertThat(otpCode).hasSize(6).containsOnlyDigits();
@@ -52,7 +52,7 @@ public class OtpAdapterIntegrationTest extends BaseTestContainersConfig {
     // Arrange
     UUID userId = UUID.randomUUID();
     String redisKey = "otp:user:" + userId;
-    String otpCode = otpAdapter.generateCodeOTP(userId);
+    String otpCode = otpAdapter.generateAndSaveOtp(userId);
 
     // Act & Assert
     assertDoesNotThrow(() -> otpAdapter.validateOtp(userId, otpCode));
@@ -67,7 +67,7 @@ public class OtpAdapterIntegrationTest extends BaseTestContainersConfig {
     // Arrange
     UUID userId = UUID.randomUUID();
     String redisKey = OTP_PREFIX + userId;
-    otpAdapter.generateCodeOTP(userId);
+    otpAdapter.generateAndSaveOtp(userId);
     String incorrectCode = "000000";
 
     // Act & Assert
@@ -85,7 +85,7 @@ public class OtpAdapterIntegrationTest extends BaseTestContainersConfig {
     // Arrange
     UUID userId = UUID.randomUUID();
     String redisKey = OTP_PREFIX + userId;
-    String otpCode = otpAdapter.generateCodeOTP(userId);
+    String otpCode = otpAdapter.generateAndSaveOtp(userId);
 
     // Simula a expiração removendo a chave diretamente do Redis
     redisTemplate.delete(redisKey);

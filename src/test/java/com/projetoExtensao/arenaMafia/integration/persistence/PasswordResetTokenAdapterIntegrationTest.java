@@ -25,13 +25,13 @@ public class PasswordResetTokenAdapterIntegrationTest extends BaseTestContainers
   private final String TOKEN_PREFIX = "password-reset-token:";
 
   @Test
-  @DisplayName("Deve salvar o token de redefinição no Redis com o userId e expiração corretos")
-  void save_shouldSaveTokenInRedisWithCorrectUserIdAndExpiration() {
+  @DisplayName("Deve salvar o token de redefinição no Redis com o otpSessionId e expiração corretos")
+  void save_shouldGenerateTokenTokenInRedisWithCorrectUserIdAndExpiration() {
     // Arrange
     UUID userId = UUID.randomUUID();
 
     // Act
-    String generatedToken = passwordResetTokenAdapter.save(userId);
+    String generatedToken = passwordResetTokenAdapter.generateToken(userId);
 
     // Assert
     assertThat(generatedToken).isNotNull().hasSize(36); // Tamanho de um UUID
@@ -49,7 +49,7 @@ public class PasswordResetTokenAdapterIntegrationTest extends BaseTestContainers
   class FindUserIdByTokenTests {
 
     @Test
-    @DisplayName("Deve encontrar e retornar o userId para um token válido e existente")
+    @DisplayName("Deve encontrar e retornar o otpSessionId para um token válido e existente")
     void getUserIdByTokenOrElseThrow_shouldReturnUserId_whenTokenExists() {
       // Arrange
       UUID userId = UUID.randomUUID();

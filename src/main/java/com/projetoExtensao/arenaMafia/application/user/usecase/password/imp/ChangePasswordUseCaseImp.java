@@ -6,7 +6,7 @@ import com.projetoExtensao.arenaMafia.application.user.usecase.password.ChangePa
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.IncorrectPasswordException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.ChangePasswordRequestDTO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.ChangePasswordRequestDto;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +25,7 @@ public class ChangePasswordUseCaseImp implements ChangePasswordUseCase {
   }
 
   @Override
-  public void execute(UUID idCurrentUser, ChangePasswordRequestDTO request) {
+  public void execute(UUID idCurrentUser, ChangePasswordRequestDto request) {
     User user = getUserOrElseThrow(idCurrentUser);
     checkIfCurrentPasswordIsEqualExisting(request.currentPassword(), user.getPasswordHash());
 

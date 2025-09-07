@@ -3,12 +3,18 @@ package com.projetoExtensao.arenaMafia.integration.controller.auth;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
+import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.*;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.LoginRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendOtpRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.AuthResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.SignupResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.integration.config.WebIntegrationTestConfig;
 import io.restassured.builder.RequestSpecBuilder;
@@ -17,6 +23,8 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.util.UUID;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
@@ -25,6 +33,9 @@ import org.springframework.test.annotation.DirtiesContext;
 @DisplayName("Testes de Integração para AuthController")
 public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
 
+  @Autowired private OtpPort otpPort;
+  @Autowired private OtpSessionPort otpSessionPort;
+  @Autowired private UserRepositoryPort userRepository;
   @Autowired private RefreshTokenRepositoryPort refreshTokenRepository;
 
   private RequestSpecification specification;
@@ -44,8 +55,8 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
   class LoginTests {
 
     @Test
-    @DisplayName("Deve retornar 200 OK quando as credenciais forem válidas")
-    void login_shouldReturn200_whenCredentialsAreValid() {
+    @DisplayName("Deve retornar 200 OK quando o usuário for autenticado com sucesso")
+    void login_shouldReturn200_whenUserAuthenticateSuccessful() {
       // Arrange
       User mockUser = mockPersistUser();
       LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
@@ -63,7 +74,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .response();
 
       // Assert
-      TokenResponseDto responseBody = response.as(TokenResponseDto.class);
+      AuthResponseDto responseBody = response.as(AuthResponseDto.class);
       assertThat(responseBody.phone()).isEqualTo(mockUser.getPhone());
       assertThat(responseBody.username()).isEqualTo(mockUser.getUsername());
       assertThat(responseBody.fullName()).isEqualTo(mockUser.getFullName());
@@ -80,7 +91,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o username estiver em branco")
+    @DisplayName("Deve retornar 400 Bad Request quando o username for inválido no DTO")
     void login_shouldReturn400_whenUsernameIsBlank() {
       // Arrange
       String blankUsername = "   ";
@@ -135,87 +146,91 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
       assertThat(response.fieldErrors()).isNull();
     }
 
-    @Test
-    @DisplayName("Deve retornar 409 Conflict quando a conta estiver pendente de verificação")
-    void login_shouldReturn409_whenAccountIsPendingVerification() {
-      // Arrange
-      mockPersistUser(AccountStatus.PENDING_VERIFICATION);
-      LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
+    @Nested
+    @DisplayName("Deve retornar 409 Conflict quando a conta não está ativada")
+    class AccountStateTests {
+      @Test
+      @DisplayName("Deve retornar 409 Conflict quando a conta está pendente de verificação")
+      void login_shouldReturn409_whenAccountIsPendingVerification() {
+        // Arrange
+        mockPersistUser(AccountStatus.PENDING_VERIFICATION);
+        LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
 
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/login")
-              .then()
-              .statusCode(409)
-              .extract()
-              .as(ErrorResponseDto.class);
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/login")
+                .then()
+                .statusCode(409)
+                .extract()
+                .as(ErrorResponseDto.class);
 
-      // Assert
-      assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message())
-          .isEqualTo(
-              "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
-      assertThat(response.path()).isEqualTo("/api/auth/login");
-      assertThat(response.fieldErrors()).isNull();
-    }
+        // Assert
+        assertThat(response.status()).isEqualTo(409);
+        assertThat(response.message())
+            .isEqualTo(
+                "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
+        assertThat(response.path()).isEqualTo("/api/auth/login");
+        assertThat(response.fieldErrors()).isNull();
+      }
 
-    @Test
-    @DisplayName("Deve retornar 409 Conflict quando a conta estiver bloqueada")
-    void login_shouldReturn409_whenAccountIsLocked() {
-      // Arrange
-      mockPersistUser(AccountStatus.LOCKED);
-      LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
+      @Test
+      @DisplayName("Deve retornar 409 Conflict quando a conta está bloqueada")
+      void login_shouldReturn409_whenAccountIsLocked() {
+        // Arrange
+        mockPersistUser(AccountStatus.LOCKED);
+        LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
 
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/login")
-              .then()
-              .statusCode(409)
-              .extract()
-              .as(ErrorResponseDto.class);
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/login")
+                .then()
+                .statusCode(409)
+                .extract()
+                .as(ErrorResponseDto.class);
 
-      // Assert
-      assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message())
-          .isEqualTo("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
-      assertThat(response.path()).isEqualTo("/api/auth/login");
-      assertThat(response.fieldErrors()).isNull();
-    }
+        // Assert
+        assertThat(response.status()).isEqualTo(409);
+        assertThat(response.message())
+            .isEqualTo("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
+        assertThat(response.path()).isEqualTo("/api/auth/login");
+        assertThat(response.fieldErrors()).isNull();
+      }
 
-    @Test
-    @DisplayName("Deve retornar 409 Conflict quando a conta estiver desativada")
-    void login_shouldReturn409_whenAccountIsDisabled() {
-      // Arrange
-      mockPersistUser(AccountStatus.DISABLED);
-      LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
+      @Test
+      @DisplayName("Deve retornar 409 Conflict quando a conta está desativada")
+      void login_shouldReturn409_whenAccountIsDisabled() {
+        // Arrange
+        mockPersistUser(AccountStatus.DISABLED);
+        LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
 
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/login")
-              .then()
-              .statusCode(409)
-              .extract()
-              .as(ErrorResponseDto.class);
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/login")
+                .then()
+                .statusCode(409)
+                .extract()
+                .as(ErrorResponseDto.class);
 
-      // Assert
-      assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message())
-          .isEqualTo(
-              "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
-      assertThat(response.path()).isEqualTo("/api/auth/login");
-      assertThat(response.fieldErrors()).isNull();
+        // Assert
+        assertThat(response.status()).isEqualTo(409);
+        assertThat(response.message())
+            .isEqualTo(
+                "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
+        assertThat(response.path()).isEqualTo("/api/auth/login");
+        assertThat(response.fieldErrors()).isNull();
+      }
     }
   }
 
@@ -309,8 +324,8 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
   class RefreshTokenTests {
 
     @Test
-    @DisplayName("Deve retornar 200 OK quando um refresh token válido for enviado")
-    void refreshToken_shouldReturn200_whenTokenIsValid() {
+    @DisplayName("Deve retornar 200 OK quando o token for atualizado com sucesso")
+    void refreshToken_shouldReturn200_whenTokenUpdatedSuccessful() {
       // Arrange
       User mockUser = mockPersistUser();
       AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
@@ -328,7 +343,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .response();
 
       // Assert
-      TokenResponseDto responseBody = response.as(TokenResponseDto.class);
+      AuthResponseDto responseBody = response.as(AuthResponseDto.class);
       assertThat(responseBody.phone()).isEqualTo(mockUser.getPhone());
       assertThat(responseBody.username()).isEqualTo(mockUser.getUsername());
       assertThat(responseBody.fullName()).isEqualTo(mockUser.getFullName());
@@ -346,7 +361,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 400 BadRequest quando um refresh token inválido for enviado")
+    @DisplayName("Deve retornar 400 BadRequest quando um refresh token for inválido")
     void refreshToken_shouldReturn400_whenRefreshTokenIsInvalid() {
       // Arrange
       Cookie invalidCookie =
@@ -422,94 +437,97 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
       assertThat(response.fieldErrors()).isNull();
     }
 
-    @Test
-    @DisplayName("Deve retornar 409 Conflict quando a conta do usuário estiver bloqueada")
-    void refreshToken_shouldReturn409_whenUserAccountIsLocked() {
-      // Arrange
-      User mockUser = mockPersistUser();
-      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      alterAccountStatus(mockUser.getPhone(), AccountStatus.LOCKED);
+    @Nested
+    @DisplayName("Deve retornar 409 Conflict quando a conta não está ativada")
+    class AccountStateTests {
+      @Test
+      @DisplayName("Deve retornar 409 Conflict quando a conta está bloqueada")
+      void refreshToken_shouldReturn409_whenUserAccountIsLocked() {
+        // Arrange
+        User mockUser = mockPersistUser();
+        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+        alterAccountStatus(mockUser.getId(), AccountStatus.LOCKED);
 
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .cookie(tokens.refreshTokenCookie())
-              .when()
-              .post("/refresh-token")
-              .then()
-              .statusCode(409)
-              .extract()
-              .as(ErrorResponseDto.class);
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .cookie(tokens.refreshTokenCookie())
+                .when()
+                .post("/refresh-token")
+                .then()
+                .statusCode(409)
+                .extract()
+                .as(ErrorResponseDto.class);
 
-      // Assert
-      assertThat(response).isNotNull();
-      assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message())
-          .isEqualTo("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
-      assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
-      assertThat(response.fieldErrors()).isNull();
-    }
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response.status()).isEqualTo(409);
+        assertThat(response.message())
+            .isEqualTo("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
+        assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
+        assertThat(response.fieldErrors()).isNull();
+      }
 
-    @Test
-    @DisplayName(
-        "Deve retornar 409 Conflict quando a conta do usuário estiver pendente de verificação")
-    void refreshToken_shouldReturn409_whenUserAccountIsPendingVerification() {
-      // Arrange
-      User mockUser = mockPersistUser();
-      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      alterAccountStatus(mockUser.getPhone(), AccountStatus.PENDING_VERIFICATION);
+      @Test
+      @DisplayName("Deve retornar 409 Conflict quando a conta está pendente de verificação")
+      void refreshToken_shouldReturn409_whenUserAccountIsPendingVerification() {
+        // Arrange
+        User mockUser = mockPersistUser();
+        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+        alterAccountStatus(mockUser.getId(), AccountStatus.PENDING_VERIFICATION);
 
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .cookie(tokens.refreshTokenCookie())
-              .when()
-              .post("/refresh-token")
-              .then()
-              .statusCode(409)
-              .extract()
-              .as(ErrorResponseDto.class);
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .cookie(tokens.refreshTokenCookie())
+                .when()
+                .post("/refresh-token")
+                .then()
+                .statusCode(409)
+                .extract()
+                .as(ErrorResponseDto.class);
 
-      // Assert
-      assertThat(response).isNotNull();
-      assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message())
-          .isEqualTo(
-              "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
-      assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
-      assertThat(response.fieldErrors()).isNull();
-    }
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response.status()).isEqualTo(409);
+        assertThat(response.message())
+            .isEqualTo(
+                "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
+        assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
+        assertThat(response.fieldErrors()).isNull();
+      }
 
-    @Test
-    @DisplayName("Deve retornar 409 Conflict quando a conta do usuário estiver desativada")
-    void refreshToken_shouldReturn409_whenUserAccountIsDisabled() {
-      // Arrange
-      User mockUser = mockPersistUser();
-      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      alterAccountStatus(mockUser.getPhone(), AccountStatus.DISABLED);
+      @Test
+      @DisplayName("Deve retornar 409 Conflict quando a conta está desativada")
+      void refreshToken_shouldReturn409_whenUserAccountIsDisabled() {
+        // Arrange
+        User mockUser = mockPersistUser();
+        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+        alterAccountStatus(mockUser.getId(), AccountStatus.DISABLED);
 
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .cookie(tokens.refreshTokenCookie())
-              .when()
-              .post("/refresh-token")
-              .then()
-              .statusCode(409)
-              .extract()
-              .as(ErrorResponseDto.class);
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .cookie(tokens.refreshTokenCookie())
+                .when()
+                .post("/refresh-token")
+                .then()
+                .statusCode(409)
+                .extract()
+                .as(ErrorResponseDto.class);
 
-      // Assert
-      assertThat(response).isNotNull();
-      assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message())
-          .isEqualTo(
-              "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
-      assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
-      assertThat(response.fieldErrors()).isNull();
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response.status()).isEqualTo(409);
+        assertThat(response.message())
+            .isEqualTo(
+                "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
+        assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
+        assertThat(response.fieldErrors()).isNull();
+      }
     }
   }
 
@@ -518,8 +536,8 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
   class SignupTests {
 
     @Test
-    @DisplayName("Deve retornar 201 Created quando os dados do usuário forem válidos")
-    void signup_shouldReturn201_whenUserDataIsValid() {
+    @DisplayName("Deve retornar 202 Accept quando o usuário for criado com sucesso")
+    void signup_shouldReturn202_whenUserDataIsValid() {
       // Arrange
       var request =
           new SignupRequestDto(
@@ -533,14 +551,12 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .when()
               .post("/signup")
               .then()
-              .statusCode(201)
+              .statusCode(202)
               .extract()
               .as(SignupResponseDto.class);
 
       // Assert
-      assertThat(response.userId()).hasSize(36); // UUID tem 36 caracteres
-      assertThat(response.username()).isEqualTo(defaultUsername);
-      assertThat(response.status()).isEqualTo(AccountStatus.PENDING_VERIFICATION.getValue());
+      assertThat(response.otpSessionId()).hasSize(36); // UUID
       assertThat(response.message())
           .isEqualTo(
               "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone.");
@@ -567,8 +583,6 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response.status()).isEqualTo(400);
-      assertThat(response.path()).isEqualTo("/api/auth/signup");
       assertThat(response.message())
           .isEqualTo("Erro de validação. Verifique os campos informados.");
       assertThat(response.fieldErrors()).hasSize(1);
@@ -578,8 +592,8 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o telefone informado tem formato inválido")
-    void signup_shouldReturn400_whenPhoneNumberIsInvalidFormat() {
+    @DisplayName("Deve retornar 400 Bad Request quando o telefone for inválido")
+    void signup_shouldReturn400_whenPhoneNumberIsInvalid() {
       // Arrange
       String invalidPhone = "+999123456789";
       var request =
@@ -599,22 +613,123 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response.status()).isEqualTo(400);
       assertThat(response.message())
           .isEqualTo("Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
-      assertThat(response.path()).isEqualTo("/api/auth/signup");
-      assertThat(response.fieldErrors()).isNull();
+    }
+
+    @Nested
+    @DisplayName("Deve retornar 409 Conflict quando o usuário já existe")
+    class UserAlreadyExistsTests {
+      @Test
+      @DisplayName("Deve retornar 409 Conflict quando o username já está em uso")
+      void signup_shouldReturn409_whenUsernameAlreadyExists() {
+        // Arrange
+        User mockUser = mockPersistUser();
+        String newPhone = "+5583998765432";
+        var request =
+            new SignupRequestDto(
+                mockUser.getUsername(),
+                defaultFullName,
+                newPhone,
+                defaultPassword,
+                defaultPassword);
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/signup")
+                .then()
+                .statusCode(409)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        assertThat(response.message()).isEqualTo("Esse nome de usuário já está em uso.");
+      }
+
+      @Test
+      @DisplayName("Deve retornar 409 Conflict quando o telefone já está em uso")
+      void signup_shouldReturn409_whenPhoneAlreadyExists() {
+        // Arrange
+        User mockUser = mockPersistUser();
+        String newUsername = "new_user";
+        var request =
+            new SignupRequestDto(
+                newUsername,
+                defaultFullName,
+                mockUser.getPhone(),
+                defaultPassword,
+                defaultPassword);
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/signup")
+                .then()
+                .statusCode(409)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        assertThat(response.message()).isEqualTo("Esse número de telefone já está em uso.");
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("Testes para o endpoint /auth/verify-account")
+  class VerifyAccountTests {
+
+    @Test
+    @DisplayName("Deve retornar 200 OK quando o código OTP for válido e a conta estiver pendente")
+    void verifyAccount_shouldReturn200_whenOtpIsValidForPendingUser() {
+      // Arrange
+      User mockUser = mockPersistUser(AccountStatus.PENDING_VERIFICATION);
+      String otpCode = otpPort.generateAndSaveOtp(mockUser.getId());
+      String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+
+      var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
+
+      // Act
+      Response response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/verify-account")
+              .then()
+              .statusCode(200)
+              .extract()
+              .response();
+      AuthResponseDto responseBody = response.as(AuthResponseDto.class);
+
+      // Assert
+      assertThat(responseBody.userId()).isEqualTo(mockUser.getId().toString());
+      assertThat(responseBody.phone()).isEqualTo(mockUser.getPhone());
+      assertThat(responseBody.username()).isEqualTo(mockUser.getUsername());
+      assertThat(responseBody.fullName()).isEqualTo(mockUser.getFullName());
+      assertThat(responseBody.role()).isEqualTo(mockUser.getRole().name());
+      assertThat(responseBody.accessToken()).isNotBlank();
+
+      Cookie refreshTokenCookie = response.getDetailedCookie("refreshToken");
+      assertThat(refreshTokenCookie.getValue()).hasSize(36);
+
+      User activatedUser = userRepository.findById(mockUser.getId()).orElseThrow();
+      assertThat(activatedUser.getStatus()).isEqualTo(AccountStatus.ACTIVE);
     }
 
     @Test
-    @DisplayName("Deve retornar 409 Conflict quando o username já estiver em uso")
-    void signup_shouldReturn409_whenUsernameAlreadyExists() {
+    @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido no DTO")
+    void verifyAccount_shouldReturn400_whenOtpIsMissing() {
       // Arrange
-      User mockUser = mockPersistUser();
-      String newPhone = "+5583998765432";
-      var request =
-          new SignupRequestDto(
-              mockUser.getUsername(), defaultFullName, newPhone, defaultPassword, defaultPassword);
+      String otpSessionId = UUID.randomUUID().toString();
+      var request = new ValidateOtpRequestDto(otpSessionId, "");
 
       // Act
       ErrorResponseDto response =
@@ -622,28 +737,28 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .spec(specification)
               .body(request)
               .when()
-              .post("/signup")
+              .post("/verify-account")
               .then()
-              .statusCode(409)
+              .statusCode(400)
               .extract()
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message()).isEqualTo("Esse nome de usuário já está em uso.");
-      assertThat(response.path()).isEqualTo("/api/auth/signup");
-      assertThat(response.fieldErrors()).isNull();
+      assertThat(response.message())
+          .isEqualTo("Erro de validação. Verifique os campos informados.");
+      assertThat(response.fieldErrors()).hasSize(1);
+      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("code");
     }
 
     @Test
-    @DisplayName("Deve retornar 409 Conflict quando o telefone já estiver em uso")
-    void signup_shouldReturn409_whenPhoneAlreadyExists() {
+    @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido")
+    void verifyAccount_shouldReturn400_whenOtpIsInvalid() {
       // Arrange
       User mockUser = mockPersistUser();
-      String newUsername = "new_user";
-      var request =
-          new SignupRequestDto(
-              newUsername, defaultFullName, mockUser.getPhone(), defaultPassword, defaultPassword);
+      String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+      String invalidCodeOTP = "111222";
+
+      var request = new ValidateOtpRequestDto(otpSessionId, invalidCodeOTP);
 
       // Act
       ErrorResponseDto response =
@@ -651,17 +766,218 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .spec(specification)
               .body(request)
               .when()
-              .post("/signup")
+              .post("/verify-account")
+              .then()
+              .statusCode(400)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.message()).isEqualTo("Código de verificação inválido ou expirado.");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 400 Bad Request quando a sessão OTP for inválida ou expirada")
+    void validateResetToken_shouldReturn400_whenUserIdIsInvalid() {
+      // Arrange
+      String otpSessionId = UUID.randomUUID().toString();
+      var request = new ValidateOtpRequestDto(otpSessionId, "123456");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/verify-account")
+              .then()
+              .statusCode(400)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.message()).isEqualTo("Sessão de verificação inválida ou expirada.");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 404 Not Found quando o usuário não for encontrado")
+    void verifyAccount_shouldReturn404_whenUserNotFound() {
+      // Arrange
+      String otpSessionId = otpSessionPort.generateOtpSession(UUID.randomUUID());
+      var request = new ValidateOtpRequestDto(otpSessionId, "123456");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/verify-account")
+              .then()
+              .statusCode(404)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.message())
+          .isEqualTo(
+              "Usuário não encontrado. Retorne ao início do cadastro para criar uma nova conta.");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 409 Conflict ao tentar ativar uma conta que já está ativa")
+    void verifyAccount_shouldReturn409_whenAccountIsAlreadyActive() {
+      // Arrange
+      User mockUser = mockPersistUser(AccountStatus.ACTIVE);
+      String otpCode = otpPort.generateAndSaveOtp(mockUser.getId());
+      String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+
+      var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/verify-account")
               .then()
               .statusCode(409)
               .extract()
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response.status()).isEqualTo(409);
-      assertThat(response.message()).isEqualTo("Esse número de telefone já está em uso.");
-      assertThat(response.path()).isEqualTo("/api/auth/signup");
-      assertThat(response.fieldErrors()).isNull();
+      assertThat(response.message())
+          .isEqualTo("Não é possível ativar uma conta que não está pendente de verificação.");
+    }
+  }
+
+  @Nested
+  @DisplayName("Testes para o endpoint /auth/resend-otp")
+  class ResendOtpTests {
+
+    @ParameterizedTest
+    @EnumSource(
+        value = AccountStatus.class,
+        names = {"ACTIVE", "PENDING_VERIFICATION"})
+    @DisplayName(
+        "Deve retornar 204 No Content quando o OTP for reenviado com sucesso para conta ativa ou pendente")
+    void resendOtp_shouldReturn204_whenOtpIsResentSuccessfullyToActiveOrPendingAccount(
+        AccountStatus status) {
+      // Arrange
+      User mockUser = mockPersistUser(status);
+      String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+
+      var request = new ResendOtpRequestDto(otpSessionId);
+
+      // Act & Assert
+      given().spec(specification).body(request).when().post("/resend-otp").then().statusCode(204);
+    }
+
+    @Test
+    @DisplayName("Deve retornar 400 Bad Request quando o otpSessionId for inválido no DTO")
+    void resendOtp_shouldReturn400_whenOtpSessionIdIsBlank() {
+      // Arrange
+      var request = new ResendOtpRequestDto("   ");
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/resend-otp")
+              .then()
+              .statusCode(400)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.message())
+          .isEqualTo("Erro de validação. Verifique os campos informados.");
+      assertThat(response.fieldErrors()).hasSize(1);
+      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("otpSessionId");
+      assertThat(response.fieldErrors().getFirst().message())
+          .isEqualTo("O ID da sessão OTP não pode estar vazio.");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 400 Bad Request quando a sessão for inválida ou expirada")
+    void resendOtp_shouldReturn400_whenOtpSessionIsInvalid() {
+      // Arrange
+      String otpSessionId = UUID.randomUUID().toString();
+      var request = new ResendOtpRequestDto(otpSessionId);
+
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/resend-otp")
+              .then()
+              .statusCode(400)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.message()).isEqualTo("Sessão de verificação inválida ou expirada.");
+    }
+
+    @Test
+    @DisplayName("Deve retornar 404 Not Found quando o usuário não for encontrado")
+    void resendOtp_shouldReturn404_whenUserNotFound() {
+      // Arrange
+      String otpSessionId = otpSessionPort.generateOtpSession(UUID.randomUUID());
+      var request = new ResendOtpRequestDto(otpSessionId);
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/resend-otp")
+              .then()
+              .statusCode(404)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.message()).isEqualTo("Usuário não encontrado.");
+    }
+
+    @Nested
+    @DisplayName("Deve retornar 409 Conflict quando a conta não está ativa ou pendente")
+    class AccountStateConflictTests {
+
+      @ParameterizedTest
+      @EnumSource(
+          value = AccountStatus.class,
+          names = {"DISABLED", "LOCKED"})
+      @DisplayName("Deve lançar exceção quando a conta está desativada ou bloqueada")
+      void resendOtp_shouldReturn409_whenAccountIsDisabledOrLocked(AccountStatus status) {
+        // Arrange
+        User mockUser = mockPersistUser(status);
+        String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+        var request = new ResendOtpRequestDto(otpSessionId);
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/resend-otp")
+                .then()
+                .statusCode(409)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        assertThat(response.message())
+            .isEqualTo(
+                "Atenção: Sua conta está bloqueada ou desativada. Por favor, contate o suporte.");
+      }
     }
   }
 }

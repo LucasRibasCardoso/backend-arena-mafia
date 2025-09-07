@@ -12,7 +12,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpExce
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPhoneChangeRequestException;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPhoneException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.CompletePhoneChangeRequestDTO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.CompletePhoneChangeRequestDto;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -47,7 +47,7 @@ public class CompleteChangePhoneUseCaseTest {
     UUID idCurrentUser = mockUser.getId();
     String newPhone = "+558320566921";
     String code = "123456";
-    var request = new CompletePhoneChangeRequestDTO(code);
+    var request = new CompletePhoneChangeRequestDto(code);
 
     when(pendingPhoneChangePort.findPhoneByUserId(idCurrentUser)).thenReturn(Optional.of(newPhone));
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(mockUser));
@@ -72,7 +72,7 @@ public class CompleteChangePhoneUseCaseTest {
   void execute_shouldThrowInvalidPhoneException_whenSavedPhoneIsInvalid(String invalidPhoneFormat) {
     // Arrange
     UUID idCurrentUser = UUID.randomUUID();
-    var request = new CompletePhoneChangeRequestDTO("123456");
+    var request = new CompletePhoneChangeRequestDto("123456");
 
     when(pendingPhoneChangePort.findPhoneByUserId(idCurrentUser))
         .thenReturn(Optional.of(invalidPhoneFormat));
@@ -93,7 +93,7 @@ public class CompleteChangePhoneUseCaseTest {
     // Arrange
     UUID idCurrentUser = UUID.randomUUID();
     String code = "123456";
-    var request = new CompletePhoneChangeRequestDTO(code);
+    var request = new CompletePhoneChangeRequestDto(code);
 
     when(pendingPhoneChangePort.findPhoneByUserId(idCurrentUser)).thenReturn(Optional.empty());
 
@@ -118,7 +118,7 @@ public class CompleteChangePhoneUseCaseTest {
     UUID idCurrentUser = mockUser.getId();
     String newPhone = "+558320566921";
     String code = "123456";
-    var request = new CompletePhoneChangeRequestDTO(code);
+    var request = new CompletePhoneChangeRequestDto(code);
 
     when(pendingPhoneChangePort.findPhoneByUserId(idCurrentUser)).thenReturn(Optional.of(newPhone));
     doThrow(new InvalidOtpException(errorMessage)).when(otpPort).validateOtp(idCurrentUser, code);
@@ -143,7 +143,7 @@ public class CompleteChangePhoneUseCaseTest {
     UUID idCurrentUser = mockUser.getId();
     String newPhone = "+558320566921";
     String code = "123456";
-    var request = new CompletePhoneChangeRequestDTO(code);
+    var request = new CompletePhoneChangeRequestDto(code);
 
     when(pendingPhoneChangePort.findPhoneByUserId(idCurrentUser)).thenReturn(Optional.of(newPhone));
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.empty());

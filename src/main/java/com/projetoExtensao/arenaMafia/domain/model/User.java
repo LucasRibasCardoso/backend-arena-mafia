@@ -181,7 +181,7 @@ public class User {
     markAsUpdated();
   }
 
-  // TODO: Métodos utilizados por administradores
+  // Métodos utilizados por administradores
   public void enableAccount() {
     if (this.status != AccountStatus.DISABLED) {
       throw new AccountStateConflictException(
@@ -212,6 +212,14 @@ public class User {
   // Métodos auxiliares
   private void markAsUpdated() {
     this.updatedAt = Instant.now();
+  }
+
+  public boolean isEnabled() {
+    return this.status == AccountStatus.ACTIVE;
+  }
+
+  public boolean isPending() {
+    return this.status == AccountStatus.PENDING_VERIFICATION;
   }
 
   // Getters
@@ -253,10 +261,6 @@ public class User {
 
   public boolean isAccountNonLocked() {
     return this.status != AccountStatus.LOCKED;
-  }
-
-  public boolean isEnabled() {
-    return this.status == AccountStatus.ACTIVE;
   }
 
   @Override

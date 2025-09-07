@@ -1,8 +1,8 @@
 package com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification;
 
 import com.projetoExtensao.arenaMafia.application.auth.model.AuthResult;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.VerifyAccountRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 
 public interface VerifyAccountUseCase {
-  AuthResult execute(VerifyAccountRequestDto requestDto);
+  AuthResult execute(ValidateOtpRequestDto request);
 }

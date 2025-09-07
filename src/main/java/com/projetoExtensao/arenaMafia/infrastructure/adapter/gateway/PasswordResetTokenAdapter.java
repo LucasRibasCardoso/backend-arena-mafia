@@ -20,7 +20,7 @@ public class PasswordResetTokenAdapter implements PasswordResetTokenPort {
   }
 
   @Override
-  public String save(UUID userId) {
+  public String generateToken(UUID userId) {
     String token = UUID.randomUUID().toString();
     String key = TOKEN_PREFIX + token;
     redisTemplate.opsForValue().set(key, userId.toString(), TOKEN_EXPIRATION);

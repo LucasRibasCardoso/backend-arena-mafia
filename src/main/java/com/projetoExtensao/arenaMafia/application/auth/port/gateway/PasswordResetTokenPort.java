@@ -4,7 +4,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface PasswordResetTokenPort {
-  String save(UUID userId);
+  String generateToken(UUID userId);
 
   Optional<UUID> findUserIdByResetToken(String token);
 

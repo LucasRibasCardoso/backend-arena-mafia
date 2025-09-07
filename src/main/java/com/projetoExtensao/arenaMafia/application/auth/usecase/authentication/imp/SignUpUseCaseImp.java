@@ -1,5 +1,6 @@
 package com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.imp;
 
+import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.SignUpUseCase;
 import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
 import com.projetoExtensao.arenaMafia.application.security.port.gateway.PasswordEncoderPort;
@@ -16,24 +17,27 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class SignUpUseCaseImp implements SignUpUseCase {
 
+  private final OtpSessionPort otpSessionPort;
   private final UserRepositoryPort userRepository;
   private final PhoneValidatorPort phoneValidator;
   private final PasswordEncoderPort passwordEncoderPort;
   private final ApplicationEventPublisher eventPublisher;
 
   public SignUpUseCaseImp(
+      OtpSessionPort otpSessionPort,
       UserRepositoryPort userRepository,
       PhoneValidatorPort phoneValidator,
       PasswordEncoderPort passwordEncoderPort,
       ApplicationEventPublisher eventPublisher) {
+    this.otpSessionPort = otpSessionPort;
     this.userRepository = userRepository;
     this.phoneValidator = phoneValidator;
-    this.passwordEncoderPort = passwordEncoderPort;
     this.eventPublisher = eventPublisher;
+    this.passwordEncoderPort = passwordEncoderPort;
   }
 
   @Override
-  public User execute(SignupRequestDto request) {
+  public String execute(SignupRequestDto request) {
     String formattedPhone = phoneValidator.formatToE164(request.phone());
     validateUniqueness(request.username(), formattedPhone);
 
@@ -42,8 +46,10 @@ public class SignUpUseCaseImp implements SignUpUseCase {
         User.create(request.username(), request.fullName(), formattedPhone, encodedPassword);
 
     User savedUser = userRepository.save(userToSave);
+    String otpSessionId = otpSessionPort.generateOtpSession(savedUser.getId());
+
     eventPublisher.publishEvent(new OnVerificationRequiredEvent(savedUser));
-    return savedUser;
+    return otpSessionId;
   }
 
   private void validateUniqueness(String username, String phone) {

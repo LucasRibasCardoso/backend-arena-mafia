@@ -3,7 +3,7 @@ package com.projetoExtensao.arenaMafia.unit.domain.model;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.RefreshTokenInvalidFormatException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidTokenFormatException;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -30,7 +30,7 @@ public class RefreshTokenVoTest {
   void constructor_shouldThrowExceptionForNullValue() {
     // Act & Assert
     assertThatThrownBy(() -> new RefreshTokenVO(null))
-        .isInstanceOf(RefreshTokenInvalidFormatException.class)
+        .isInstanceOf(InvalidTokenFormatException.class)
         .hasMessage("Refresh token não pode ser nulo.");
   }
 
@@ -61,7 +61,7 @@ public class RefreshTokenVoTest {
 
       // Act & Assert
       assertThatThrownBy(() -> RefreshTokenVO.fromString(invalidUuidString))
-          .isInstanceOf(RefreshTokenInvalidFormatException.class)
+          .isInstanceOf(InvalidTokenFormatException.class)
           .hasMessageContaining("Formato inválido para o refresh token.");
     }
 
@@ -70,7 +70,7 @@ public class RefreshTokenVoTest {
     void fromString_shouldThrowExceptionForNullValue() {
       // Act & Assert
       assertThatThrownBy(() -> RefreshTokenVO.fromString(null))
-          .isInstanceOf(RefreshTokenInvalidFormatException.class)
+          .isInstanceOf(InvalidTokenFormatException.class)
           .hasMessage("Refresh token não pode ser nulo ou vazio.");
     }
   }

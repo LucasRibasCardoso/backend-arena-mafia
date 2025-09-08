@@ -25,7 +25,6 @@ import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.Passw
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.SignupResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.util.CookieUtils;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -34,9 +33,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-
-  @Value("${spring.security.jwt.refresh-token-expiration-days}")
-  private long refreshTokenExpirationDays;
 
   private final CookieUtils cookieUtils;
   private final LoginUseCase loginUseCase;

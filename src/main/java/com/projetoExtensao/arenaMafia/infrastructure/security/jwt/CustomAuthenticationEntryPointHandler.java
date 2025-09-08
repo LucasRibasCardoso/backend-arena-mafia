@@ -1,6 +1,7 @@
 package com.projetoExtensao.arenaMafia.infrastructure.security.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -45,9 +46,8 @@ public class CustomAuthenticationEntryPointHandler implements AuthenticationEntr
   }
 
   private ErrorResponseDto createErrorResponse(HttpServletRequest request) {
-    String errorMessage = "Sua sessão é inválida ou expirou. Por favor, faça login novamente.";
-
+    ErrorCode errorCode = ErrorCode.SESSION_EXPIRED;
     return ErrorResponseDto.forGeneralError(
-        UNAUTHORIZED_STATUS, errorMessage, request.getRequestURI());
+        UNAUTHORIZED_STATUS, errorCode, errorCode.getDefaultMessage(), request.getRequestURI());
   }
 }

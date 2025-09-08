@@ -31,7 +31,6 @@ public class PasswordResetTokenAdapterIntegrationTest extends BaseTestContainers
     UUID userId = UUID.randomUUID();
 
     // Act
-    // CORREÇÃO: O método agora retorna um objeto ResetToken
     ResetToken generatedToken = passwordResetTokenAdapter.generateToken(userId);
 
     // Assert

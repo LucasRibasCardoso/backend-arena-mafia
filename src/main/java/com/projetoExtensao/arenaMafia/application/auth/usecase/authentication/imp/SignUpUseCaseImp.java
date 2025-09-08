@@ -6,6 +6,7 @@ import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificat
 import com.projetoExtensao.arenaMafia.application.security.port.gateway.PasswordEncoderPort;
 import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
@@ -42,23 +43,26 @@ public class SignUpUseCaseImp implements SignUpUseCase {
     String formattedPhone = phoneValidator.formatToE164(request.phone());
     validateUniqueness(request.username(), formattedPhone);
 
-    String encodedPassword = passwordEncoderPort.encode(request.password());
-    User userToSave =
-        User.create(request.username(), request.fullName(), formattedPhone, encodedPassword);
-
+    User userToSave = createNewUser(request, formattedPhone);
     User savedUser = userRepository.save(userToSave);
-    OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(savedUser.getId());
 
+    OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(savedUser.getId());
     eventPublisher.publishEvent(new OnVerificationRequiredEvent(savedUser));
     return otpSessionId;
   }
 
   private void validateUniqueness(String username, String phone) {
     if (userRepository.existsByUsername(username)) {
-      throw new UserAlreadyExistsException("Esse nome de usuário já está em uso.");
+      throw new UserAlreadyExistsException(ErrorCode.USERNAME_ALREADY_EXISTS);
     }
+
     if (userRepository.existsByPhone(phone)) {
-      throw new UserAlreadyExistsException("Esse número de telefone já está em uso.");
+      throw new UserAlreadyExistsException(ErrorCode.PHONE_ALREADY_EXISTS);
     }
+  }
+
+  private User createNewUser(SignupRequestDto request, String formattedPhone) {
+    String passwordHash = passwordEncoderPort.encode(request.password());
+    return User.create(request.username(), request.fullName(), formattedPhone, passwordHash);
   }
 }

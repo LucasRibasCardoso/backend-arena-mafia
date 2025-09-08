@@ -1,7 +1,9 @@
 package com.projetoExtensao.arenaMafia.domain.exception.badRequest;
 
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+
 public class InvalidUsernameFormatException extends BadRequestException {
-  public InvalidUsernameFormatException(String message) {
-    super(message);
+  public InvalidUsernameFormatException(ErrorCode errorCode) {
+    super(errorCode);
   }
 }

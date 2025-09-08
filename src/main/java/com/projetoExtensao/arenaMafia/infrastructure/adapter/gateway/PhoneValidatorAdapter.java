@@ -4,7 +4,8 @@ import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.i18n.phonenumbers.Phonenumber;
 import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadPhoneNumberException;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidFormatPhoneException;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,16 +21,12 @@ public class PhoneValidatorAdapter implements PhoneValidatorPort {
   public String formatToE164(String phoneNumber) {
     try {
       Phonenumber.PhoneNumber parsedPhone = phoneUtil.parse(phoneNumber, null);
-
       if (!phoneUtil.isValidNumber(parsedPhone)) {
-        throw new BadPhoneNumberException(
-            "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
+        throw new InvalidFormatPhoneException(ErrorCode.INVALID_FORMAT_PHONE);
       }
       return phoneUtil.format(parsedPhone, PhoneNumberUtil.PhoneNumberFormat.E164);
-
     } catch (NumberParseException e) {
-      throw new BadPhoneNumberException(
-          "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
+      throw new InvalidFormatPhoneException(ErrorCode.INVALID_FORMAT_PHONE);
     }
   }
 }

@@ -1,8 +1,9 @@
 package com.projetoExtensao.arenaMafia.domain.model;
 
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidFullNameException;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidFormatFullNameException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidFormatPhoneException;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPasswordHashException;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPhoneException;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidUsernameFormatException;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
@@ -88,39 +89,39 @@ public class User {
   // Validações
   public static void validateUsername(String username) {
     if (username == null || username.isBlank()) {
-      throw new InvalidUsernameFormatException("O nome de usuário não pode ser nulo ou vazio.");
+      throw new InvalidUsernameFormatException(ErrorCode.USERNAME_REQUIRED);
     }
+
     if (username.length() < 3 || username.length() > 50) {
-      throw new InvalidUsernameFormatException(
-          "O nome de usuário deve ter entre 3 e 50 caracteres.");
+      throw new InvalidUsernameFormatException(ErrorCode.USERNAME_INVALID_LENGTH);
     }
+
     if (!username.matches("^[a-zA-Z0-9_]+$")) {
-      throw new InvalidUsernameFormatException(
-          "O nome de usuário deve conter apenas letras, números e underscore (_).");
+      throw new InvalidUsernameFormatException(ErrorCode.USERNAME_INVALID_FORMAT);
     }
   }
 
   public static void validatePasswordHash(String passwordHash) {
     if (passwordHash == null || passwordHash.isBlank()) {
-      throw new InvalidPasswordHashException("O hash da senha não pode ser nulo ou vazio.");
+      throw new InvalidPasswordHashException(ErrorCode.PASSWORD_HASH_REQUIRED);
     }
   }
 
   public static void validatePhone(String phone) {
     if (phone == null || phone.isBlank()) {
-      throw new InvalidPhoneException("O número de telefone não pode ser nulo ou vazio.");
+      throw new InvalidFormatPhoneException(ErrorCode.PHONE_REQUIRED);
     }
     if (!phone.matches("^\\+[1-9]\\d{1,14}$")) {
-      throw new InvalidPhoneException("O número de telefone deve estar no formato E.164.");
+      throw new InvalidFormatPhoneException(ErrorCode.INVALID_FORMAT_PHONE);
     }
   }
 
   public static void validateFullName(String fullName) {
     if (fullName.isBlank()) {
-      throw new InvalidFullNameException("O nome completo não pode ser vazio ou conter espaços.");
+      throw new InvalidFormatFullNameException(ErrorCode.FULL_NAME_REQUIRED);
     }
     if (fullName.length() < 3 || fullName.length() > 100) {
-      throw new InvalidFullNameException("O nome completo deve ter entre 3 e 100 caracteres.");
+      throw new InvalidFormatFullNameException(ErrorCode.FULL_NAME_INVALID_LENGTH);
     }
   }
 
@@ -158,16 +159,14 @@ public class User {
 
   public void ensurePendingVerification() {
     if (this.status != AccountStatus.PENDING_VERIFICATION) {
-      throw new AccountStateConflictException(
-          "Atenção: Só é possível reenviar o código para contas pendentes de verificação.");
+      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_PENDING_VERIFICATION);
     }
   }
 
   // Gerenciar status da conta
   public void confirmVerification() {
     if (this.status != AccountStatus.PENDING_VERIFICATION) {
-      throw new AccountStateConflictException(
-          "Não é possível ativar uma conta que não está pendente de verificação.");
+      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_PENDING_VERIFICATION);
     }
     this.status = AccountStatus.ACTIVE;
     markAsUpdated();
@@ -175,17 +174,15 @@ public class User {
 
   public void disableAccount() {
     if (this.status != AccountStatus.ACTIVE) {
-      throw new AccountStateConflictException("Sua conta precisa estar ativa para ser desativada.");
+      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_ACTIVE);
     }
     this.status = AccountStatus.DISABLED;
     markAsUpdated();
   }
 
-  // Métodos utilizados por administradores
   public void enableAccount() {
     if (this.status != AccountStatus.DISABLED) {
-      throw new AccountStateConflictException(
-          "Atenção: Apenas contas com status 'desativada' podem ser reativadas.");
+      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_DISABLED);
     }
     this.status = AccountStatus.ACTIVE;
     markAsUpdated();
@@ -193,8 +190,7 @@ public class User {
 
   public void lockAccount() {
     if (this.status != AccountStatus.ACTIVE) {
-      throw new AccountStateConflictException(
-          "Não é possível bloquear uma conta que não está ativa.");
+      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_ACTIVE);
     }
     this.status = AccountStatus.LOCKED;
     markAsUpdated();
@@ -202,8 +198,7 @@ public class User {
 
   public void unlockAccount() {
     if (this.status != AccountStatus.LOCKED) {
-      throw new AccountStateConflictException(
-          "Não é possível desbloquear uma conta que não está bloqueada.");
+      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_LOCKED);
     }
     this.status = AccountStatus.ACTIVE;
     markAsUpdated();

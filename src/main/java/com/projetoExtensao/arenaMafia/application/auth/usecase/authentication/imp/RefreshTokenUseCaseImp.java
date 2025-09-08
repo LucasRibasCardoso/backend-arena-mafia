@@ -27,10 +27,8 @@ public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
 
   @Override
   public AuthResult execute(RefreshTokenVO refreshTokenVO) {
-    if (refreshTokenVO == null) {
-      throw new RefreshTokenMissingException(
-          "Sua sessão expirou. Por favor, faça login novamente.");
-    }
+    if (refreshTokenVO == null) throw new RefreshTokenMissingException();
+
     RefreshToken refreshToken = getRefreshTokenOrElseThrow(refreshTokenVO);
     refreshToken.getUser().ensureAccountEnabled();
 
@@ -46,6 +44,6 @@ public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
   private RefreshToken getRefreshTokenOrElseThrow(RefreshTokenVO refreshTokenVO) {
     return refreshTokenRepository
         .findByToken(refreshTokenVO)
-        .orElseThrow(() -> new RefreshTokenNotFoundException("Refresh token não encontrado."));
+        .orElseThrow(RefreshTokenNotFoundException::new);
   }
 }

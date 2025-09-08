@@ -5,6 +5,7 @@ import com.projetoExtensao.arenaMafia.application.user.port.gateway.PendingPhone
 import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.user.usecase.phone.InitiateChangePhoneUseCase;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
@@ -46,9 +47,7 @@ public class InitiateChangePhoneUseCaseImp implements InitiateChangePhoneUseCase
   }
 
   private User getUserOrElseThrow(UUID idCurrentUser) {
-    return userRepository
-        .findById(idCurrentUser)
-        .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado."));
+    return userRepository.findById(idCurrentUser).orElseThrow(UserNotFoundException::new);
   }
 
   private void checkIfPhoneAlreadyExists(UUID idCurrentUser, String newPhone) {
@@ -57,7 +56,7 @@ public class InitiateChangePhoneUseCaseImp implements InitiateChangePhoneUseCase
         .ifPresent(
             userFound -> {
               if (!userFound.getId().equals(idCurrentUser)) {
-                throw new UserAlreadyExistsException("Esse número de telefone já está em uso.");
+                throw new UserAlreadyExistsException(ErrorCode.PHONE_ALREADY_EXISTS);
               }
             });
   }

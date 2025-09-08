@@ -112,7 +112,7 @@ public class User {
       throw new InvalidFormatPhoneException(ErrorCode.PHONE_REQUIRED);
     }
     if (!phone.matches("^\\+[1-9]\\d{1,14}$")) {
-      throw new InvalidFormatPhoneException(ErrorCode.INVALID_FORMAT_PHONE);
+      throw new InvalidFormatPhoneException(ErrorCode.PHONE_INVALID_FORMAT);
     }
   }
 

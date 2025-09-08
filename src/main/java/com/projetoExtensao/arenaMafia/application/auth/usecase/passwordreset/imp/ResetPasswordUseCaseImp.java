@@ -35,8 +35,8 @@ public class ResetPasswordUseCaseImp implements ResetPasswordUseCase {
     ResetToken token = request.passwordResetToken();
     UUID userId = getUserIdFromToken(token);
     User user = getUserById(userId);
-
     user.ensureAccountEnabled();
+
     String newPasswordHash = passwordEncoder.encode(request.newPassword());
     user.updatePasswordHash(newPasswordHash);
     userRepositoryPort.save(user);
@@ -47,15 +47,10 @@ public class ResetPasswordUseCaseImp implements ResetPasswordUseCase {
   private UUID getUserIdFromToken(ResetToken token) {
     return passwordResetTokenPort
         .findUserIdByResetToken(token)
-        .orElseThrow(() -> new InvalidPasswordResetTokenException("Token inválido ou expirado."));
+        .orElseThrow(InvalidPasswordResetTokenException::new);
   }
 
   private User getUserById(UUID userId) {
-    return userRepositoryPort
-        .findById(userId)
-        .orElseThrow(
-            () ->
-                new UserNotFoundException(
-                    "Ocorreu um erro ao redefinir sua senha. Por favor, inicie o processo novamente."));
+    return userRepositoryPort.findById(userId).orElseThrow(UserNotFoundException::new);
   }
 }

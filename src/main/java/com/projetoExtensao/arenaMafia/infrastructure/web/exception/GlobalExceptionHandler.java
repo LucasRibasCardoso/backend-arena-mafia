@@ -1,6 +1,7 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.exception;
 
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadRequestException;
+import com.projetoExtensao.arenaMafia.domain.exception.ApplicationException;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.ConflictException;
 import com.projetoExtensao.arenaMafia.domain.exception.forbidden.ForbiddenException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.NotFoundException;
@@ -16,8 +17,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -28,138 +27,88 @@ public class GlobalExceptionHandler {
 
   private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-  // ===============================================================================================
-  // HANDLERS PARA A HIERARQUIA DE EXCEÇÕES DE NEGÓCIO
-  // ===============================================================================================
-
-  @ExceptionHandler(NotFoundException.class)
-  public ResponseEntity<ErrorResponseDto> handleNotFoundException(
-      NotFoundException e, HttpServletRequest request) {
-    return createErrorResponse(HttpStatus.NOT_FOUND, e.getMessage(), request.getRequestURI());
+  @ExceptionHandler(ApplicationException.class)
+  public ResponseEntity<ErrorResponseDto> handleApplicationException(
+      ApplicationException e, HttpServletRequest request) {
+    return buildErrorResponseEntity(mapExceptionToStatus(e), e.getErrorCode(), request);
   }
 
-  @ExceptionHandler(ConflictException.class)
-  public ResponseEntity<ErrorResponseDto> handleConflictException(
-      ConflictException e, HttpServletRequest request) {
-    return createErrorResponse(HttpStatus.CONFLICT, e.getMessage(), request.getRequestURI());
-  }
-
-  @ExceptionHandler(ForbiddenException.class)
-  public ResponseEntity<ErrorResponseDto> handleForbiddenException(
-      ForbiddenException e, HttpServletRequest request) {
-    return createErrorResponse(HttpStatus.FORBIDDEN, e.getMessage(), request.getRequestURI());
-  }
-
-  @ExceptionHandler(UnauthorizedException.class)
-  public ResponseEntity<ErrorResponseDto> handleUnauthorizedException(
-      UnauthorizedException e, HttpServletRequest request) {
-    return createErrorResponse(HttpStatus.UNAUTHORIZED, e.getMessage(), request.getRequestURI());
-  }
-
-  @ExceptionHandler(BadRequestException.class)
-  public ResponseEntity<ErrorResponseDto> handleBadRequestException(
-      BadRequestException e, HttpServletRequest request) {
-    return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request.getRequestURI());
-  }
-
-  // ===============================================================================================
-  // HANDLERS PARA EXCEÇÕES ESPECÍFICAS DO SPRING E VALIDAÇÃO
-  // ===============================================================================================
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponseDto> handleValidationException(
       MethodArgumentNotValidException e, HttpServletRequest request) {
 
-    Map<String, String> errorMap = new LinkedHashMap<>();
-
-    // Itera sobre todos os erros (de campo e globais)
-    e.getBindingResult()
-        .getAllErrors()
-        .forEach(
-            error -> {
-              String key;
-              if (error instanceof FieldError fieldError) {
-                key = fieldError.getField();
-              } else {
-                key = error.getObjectName();
-              }
-              errorMap.putIfAbsent(key, error.getDefaultMessage());
-            });
-
-    // Converte o mapa para a lista de DTOs de erro
     List<FieldErrorResponseDto> fieldErrors =
-        errorMap.entrySet().stream()
-            .map(entry -> new FieldErrorResponseDto(entry.getKey(), entry.getValue()))
+        e.getBindingResult().getFieldErrors().stream()
+            .map(
+                fieldError -> {
+                  String errorCodeString = fieldError.getDefaultMessage();
+                  String devMessage;
+                  try {
+                    ErrorCode errorCode = ErrorCode.valueOf(errorCodeString);
+                    devMessage = errorCode.getDefaultMessage();
+                  } catch (IllegalArgumentException ex) {
+                    devMessage = "Código de erro de validação não mapeado: " + errorCodeString;
+                  }
+                  return new FieldErrorResponseDto(
+                      fieldError.getField(), errorCodeString, devMessage);
+                })
             .toList();
 
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forValidationErrors(
-            "Erro de validação. Verifique os campos informados.",
-            request.getRequestURI(),
-            fieldErrors);
-
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDto);
+    return buildErrorResponseEntity(fieldErrors, request);
   }
 
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
   public ResponseEntity<ErrorResponseDto> handleMethodArgumentTypeMismatch(
       MethodArgumentTypeMismatchException e, HttpServletRequest request) {
 
-    String detailedMessage =
-        "O valor '" + e.getValue() + "' é inválido para o parâmetro '" + e.getName() + "'.";
-
     Throwable rootCause = NestedExceptionUtils.getRootCause(e);
-    if (rootCause instanceof BadRequestException) {
-      detailedMessage = rootCause.getMessage();
+    if (rootCause instanceof ApplicationException appException) {
+      return handleApplicationException(appException, request);
     }
-    return createErrorResponse(HttpStatus.BAD_REQUEST, detailedMessage, request.getRequestURI());
-  }
-
-  @ExceptionHandler(BadCredentialsException.class)
-  public ResponseEntity<ErrorResponseDto> handleBadCredentialsException(
-      HttpServletRequest request) {
-    return createErrorResponse(
-        HttpStatus.UNAUTHORIZED,
-        "Credenciais inválidas. Por favor, verifique seu usuário e senha.",
-        request.getRequestURI());
+    return buildErrorResponseEntity(
+        HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST_PARAMETER, request);
   }
 
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<ErrorResponseDto> handleAccessDeniedException(HttpServletRequest request) {
-    return createErrorResponse(
-        HttpStatus.FORBIDDEN,
-        "Acesso negado. Você não tem permissão para acessar este recurso.",
-        request.getRequestURI());
+    return buildErrorResponseEntity(HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED, request);
   }
 
-  // ===============================================================================================
-  // HANDLERS GENÉRICOS
-  // ===============================================================================================
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<ErrorResponseDto> handleDataIntegrityViolationException(
       HttpServletRequest request) {
-    return createErrorResponse(
-        HttpStatus.CONFLICT,
-        "Conflito de dados. O recurso que você está tentando criar ou atualizar já existe.",
-        request.getRequestURI());
+    return buildErrorResponseEntity(
+        HttpStatus.CONFLICT, ErrorCode.DATA_INTEGRITY_VIOLATION, request);
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponseDto> handleGenericException(
       Exception e, HttpServletRequest request) {
 
-    logger.error("Ocorreu um erro inesperado", e);
-    return createErrorResponse(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        "Erro interno do servidor. Por favor, tente novamente mais tarde.",
-        request.getRequestURI());
+    logger.error("Ocorreu um erro inesperado: ", e);
+    return buildErrorResponseEntity(
+        HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.UNEXPECTED_ERROR, request);
   }
 
-  private ResponseEntity<ErrorResponseDto> createErrorResponse(
-      HttpStatus status, String message, String path) {
+  private HttpStatus mapExceptionToStatus(ApplicationException e) {
+    if (e instanceof NotFoundException) return HttpStatus.NOT_FOUND;
+    if (e instanceof ConflictException) return HttpStatus.CONFLICT;
+    if (e instanceof UnauthorizedException) return HttpStatus.UNAUTHORIZED;
+    if (e instanceof ForbiddenException) return HttpStatus.FORBIDDEN;
+    return HttpStatus.BAD_REQUEST;
+  }
 
-    ErrorResponseDto errorResponseDto =
-        ErrorResponseDto.forGeneralError(status.value(), message, path);
+  private ResponseEntity<ErrorResponseDto> buildErrorResponseEntity(
+      HttpStatus status, ErrorCode errorCode, HttpServletRequest request) {
+    ErrorResponseDto responseBody =
+        ErrorResponseDto.forGeneralError(status.value(), errorCode, request.getRequestURI());
+    return ResponseEntity.status(status).body(responseBody);
+  }
 
-    return ResponseEntity.status(status).body(errorResponseDto);
+  private ResponseEntity<ErrorResponseDto> buildErrorResponseEntity(
+      List<FieldErrorResponseDto> fieldErrors, HttpServletRequest request) {
+    ErrorResponseDto responseBody =
+        ErrorResponseDto.forValidationErrors(request.getRequestURI(), fieldErrors);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseBody);
   }
 }

@@ -20,9 +20,6 @@ public class GetUserProfileUseCaseImp implements GetUserProfileUseCase {
 
   @Override
   public User execute(UUID userId) {
-    return userRepository
-        .findById(userId)
-        .orElseThrow(
-            () -> new UserNotFoundException("Usuário autenticado não encontrado no sistema."));
+    return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
   }
 }

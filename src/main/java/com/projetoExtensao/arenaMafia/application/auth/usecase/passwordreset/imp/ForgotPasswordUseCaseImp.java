@@ -5,6 +5,7 @@ import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.For
 import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
 import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ForgotPasswordRequestDto;
@@ -13,7 +14,6 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,8 +57,12 @@ public class ForgotPasswordUseCaseImp implements ForgotPasswordUseCase {
       OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(user.getId());
       eventPublisher.publishEvent(new OnVerificationRequiredEvent(user));
       return Optional.of(otpSessionId);
-    } catch (AccountStatusException e) {
-      logger.warn("Tentativa de redefinição de senha para conta desabilitada: {}  ", user.getId());
+    } catch (AccountStateConflictException e) {
+      logger.warn(
+          "Tentativa de redefinição de senha para conta com status inválido: [{}] : [{}] : [{}]",
+          user.getId(),
+          e.getErrorCode(),
+          e.getErrorCode().getDefaultMessage());
       return Optional.empty();
     }
   }

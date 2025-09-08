@@ -27,8 +27,6 @@ public class UpdateProfileUseCaseImp implements UpdateProfileUseCase {
   }
 
   private User getUserOrElseThrow(UUID idCurrentUser) {
-    return userRepository
-        .findById(idCurrentUser)
-        .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado."));
+    return userRepository.findById(idCurrentUser).orElseThrow(UserNotFoundException::new);
   }
 }

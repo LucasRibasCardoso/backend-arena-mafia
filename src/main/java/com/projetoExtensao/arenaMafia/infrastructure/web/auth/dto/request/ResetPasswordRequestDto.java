@@ -9,15 +9,19 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-@PasswordsMatch(message = "A senha de confirmação não corresponde à nova senha.")
+@PasswordsMatch(message = "PASSWORDS_DO_NOT_MATCH")
 public record ResetPasswordRequestDto(
-    @NotNull(message = "O token de redefinição de senha é obrigatório.") @Valid
-        ResetToken passwordResetToken,
-    @NotBlank(message = "Por favor, insira uma nova senha.")
-        @Size(min = 6, max = 20, message = "A senha deve ter entre 6 e 20 caracteres.")
-        @Pattern(regexp = "^\\S+$", message = "A senha não pode conter espaços em branco.")
-        String newPassword,
-    @NotBlank(message = "Por favor, confirme sua nova senha.") String confirmPassword)
+    @NotNull(message = "RESET_TOKEN_REQUIRED")
+    @Valid
+    ResetToken passwordResetToken,
+
+    @NotBlank(message = "PASSWORD_REQUIRED")
+    @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
+    @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
+    String newPassword,
+
+    @NotBlank(message = "CONFIRM_PASSWORD_REQUIRED")
+    String confirmPassword)
     implements PasswordConfirmationProvider {
 
   @Override

@@ -66,7 +66,7 @@ public class JwtTokenProvider {
       UserDetails user = customUserDetailsService.loadUserById(userId);
       return new UsernamePasswordAuthenticationToken(user, "", user.getAuthorities());
     } catch (JWTVerificationException e) {
-      throw new InvalidJwtTokenException("Token JWT inválido ou expirado.");
+      throw new InvalidJwtTokenException();
     }
   }
 

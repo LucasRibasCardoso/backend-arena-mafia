@@ -20,10 +20,7 @@ public class DisableMyAccountUseCaseImp implements DisableMyAccountUseCase {
 
   @Override
   public void execute(UUID idCurrentUser) {
-    User user =
-        userRepository
-            .findById(idCurrentUser)
-            .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado"));
+    User user = userRepository.findById(idCurrentUser).orElseThrow(UserNotFoundException::new);
     user.disableAccount();
     userRepository.save(user);
   }

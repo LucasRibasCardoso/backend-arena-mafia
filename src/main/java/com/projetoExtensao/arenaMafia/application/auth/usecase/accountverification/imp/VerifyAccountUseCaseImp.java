@@ -6,8 +6,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPo
 import com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification.VerifyAccountUseCase;
 import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
-import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
+import com.projetoExtensao.arenaMafia.domain.exception.notFound.InvalidOtpSessionException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
@@ -51,7 +50,7 @@ public class VerifyAccountUseCaseImp implements VerifyAccountUseCase {
   private UUID getUserIdFromOtpSession(OtpSessionId otpSessionId) {
     return otpSessionPort
         .findUserIdByOtpSessionId(otpSessionId)
-        .orElseThrow(() -> new InvalidOtpException(ErrorCode.INVALID_OR_EXPIRED_OTP_SESSION));
+        .orElseThrow(InvalidOtpSessionException::new);
   }
 
   private User getUserById(UUID userId) {

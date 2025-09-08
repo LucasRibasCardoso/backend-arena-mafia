@@ -4,7 +4,7 @@ import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.gateway.PendingPhoneChangePort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.user.usecase.phone.CompleteChangePhoneUseCase;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPhoneChangeRequestException;
+import com.projetoExtensao.arenaMafia.domain.exception.notFound.PhoneChangeNotInitiatedException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.CompletePhoneChangeRequestDto;
@@ -32,7 +32,6 @@ public class CompleteChangePhoneUseCaseImp implements CompleteChangePhoneUseCase
   @Override
   public User execute(UUID idCurrentUser, CompletePhoneChangeRequestDto request) {
     String newPhone = getPhoneOrElseThrow(idCurrentUser);
-    User.validatePhone(newPhone);
 
     otpPort.validateOtp(idCurrentUser, request.otpCode());
     pendingPhoneChangePort.deleteByUserId(idCurrentUser);
@@ -45,15 +44,10 @@ public class CompleteChangePhoneUseCaseImp implements CompleteChangePhoneUseCase
   private String getPhoneOrElseThrow(UUID idCurrentUser) {
     return pendingPhoneChangePort
         .findPhoneByUserId(idCurrentUser)
-        .orElseThrow(
-            () ->
-                new InvalidPhoneChangeRequestException(
-                    "Sua solicitação de alteração de telefone já expirou. Tente novamente."));
+        .orElseThrow(PhoneChangeNotInitiatedException::new);
   }
 
   private User getUserOrElseThrow(UUID idCurrentUser) {
-    return userRepositoryPort
-        .findById(idCurrentUser)
-        .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado."));
+    return userRepositoryPort.findById(idCurrentUser).orElseThrow(UserNotFoundException::new);
   }
 }

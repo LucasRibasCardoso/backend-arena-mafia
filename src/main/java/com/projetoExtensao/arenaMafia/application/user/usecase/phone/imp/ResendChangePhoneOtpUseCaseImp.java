@@ -42,9 +42,6 @@ public class ResendChangePhoneOtpUseCaseImp implements ResendChangePhoneOtpUseCa
   private String getNewPhoneFromCache(UUID userId) {
     return pendingPhoneChangePort
         .findPhoneByUserId(userId)
-        .orElseThrow(
-            () ->
-                new PhoneChangeNotInitiatedException(
-                    "Nenhuma alteração de telefone pendente encontrada para o usuário."));
+        .orElseThrow(PhoneChangeNotInitiatedException::new);
   }
 }

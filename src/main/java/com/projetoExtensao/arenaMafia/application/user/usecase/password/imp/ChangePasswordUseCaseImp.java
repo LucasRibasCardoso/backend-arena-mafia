@@ -3,7 +3,7 @@ package com.projetoExtensao.arenaMafia.application.user.usecase.password.imp;
 import com.projetoExtensao.arenaMafia.application.security.port.gateway.PasswordEncoderPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.user.usecase.password.ChangePasswordUseCase;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.IncorrectPasswordException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.IncorrectCurrentPasswordException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.ChangePasswordRequestDto;
@@ -27,7 +27,7 @@ public class ChangePasswordUseCaseImp implements ChangePasswordUseCase {
   @Override
   public void execute(UUID idCurrentUser, ChangePasswordRequestDto request) {
     User user = getUserOrElseThrow(idCurrentUser);
-    checkIfCurrentPasswordIsEqualExisting(request.currentPassword(), user.getPasswordHash());
+    verifyCurrentPassword(request.currentPassword(), user.getPasswordHash());
 
     String newPasswordHash = passwordEncoder.encode(request.newPassword());
     user.updatePasswordHash(newPasswordHash);
@@ -35,15 +35,16 @@ public class ChangePasswordUseCaseImp implements ChangePasswordUseCase {
   }
 
   private User getUserOrElseThrow(UUID idCurrentUser) {
-    return userRepository
-        .findById(idCurrentUser)
-        .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado"));
+    return userRepository.findById(idCurrentUser).orElseThrow(UserNotFoundException::new);
   }
 
-  private void checkIfCurrentPasswordIsEqualExisting(
-      String currentPasswordRequest, String existingPassword) {
-    if (!passwordEncoder.matches(currentPasswordRequest, existingPassword)) {
-      throw new IncorrectPasswordException("A Senha atual está incorreta");
+  private void verifyCurrentPassword(String rawPassword, String encodedPassword) {
+    if (!isPasswordSameAsCurrent(rawPassword, encodedPassword)) {
+      throw new IncorrectCurrentPasswordException();
     }
+  }
+
+  private boolean isPasswordSameAsCurrent(String newPassword, String currentPassword) {
+    return passwordEncoder.matches(newPassword, currentPassword);
   }
 }

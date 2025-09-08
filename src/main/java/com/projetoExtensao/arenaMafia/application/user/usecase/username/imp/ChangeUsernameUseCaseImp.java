@@ -2,6 +2,7 @@ package com.projetoExtensao.arenaMafia.application.user.usecase.username.imp;
 
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.user.usecase.username.ChangeUsernameUseCase;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
@@ -22,7 +23,6 @@ public class ChangeUsernameUseCaseImp implements ChangeUsernameUseCase {
 
   @Override
   public User execute(UUID idCurrentUser, ChangeUsernameRequestDto request) {
-    User.validateUsername(request.username());
     checkIfUsernameAlreadyExists(idCurrentUser, request.username());
     User user = getUserOrElseThrow(idCurrentUser);
     user.updateUsername(request.username());
@@ -35,14 +35,12 @@ public class ChangeUsernameUseCaseImp implements ChangeUsernameUseCase {
         .ifPresent(
             userFound -> {
               if (!userFound.getId().equals(idCurrentUser)) {
-                throw new UserAlreadyExistsException("Esse nome de usuário já está em uso.");
+                throw new UserAlreadyExistsException(ErrorCode.USERNAME_ALREADY_EXISTS);
               }
             });
   }
 
   private User getUserOrElseThrow(UUID idCurrentUser) {
-    return userRepository
-        .findById(idCurrentUser)
-        .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado."));
+    return userRepository.findById(idCurrentUser).orElseThrow(UserNotFoundException::new);
   }
 }

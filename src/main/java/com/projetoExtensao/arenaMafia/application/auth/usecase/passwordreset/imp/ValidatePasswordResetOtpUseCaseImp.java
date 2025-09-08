@@ -5,7 +5,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordRese
 import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.ValidatePasswordResetOtpUseCase;
 import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
+import com.projetoExtensao.arenaMafia.domain.exception.notFound.InvalidOtpSessionException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
@@ -50,12 +50,10 @@ public class ValidatePasswordResetOtpUseCaseImp implements ValidatePasswordReset
   private UUID getUserIdFromOtpSession(OtpSessionId otpSessionId) {
     return otpSessionPort
         .findUserIdByOtpSessionId(otpSessionId)
-        .orElseThrow(() -> new InvalidOtpException("Sessão de verificação inválida ou expirada."));
+        .orElseThrow(InvalidOtpSessionException::new);
   }
 
   private User getUserById(UUID userId) {
-    return userRepository
-        .findById(userId)
-        .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado."));
+    return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
   }
 }

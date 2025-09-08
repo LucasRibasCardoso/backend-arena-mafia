@@ -21,31 +21,31 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/users/me")
 public class UserController {
 
-  private final InitiateChangePhoneUseCase initiateChangePhoneUseCase;
-  private final CompleteChangePhoneUseCase completeChangePhoneUseCase;
-  private final DisableMyAccountUseCase disableMyAccountUseCase;
-  private final ResendChangePhoneOtpUseCase resendChangePhoneOtpUseCase;
+  private final UpdateProfileUseCase updateProfileUseCase;
   private final ChangeUsernameUseCase changeUsernameUseCase;
   private final ChangePasswordUseCase changePasswordUseCase;
   private final GetUserProfileUseCase getUserProfileUseCase;
-  private final UpdateProfileUseCase updateProfileUseCase;
+  private final DisableMyAccountUseCase disableMyAccountUseCase;
+  private final InitiateChangePhoneUseCase initiateChangePhoneUseCase;
+  private final CompleteChangePhoneUseCase completeChangePhoneUseCase;
+  private final ResendChangePhoneOtpUseCase resendChangePhoneOtpUseCase;
 
   public UserController(
-      CompleteChangePhoneUseCase completeChangePhoneUseCase,
-      InitiateChangePhoneUseCase initiateChangePhoneUseCase,
-      DisableMyAccountUseCase disableMyAccountUseCase,
-      ResendChangePhoneOtpUseCase resendChangePhoneOtpUseCase,
+      UpdateProfileUseCase updateProfileUseCase,
       ChangeUsernameUseCase changeUsernameUseCase,
       ChangePasswordUseCase changePasswordUseCase,
       GetUserProfileUseCase getUserProfileUseCase,
-      UpdateProfileUseCase updateProfileUseCase) {
-    this.completeChangePhoneUseCase = completeChangePhoneUseCase;
-    this.initiateChangePhoneUseCase = initiateChangePhoneUseCase;
-    this.disableMyAccountUseCase = disableMyAccountUseCase;
+      DisableMyAccountUseCase disableMyAccountUseCase,
+      InitiateChangePhoneUseCase initiateChangePhoneUseCase,
+      CompleteChangePhoneUseCase completeChangePhoneUseCase,
+      ResendChangePhoneOtpUseCase resendChangePhoneOtpUseCase) {
+    this.updateProfileUseCase = updateProfileUseCase;
     this.changeUsernameUseCase = changeUsernameUseCase;
     this.changePasswordUseCase = changePasswordUseCase;
     this.getUserProfileUseCase = getUserProfileUseCase;
-    this.updateProfileUseCase = updateProfileUseCase;
+    this.disableMyAccountUseCase = disableMyAccountUseCase;
+    this.initiateChangePhoneUseCase = initiateChangePhoneUseCase;
+    this.completeChangePhoneUseCase = completeChangePhoneUseCase;
     this.resendChangePhoneOtpUseCase = resendChangePhoneOtpUseCase;
   }
 
@@ -54,10 +54,7 @@ public class UserController {
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser) {
 
     User user = getUserProfileUseCase.execute(authenticatedUser.getUser().getId());
-    UserProfileResponseDto response =
-        new UserProfileResponseDto(
-            user.getUsername(), user.getFullName(), user.getPhone(), user.getRole().name());
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(buildUserProfileResponseDto(user));
   }
 
   @PatchMapping("/profile")
@@ -67,13 +64,7 @@ public class UserController {
 
     User updatedUser =
         updateProfileUseCase.execute(authenticatedUser.getUser().getId(), requestDTO);
-    UserProfileResponseDto response =
-        new UserProfileResponseDto(
-            updatedUser.getUsername(),
-            updatedUser.getFullName(),
-            updatedUser.getPhone(),
-            updatedUser.getRole().name());
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(buildUserProfileResponseDto(updatedUser));
   }
 
   @PatchMapping("/username")
@@ -82,13 +73,7 @@ public class UserController {
       @Valid @RequestBody ChangeUsernameRequestDto request) {
 
     User updatedUser = changeUsernameUseCase.execute(authenticatedUser.getUser().getId(), request);
-    UserProfileResponseDto response =
-        new UserProfileResponseDto(
-            updatedUser.getUsername(),
-            updatedUser.getFullName(),
-            updatedUser.getPhone(),
-            updatedUser.getRole().name());
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(buildUserProfileResponseDto(updatedUser));
   }
 
   @PostMapping("/password")
@@ -116,19 +101,12 @@ public class UserController {
 
     User updatedUser =
         completeChangePhoneUseCase.execute(authenticatedUser.getUser().getId(), request);
-    UserProfileResponseDto response =
-        new UserProfileResponseDto(
-            updatedUser.getUsername(),
-            updatedUser.getFullName(),
-            updatedUser.getPhone(),
-            updatedUser.getRole().name());
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(buildUserProfileResponseDto(updatedUser));
   }
 
   @PostMapping("/phone/verification/resend")
   public ResponseEntity<Void> resendPhoneVerificationCode(
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser) {
-
     resendChangePhoneOtpUseCase.execute(authenticatedUser.getUser().getId());
     return ResponseEntity.noContent().build();
   }
@@ -138,5 +116,10 @@ public class UserController {
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser) {
     disableMyAccountUseCase.execute(authenticatedUser.getUser().getId());
     return ResponseEntity.noContent().build();
+  }
+
+  private UserProfileResponseDto buildUserProfileResponseDto(User user) {
+    return new UserProfileResponseDto(
+        user.getUsername(), user.getFullName(), user.getPhone(), user.getRole().name());
   }
 }

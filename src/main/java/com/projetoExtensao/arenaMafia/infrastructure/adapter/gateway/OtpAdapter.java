@@ -1,6 +1,7 @@
 package com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway;
 
 import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
 import java.time.Duration;
@@ -31,7 +32,7 @@ public class OtpAdapter implements OtpPort {
   public void validateOtp(UUID userId, OtpCode otpCode) {
     String stored = redisTemplate.opsForValue().get(key(userId));
     if (stored == null || !stored.equals(otpCode.value())) {
-      throw new InvalidOtpException("Código de verificação inválido ou expirado.");
+      throw new InvalidOtpException(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED);
     }
     redisTemplate.delete(key(userId));
   }

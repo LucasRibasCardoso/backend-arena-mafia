@@ -48,6 +48,6 @@ public class CustomAuthenticationEntryPointHandler implements AuthenticationEntr
   private ErrorResponseDto createErrorResponse(HttpServletRequest request) {
     ErrorCode errorCode = ErrorCode.SESSION_EXPIRED;
     return ErrorResponseDto.forGeneralError(
-        UNAUTHORIZED_STATUS, errorCode, errorCode.getDefaultMessage(), request.getRequestURI());
+        UNAUTHORIZED_STATUS, errorCode, request.getRequestURI());
   }
 }

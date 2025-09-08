@@ -34,7 +34,7 @@ public class CompleteChangePhoneUseCaseImp implements CompleteChangePhoneUseCase
     String newPhone = getPhoneOrElseThrow(idCurrentUser);
     User.validatePhone(newPhone);
 
-    otpPort.validateOtp(idCurrentUser, request.code());
+    otpPort.validateOtp(idCurrentUser, request.otpCode());
     pendingPhoneChangePort.deleteByUserId(idCurrentUser);
 
     User user = getUserOrElseThrow(idCurrentUser);

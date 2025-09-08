@@ -2,20 +2,20 @@ package com.projetoExtensao.arenaMafia.integration.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.projetoExtensao.arenaMafia.domain.valueobjects.ResetToken;
 import com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway.PasswordResetTokenAdapter;
 import com.projetoExtensao.arenaMafia.integration.config.BaseTestContainersConfig;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 
-@SpringBootTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DisplayName("Testes de integração de persistência para PasswordResetTokenAdapter")
 public class PasswordResetTokenAdapterIntegrationTest extends BaseTestContainersConfig {
 
@@ -25,37 +25,37 @@ public class PasswordResetTokenAdapterIntegrationTest extends BaseTestContainers
   private final String TOKEN_PREFIX = "password-reset-token:";
 
   @Test
-  @DisplayName("Deve salvar o token de redefinição no Redis com o otpSessionId e expiração corretos")
-  void save_shouldGenerateTokenTokenInRedisWithCorrectUserIdAndExpiration() {
+  @DisplayName("Deve gerar e salvar o token de redefinição no Redis com expiração")
+  void generateToken_shouldSaveTokenInRedisWithCorrectUserIdAndExpiration() {
     // Arrange
     UUID userId = UUID.randomUUID();
 
     // Act
-    String generatedToken = passwordResetTokenAdapter.generateToken(userId);
+    // CORREÇÃO: O método agora retorna um objeto ResetToken
+    ResetToken generatedToken = passwordResetTokenAdapter.generateToken(userId);
 
     // Assert
-    assertThat(generatedToken).isNotNull().hasSize(36); // Tamanho de um UUID
+    assertThat(generatedToken).isNotNull();
+    assertThat(generatedToken.value()).isNotNull();
 
     String redisKey = TOKEN_PREFIX + generatedToken;
     String storedUserId = redisTemplate.opsForValue().get(redisKey);
-    Long ttl = redisTemplate.getExpire(redisKey, TimeUnit.SECONDS);
+    Long ttl = redisTemplate.getExpire(redisKey);
 
     assertThat(storedUserId).isEqualTo(userId.toString());
     assertThat(ttl).isNotNull().isPositive().isLessThanOrEqualTo(Duration.ofMinutes(5).toSeconds());
   }
 
   @Nested
-  @DisplayName("Testes para o método getUserIdByTokenOrElseThrow")
-  class FindUserIdByTokenTests {
+  @DisplayName("Testes para o método findUserIdByResetToken")
+  class FindUserIdByResetTokenTests {
 
     @Test
-    @DisplayName("Deve encontrar e retornar o otpSessionId para um token válido e existente")
-    void getUserIdByTokenOrElseThrow_shouldReturnUserId_whenTokenExists() {
+    @DisplayName("Deve encontrar e retornar o UUID do usuário para um token válido e existente")
+    void findUserIdByResetToken_shouldReturnUserId_whenTokenExists() {
       // Arrange
       UUID userId = UUID.randomUUID();
-      String token = UUID.randomUUID().toString();
-      String redisKey = TOKEN_PREFIX + token;
-      redisTemplate.opsForValue().set(redisKey, userId.toString(), Duration.ofMinutes(5));
+      ResetToken token = passwordResetTokenAdapter.generateToken(userId);
 
       // Act
       Optional<UUID> foundUserId = passwordResetTokenAdapter.findUserIdByResetToken(token);
@@ -67,9 +67,9 @@ public class PasswordResetTokenAdapterIntegrationTest extends BaseTestContainers
 
     @Test
     @DisplayName("Deve retornar Optional vazio quando o token não existir")
-    void getUserIdByTokenOrElseThrow_shouldThrowException_whenTokenDoesNotExist() {
+    void findUserIdByResetToken_shouldReturnEmpty_whenTokenDoesNotExist() {
       // Arrange
-      String nonExistentToken = UUID.randomUUID().toString();
+      ResetToken nonExistentToken = ResetToken.generate();
 
       // Act
       Optional<UUID> foundUserId =
@@ -84,11 +84,10 @@ public class PasswordResetTokenAdapterIntegrationTest extends BaseTestContainers
   @DisplayName("Deve deletar um token existente do Redis")
   void delete_shouldRemoveTokenFromRedis() {
     // Arrange
-    String token = UUID.randomUUID().toString();
+    UUID userId = UUID.randomUUID();
+    ResetToken token = passwordResetTokenAdapter.generateToken(userId);
     String redisKey = TOKEN_PREFIX + token;
-    redisTemplate.opsForValue().set(redisKey, UUID.randomUUID().toString());
 
-    // Garante que a chave existe ANTES de deletar
     assertThat(redisTemplate.hasKey(redisKey)).isTrue();
 
     // Act

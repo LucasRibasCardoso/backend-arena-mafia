@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -96,6 +98,20 @@ public class GlobalExceptionHandler {
             fieldErrors);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponseDto);
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ErrorResponseDto> handleMethodArgumentTypeMismatch(
+      MethodArgumentTypeMismatchException e, HttpServletRequest request) {
+
+    String detailedMessage =
+        "O valor '" + e.getValue() + "' é inválido para o parâmetro '" + e.getName() + "'.";
+
+    Throwable rootCause = NestedExceptionUtils.getRootCause(e);
+    if (rootCause instanceof BadRequestException) {
+      detailedMessage = rootCause.getMessage();
+    }
+    return createErrorResponse(HttpStatus.BAD_REQUEST, detailedMessage, request.getRequestURI());
   }
 
   @ExceptionHandler(BadCredentialsException.class)

@@ -12,11 +12,13 @@ import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConf
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.LoginRequestDto;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,7 +32,6 @@ public class LoginUseCaseTest {
 
   @Mock private AuthPort authPort;
   @Mock private UserRepositoryPort userRepository;
-
   @InjectMocks private LoginUseCaseImp loginUseCase;
 
   private final String defaultUsername = "testuser";
@@ -55,8 +56,10 @@ public class LoginUseCaseTest {
   void execute_shouldAuthenticateUserAndReturnTokens() {
     // Arrange
     User user = createUser(AccountStatus.ACTIVE);
+    RefreshTokenVO refreshTokenVO = RefreshTokenVO.generate();
+    AuthResult expectedResponse = new AuthResult(user, "access_token", refreshTokenVO);
+
     LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
-    AuthResult expectedResponse = new AuthResult(user, "access_token", "refresh_token");
 
     when(userRepository.findByUsername(defaultUsername)).thenReturn(Optional.of(user));
     when(authPort.authenticate(defaultUsername, defaultPassword)).thenReturn(user);
@@ -115,65 +118,68 @@ public class LoginUseCaseTest {
     verify(authPort, never()).generateTokens(any(User.class));
   }
 
-  @Test
-  @DisplayName(
-      "Deve lançar AccountStateConflictException quando a conta do usuário estiver pendente de verificação")
-  void execute_shouldThrowAccountStateConflictException_whenAccountIsPending() {
-    // Arrange
-    User user = createUser(AccountStatus.PENDING_VERIFICATION);
-    LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
+  @Nested
+  @DisplayName("Deve lançar exceção quando a conta não está ativada")
+  class AccountStateTests {
 
-    when(userRepository.findByUsername(defaultUsername)).thenReturn(Optional.of(user));
+    @Test
+    @DisplayName(
+        "Deve lançar AccountStateConflictException quando a conta está pendente de verificação")
+    void execute_shouldThrowAccountStateConflictException_whenAccountIsPending() {
+      // Arrange
+      User user = createUser(AccountStatus.PENDING_VERIFICATION);
+      LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
 
-    // Act & Assert
-    assertThatThrownBy(() -> loginUseCase.execute(request))
-        .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage(
-            "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
+      when(userRepository.findByUsername(defaultUsername)).thenReturn(Optional.of(user));
 
-    verify(userRepository, times(1)).findByUsername(defaultUsername);
-    verify(authPort, never()).authenticate(anyString(), anyString());
-    verify(authPort, never()).generateTokens(any(User.class));
-  }
+      // Act & Assert
+      assertThatThrownBy(() -> loginUseCase.execute(request))
+          .isInstanceOf(AccountStateConflictException.class)
+          .hasMessage(
+              "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
 
-  @Test
-  @DisplayName(
-      "Deve lançar AccountStateConflictException quando a conta do usuário estiver bloqueada")
-  void execute_shouldThrowAccountStateConflictException_whenAccountIsLocked() {
-    // Arrange
-    LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
-    User user = createUser(AccountStatus.LOCKED);
+      verify(userRepository, times(1)).findByUsername(defaultUsername);
+      verify(authPort, never()).authenticate(anyString(), anyString());
+      verify(authPort, never()).generateTokens(any(User.class));
+    }
 
-    when(userRepository.findByUsername(defaultUsername)).thenReturn(Optional.of(user));
+    @Test
+    @DisplayName("Deve lançar AccountStateConflictException quando a conta está bloqueada")
+    void execute_shouldThrowAccountStateConflictException_whenAccountIsLocked() {
+      // Arrange
+      LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
+      User user = createUser(AccountStatus.LOCKED);
 
-    // Act & Assert
-    assertThatThrownBy(() -> loginUseCase.execute(request))
-        .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
+      when(userRepository.findByUsername(defaultUsername)).thenReturn(Optional.of(user));
 
-    verify(userRepository, times(1)).findByUsername(defaultUsername);
-    verify(authPort, never()).authenticate(anyString(), anyString());
-    verify(authPort, never()).generateTokens(any(User.class));
-  }
+      // Act & Assert
+      assertThatThrownBy(() -> loginUseCase.execute(request))
+          .isInstanceOf(AccountStateConflictException.class)
+          .hasMessage("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
 
-  @Test
-  @DisplayName(
-      "Deve lançar AccountStateConflictException quando a conta do usuário estiver desativada")
-  void execute_shouldThrowAccountStateConflictException_whenAccountIsDisabled() {
-    // Arrange
-    LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
-    User user = createUser(AccountStatus.DISABLED);
+      verify(userRepository, times(1)).findByUsername(defaultUsername);
+      verify(authPort, never()).authenticate(anyString(), anyString());
+      verify(authPort, never()).generateTokens(any(User.class));
+    }
 
-    when(userRepository.findByUsername(defaultUsername)).thenReturn(Optional.of(user));
+    @Test
+    @DisplayName("Deve lançar AccountStateConflictException quando a conta está desativada")
+    void execute_shouldThrowAccountStateConflictException_whenAccountIsDisabled() {
+      // Arrange
+      LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
+      User user = createUser(AccountStatus.DISABLED);
 
-    // Act & Assert
-    assertThatThrownBy(() -> loginUseCase.execute(request))
-        .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage(
-            "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
+      when(userRepository.findByUsername(defaultUsername)).thenReturn(Optional.of(user));
 
-    verify(userRepository, times(1)).findByUsername(defaultUsername);
-    verify(authPort, never()).authenticate(anyString(), anyString());
-    verify(authPort, never()).generateTokens(any(User.class));
+      // Act & Assert
+      assertThatThrownBy(() -> loginUseCase.execute(request))
+          .isInstanceOf(AccountStateConflictException.class)
+          .hasMessage(
+              "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
+
+      verify(userRepository, times(1)).findByUsername(defaultUsername);
+      verify(authPort, never()).authenticate(anyString(), anyString());
+      verify(authPort, never()).generateTokens(any(User.class));
+    }
   }
 }

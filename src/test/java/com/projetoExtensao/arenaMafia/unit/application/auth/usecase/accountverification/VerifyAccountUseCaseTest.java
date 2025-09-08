@@ -16,6 +16,9 @@ import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundExce
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 import java.time.Instant;
 import java.util.Optional;
@@ -37,7 +40,8 @@ public class VerifyAccountUseCaseTest {
   @Mock private UserRepositoryPort userRepository;
   @InjectMocks private VerifyAccountUseCaseImp verifyAccountUseCase;
 
-  private final String defaultOtp = "123456";
+  private final OtpCode otpCode = OtpCode.generate();
+  private final OtpSessionId otpSessionId = OtpSessionId.generate();
 
   private User createUser(AccountStatus accountStatus) {
     Instant now = Instant.now();
@@ -59,12 +63,12 @@ public class VerifyAccountUseCaseTest {
     // Arrange
     User user = createUser(AccountStatus.PENDING_VERIFICATION);
     UUID userId = user.getId();
-    String defaultAccessToken = "access_token";
-    String defaultRefreshToken = "refresh_token";
-    var authResult = new AuthResult(user, defaultAccessToken, defaultRefreshToken);
 
-    String otpSessionId = UUID.randomUUID().toString();
-    var request = new ValidateOtpRequestDto(otpSessionId, defaultOtp);
+    String accessToken = "access_token";
+    RefreshTokenVO refreshToken = RefreshTokenVO.generate();
+    var authResult = new AuthResult(user, accessToken, refreshToken);
+
+    var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -75,12 +79,12 @@ public class VerifyAccountUseCaseTest {
 
     // Assert
     assertThat(response.user()).isEqualTo(user);
-    assertThat(response.accessToken()).isEqualTo(defaultAccessToken);
-    assertThat(response.refreshToken()).isEqualTo(defaultRefreshToken);
+    assertThat(response.accessToken()).isEqualTo(accessToken);
+    assertThat(response.refreshToken()).isEqualTo(refreshToken);
 
     verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
     verify(userRepository, times(1)).findById(userId);
-    verify(otpPort, times(1)).validateOtp(user.getId(), defaultOtp);
+    verify(otpPort, times(1)).validateOtp(user.getId(), otpCode);
     verify(userRepository, times(1)).save(user);
     verify(authPort, times(1)).generateTokens(user);
   }
@@ -91,8 +95,7 @@ public class VerifyAccountUseCaseTest {
     // Arrange
     UUID userId = UUID.randomUUID();
 
-    String otpSessionId = UUID.randomUUID().toString();
-    var request = new ValidateOtpRequestDto(otpSessionId, defaultOtp);
+    var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
     when(userRepository.findById(userId)).thenReturn(Optional.empty());
@@ -105,26 +108,28 @@ public class VerifyAccountUseCaseTest {
 
     verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
     verify(userRepository, times(1)).findById(userId);
-    verify(otpPort, never()).validateOtp(any(), anyString());
+    verify(otpPort, never()).validateOtp(any(UUID.class), any(OtpCode.class));
     verify(userRepository, never()).save(any(User.class));
     verify(authPort, never()).generateTokens(any(User.class));
   }
 
   @Test
-  @DisplayName("Deve lançar uma exceção quando o otpSessionId for inválido")
-  void execute_shouldThrowException_whenOtpSessionIdIsInvalid() {
+  @DisplayName("Deve lançar uma exceção quando a sessão OTP for inválida")
+  void execute_shouldThrowException_whenOtpSessionIsInvalid() {
     // Arrange
-    String userId = "invalid-uuid";
-    var request = new ValidateOtpRequestDto(userId, defaultOtp);
+    OtpSessionId invalidOtpSessionId = OtpSessionId.generate();
+    var request = new ValidateOtpRequestDto(invalidOtpSessionId, otpCode);
+
+    when(otpSessionPort.findUserIdByOtpSessionId(invalidOtpSessionId)).thenReturn(Optional.empty());
 
     // Act & Assert
     assertThatThrownBy(() -> verifyAccountUseCase.execute(request))
         .isInstanceOf(InvalidOtpException.class)
         .hasMessage("Sessão de verificação inválida ou expirada.");
 
-    verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(userId);
+    verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(invalidOtpSessionId);
     verify(userRepository, never()).findById(any(UUID.class));
-    verify(otpPort, never()).validateOtp(any(), anyString());
+    verify(otpPort, never()).validateOtp(any(UUID.class), any(OtpCode.class));
     verify(userRepository, never()).save(any(User.class));
     verify(authPort, never()).generateTokens(any(User.class));
   }
@@ -137,8 +142,7 @@ public class VerifyAccountUseCaseTest {
     User user = createUser(AccountStatus.PENDING_VERIFICATION);
     UUID userId = user.getId();
 
-    String otpSessionId = UUID.randomUUID().toString();
-    String invalidOtp = "aaabbb";
+    OtpCode invalidOtp = OtpCode.generate();
     var request = new ValidateOtpRequestDto(otpSessionId, invalidOtp);
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
@@ -166,8 +170,7 @@ public class VerifyAccountUseCaseTest {
     User user = createUser(AccountStatus.ACTIVE);
     UUID userId = user.getId();
 
-    String otpSessionId = UUID.randomUUID().toString();
-    var request = new ValidateOtpRequestDto(otpSessionId, defaultOtp);
+    var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -180,7 +183,7 @@ public class VerifyAccountUseCaseTest {
     // Verify
     verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
     verify(userRepository, times(1)).findById(userId);
-    verify(otpPort, times(1)).validateOtp(user.getId(), defaultOtp);
+    verify(otpPort, times(1)).validateOtp(user.getId(), otpCode);
     verify(userRepository, never()).save(any(User.class));
     verify(authPort, never()).generateTokens(any(User.class));
   }

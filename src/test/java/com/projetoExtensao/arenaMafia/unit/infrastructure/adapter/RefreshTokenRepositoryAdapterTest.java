@@ -27,7 +27,6 @@ public class RefreshTokenRepositoryAdapterTest {
   @Mock private RefreshTokenJpaRepository refreshTokenJpaRepository;
   @Mock private RefreshTokenMapper refreshTokenMapper;
   @Mock private UserMapper userMapper;
-
   @InjectMocks private RefreshTokenRepositoryAdapter refreshTokenRepositoryAdapter;
 
   @Nested

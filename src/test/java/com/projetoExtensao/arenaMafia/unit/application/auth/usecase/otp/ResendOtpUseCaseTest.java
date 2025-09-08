@@ -14,6 +14,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundExce
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,6 +37,8 @@ public class ResendOtpUseCaseTest {
   @Mock private ApplicationEventPublisher eventPublisher;
   @Mock private UserRepositoryPort userRepositoryPort;
   @InjectMocks private ResendOtpUseCaseImp resendOtpUseCaseTest;
+
+  private final OtpSessionId otpSessionId = OtpSessionId.generate();
 
   private User createUser(AccountStatus status) {
     Instant now = Instant.now();
@@ -60,7 +63,6 @@ public class ResendOtpUseCaseTest {
     // Arrange
     User user = createUser(status);
     UUID userId = user.getId();
-    String otpSessionId = UUID.randomUUID().toString();
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
     when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));
@@ -78,7 +80,6 @@ public class ResendOtpUseCaseTest {
   @DisplayName("Deve lançar exceção quando a sessão OTP for inválida")
   void shouldThrowExceptionForInvalidOtpSession() {
     // Arrange
-    String otpSessionId = UUID.randomUUID().toString();
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.empty());
 
     // Act & Assert
@@ -95,7 +96,6 @@ public class ResendOtpUseCaseTest {
   @DisplayName("Deve lançar exceção quando o usuário não for encontrado")
   void shouldThrowException_whenUserNotFound() {
     // Arrange
-    String otpSessionId = UUID.randomUUID().toString();
     UUID userId = UUID.randomUUID();
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
@@ -124,7 +124,6 @@ public class ResendOtpUseCaseTest {
       // Arrange
       User user = createUser(status);
       UUID userId = user.getId();
-      String otpSessionId = UUID.randomUUID().toString();
 
       when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
       when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));

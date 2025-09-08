@@ -14,6 +14,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConf
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ForgotPasswordRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.ForgotPasswordResponseDto;
 import java.time.Instant;
@@ -37,12 +38,13 @@ public class ForgotPasswordUseCaseTest {
   @Mock private UserRepositoryPort userRepository;
   @Mock private PhoneValidatorPort phoneValidator;
   @Mock private ApplicationEventPublisher eventPublisher;
-
   @InjectMocks private ForgotPasswordUseCaseImp forgotPasswordUseCase;
 
   private final String defaultPhone = "+558320548181";
   private final String unformattedPhone = "+558320548181";
   private final String formattedPhone = defaultPhone;
+
+  private final OtpSessionId otpSessionId = OtpSessionId.generate();
 
   private User createUser(AccountStatus accountStatus) {
     Instant now = Instant.now();
@@ -62,7 +64,6 @@ public class ForgotPasswordUseCaseTest {
   @DisplayName("Deve publicar um evento para envio de sms quando o usuário for encontrado")
   void execute_shouldPublishEvent_whenUserIsFoundByPhone() {
     // Arrange
-    String otpSessionId = UUID.randomUUID().toString();
     User user = createUser(AccountStatus.ACTIVE);
     var request = new ForgotPasswordRequestDto(unformattedPhone);
 
@@ -104,7 +105,7 @@ public class ForgotPasswordUseCaseTest {
     ForgotPasswordResponseDto response = forgotPasswordUseCase.execute(request);
 
     // Assert
-    assertThat(response.otpSessionId()).hasSize(36); // UUID Fake
+    assertThat(response.otpSessionId().toString()).hasSize(36); // UUID Fake
     assertThat(response.message())
         .isEqualTo("Se o número estiver cadastrado, você receberá um código de verificação.");
 

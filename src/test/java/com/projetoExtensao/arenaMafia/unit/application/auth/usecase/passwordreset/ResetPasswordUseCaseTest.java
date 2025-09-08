@@ -14,6 +14,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundExce
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.ResetToken;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResetPasswordRequestDto;
 import java.time.Instant;
 import java.util.Optional;
@@ -32,10 +33,9 @@ public class ResetPasswordUseCaseTest {
   @Mock private PasswordEncoderPort passwordEncoder;
   @Mock private UserRepositoryPort userRepository;
   @Mock private PasswordResetTokenPort passwordResetToken;
-
   @InjectMocks private ResetPasswordUseCaseImp resetPasswordUseCase;
 
-  private final String token = "valid-reset-token";
+  private final ResetToken resetToken = ResetToken.generate();
   private final String newPassword = "newSecurePassword123!";
   private final String confirmPassword = "newSecurePassword123!";
 
@@ -59,9 +59,10 @@ public class ResetPasswordUseCaseTest {
     // Arrange
     User user = createUser(AccountStatus.ACTIVE);
     String newPasswordHash = "hashedNewPassword";
-    var request = new ResetPasswordRequestDto(token, newPassword, confirmPassword);
+    var request = new ResetPasswordRequestDto(resetToken, newPassword, confirmPassword);
 
-    when(passwordResetToken.findUserIdByResetToken(token)).thenReturn(Optional.of(user.getId()));
+    when(passwordResetToken.findUserIdByResetToken(resetToken))
+        .thenReturn(Optional.of(user.getId()));
 
     when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
     when(passwordEncoder.encode(newPassword)).thenReturn(newPasswordHash);
@@ -72,7 +73,7 @@ public class ResetPasswordUseCaseTest {
     // Assert
     assertThat(user.getPasswordHash()).isEqualTo(newPasswordHash);
 
-    verify(passwordResetToken, times(1)).findUserIdByResetToken(token);
+    verify(passwordResetToken, times(1)).findUserIdByResetToken(resetToken);
     verify(userRepository, times(1)).findById(user.getId());
     verify(passwordEncoder, times(1)).encode(newPassword);
   }
@@ -81,16 +82,16 @@ public class ResetPasswordUseCaseTest {
   @DisplayName("Deve lançar uma exceção quando não encontrar o token de redefinição de senha")
   public void execute_ShouldThrowExceptionForInvalidToken() {
     // Arrange
-    var request = new ResetPasswordRequestDto(token, newPassword, confirmPassword);
+    var request = new ResetPasswordRequestDto(resetToken, newPassword, confirmPassword);
 
-    when(passwordResetToken.findUserIdByResetToken(token)).thenReturn(Optional.empty());
+    when(passwordResetToken.findUserIdByResetToken(resetToken)).thenReturn(Optional.empty());
 
     // Act & Assert
     assertThatThrownBy(() -> resetPasswordUseCase.execute(request))
         .isInstanceOf(InvalidPasswordResetTokenException.class)
         .hasMessageContaining("Token inválido ou expirado.");
 
-    verify(passwordResetToken, times(1)).findUserIdByResetToken(token);
+    verify(passwordResetToken, times(1)).findUserIdByResetToken(resetToken);
     verify(userRepository, never()).findById(any());
     verify(passwordEncoder, never()).encode(any());
   }
@@ -100,9 +101,9 @@ public class ResetPasswordUseCaseTest {
   public void execute_ShouldThrowExceptionForUserNotFound() {
     // Arrange
     UUID userId = UUID.randomUUID();
-    var request = new ResetPasswordRequestDto(token, newPassword, confirmPassword);
+    var request = new ResetPasswordRequestDto(resetToken, newPassword, confirmPassword);
 
-    when(passwordResetToken.findUserIdByResetToken(token)).thenReturn(Optional.of(userId));
+    when(passwordResetToken.findUserIdByResetToken(resetToken)).thenReturn(Optional.of(userId));
     when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
     // Act & Assert
@@ -117,9 +118,10 @@ public class ResetPasswordUseCaseTest {
   public void execute_ShouldThrowExceptionForLockedAccount() {
     // Arrange
     User user = createUser(AccountStatus.LOCKED);
-    var request = new ResetPasswordRequestDto(token, newPassword, confirmPassword);
+    var request = new ResetPasswordRequestDto(resetToken, newPassword, confirmPassword);
 
-    when(passwordResetToken.findUserIdByResetToken(token)).thenReturn(Optional.of(user.getId()));
+    when(passwordResetToken.findUserIdByResetToken(resetToken))
+        .thenReturn(Optional.of(user.getId()));
     when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
     // Act & Assert
@@ -127,7 +129,7 @@ public class ResetPasswordUseCaseTest {
         .isInstanceOf(AccountStateConflictException.class)
         .hasMessageContaining("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
 
-    verify(passwordResetToken, times(1)).findUserIdByResetToken(token);
+    verify(passwordResetToken, times(1)).findUserIdByResetToken(resetToken);
     verify(userRepository, times(1)).findById(user.getId());
     verify(passwordEncoder, never()).encode(any());
   }
@@ -137,9 +139,10 @@ public class ResetPasswordUseCaseTest {
   public void execute_ShouldThrowExceptionForPendingVerificationAccount() {
     // Arrange
     User user = createUser(AccountStatus.PENDING_VERIFICATION);
-    var request = new ResetPasswordRequestDto(token, newPassword, confirmPassword);
+    var request = new ResetPasswordRequestDto(resetToken, newPassword, confirmPassword);
 
-    when(passwordResetToken.findUserIdByResetToken(token)).thenReturn(Optional.of(user.getId()));
+    when(passwordResetToken.findUserIdByResetToken(resetToken))
+        .thenReturn(Optional.of(user.getId()));
     when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
     // Act & Assert
@@ -148,7 +151,7 @@ public class ResetPasswordUseCaseTest {
         .hasMessageContaining(
             "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
 
-    verify(passwordResetToken, times(1)).findUserIdByResetToken(token);
+    verify(passwordResetToken, times(1)).findUserIdByResetToken(resetToken);
     verify(userRepository, times(1)).findById(user.getId());
     verify(passwordEncoder, never()).encode(any());
   }
@@ -158,12 +161,10 @@ public class ResetPasswordUseCaseTest {
   public void execute_ShouldThrowExceptionForDisabledAccount() {
     // Arrange
     User user = createUser(AccountStatus.DISABLED);
-    String token = "valid-reset-token";
-    String newPassword = "newSecurePassword123!";
-    String confirmPassword = "newSecurePassword123!";
-    var request = new ResetPasswordRequestDto(token, newPassword, confirmPassword);
+    var request = new ResetPasswordRequestDto(resetToken, newPassword, confirmPassword);
 
-    when(passwordResetToken.findUserIdByResetToken(token)).thenReturn(Optional.of(user.getId()));
+    when(passwordResetToken.findUserIdByResetToken(resetToken))
+        .thenReturn(Optional.of(user.getId()));
     when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
     // Act & Assert
@@ -172,7 +173,7 @@ public class ResetPasswordUseCaseTest {
         .hasMessageContaining(
             "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
 
-    verify(passwordResetToken, times(1)).findUserIdByResetToken(token);
+    verify(passwordResetToken, times(1)).findUserIdByResetToken(resetToken);
     verify(userRepository, times(1)).findById(user.getId());
     verify(passwordEncoder, never()).encode(any());
   }

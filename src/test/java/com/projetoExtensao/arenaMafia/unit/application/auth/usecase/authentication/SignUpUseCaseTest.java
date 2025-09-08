@@ -13,6 +13,7 @@ import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepos
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadPhoneNumberException;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -52,7 +53,7 @@ public class SignUpUseCaseTest {
   void execute_shouldCreateUserAndPublishEvent_whenDataIsValid() {
     // Arrange
     User savedUser = createUser();
-    String otpSessionId = UUID.randomUUID().toString();
+    OtpSessionId otpSessionId = OtpSessionId.generate();
     var request =
         new SignupRequestDto(
             defaultUsername,
@@ -69,7 +70,7 @@ public class SignUpUseCaseTest {
     when(otpSessionPort.generateOtpSession(savedUser.getId())).thenReturn(otpSessionId);
 
     // Act
-    String response = signUpUseCase.execute(request);
+    OtpSessionId response = signUpUseCase.execute(request);
 
     // Assert
     assertThat(response).isEqualTo(otpSessionId);

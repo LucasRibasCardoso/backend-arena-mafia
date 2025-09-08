@@ -27,11 +27,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 public class AuthPortAdapterTest {
 
   @Mock private AuthenticationManager authenticationManager;
-
   @Mock private JwtTokenProvider tokenProvider;
-
   @Mock private RefreshTokenRepositoryPort refreshTokenRepository;
-
   @InjectMocks private AuthAdapter authAdapter;
 
   @Test
@@ -84,7 +81,7 @@ public class AuthPortAdapterTest {
     assertThat(result.user().getFullName()).isEqualTo(user.getFullName());
     assertThat(result.user().getRole()).isEqualTo(user.getRole());
     assertThat(result.accessToken()).isEqualTo(expectedAccessToken);
-    assertThat(result.refreshToken()).isEqualTo(refreshToken.getToken().toString());
+    assertThat(result.refreshToken()).isEqualTo(refreshToken.getToken());
 
     verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
     verify(refreshTokenRepository, times(1)).deleteByUser(user);

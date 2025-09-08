@@ -6,10 +6,10 @@ import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificat
 import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ForgotPasswordRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.ForgotPasswordResponseDto;
 import java.util.Optional;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -51,10 +51,10 @@ public class ForgotPasswordUseCaseImp implements ForgotPasswordUseCase {
         .orElseGet(() -> generateSecureFallbackResponse(message));
   }
 
-  private Optional<String> generateSessionIfAccountIsEnabled(User user) {
+  private Optional<OtpSessionId> generateSessionIfAccountIsEnabled(User user) {
     try {
       user.ensureAccountEnabled();
-      String otpSessionId = otpSessionPort.generateOtpSession(user.getId());
+      OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(user.getId());
       eventPublisher.publishEvent(new OnVerificationRequiredEvent(user));
       return Optional.of(otpSessionId);
     } catch (AccountStatusException e) {
@@ -64,7 +64,7 @@ public class ForgotPasswordUseCaseImp implements ForgotPasswordUseCase {
   }
 
   private ForgotPasswordResponseDto generateSecureFallbackResponse(String message) {
-    String fakeOtpSessionId = UUID.randomUUID().toString();
+    OtpSessionId fakeOtpSessionId = OtpSessionId.generate();
     return new ForgotPasswordResponseDto(fakeOtpSessionId, message);
   }
 }

@@ -1,6 +1,7 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
+import jakarta.validation.constraints.NotNull;
 
 public record ResendOtpRequestDto(
-    @NotBlank(message = "O ID da sessão OTP não pode estar vazio.") String otpSessionId) {}
+    @NotNull(message = "O ID da sessão OTP não pode estar vazio.") OtpSessionId otpSessionId) {}

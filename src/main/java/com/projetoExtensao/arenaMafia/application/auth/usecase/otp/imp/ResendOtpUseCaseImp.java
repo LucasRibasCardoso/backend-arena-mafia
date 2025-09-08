@@ -8,6 +8,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpExce
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -31,14 +32,14 @@ public class ResendOtpUseCaseImp implements ResendOtpUseCase {
   }
 
   @Override
-  public void execute(String otpSessionId) {
+  public void execute(OtpSessionId otpSessionId) {
     UUID userId = getUserIdFromOtpSession(otpSessionId);
     User user = getUserById(userId);
     ensureUserIsActiveOrPending(user);
     eventPublisher.publishEvent(new OnVerificationRequiredEvent(user));
   }
 
-  private UUID getUserIdFromOtpSession(String otpSessionId) {
+  private UUID getUserIdFromOtpSession(OtpSessionId otpSessionId) {
     return otpSessionPort
         .findUserIdByOtpSessionId(otpSessionId)
         .orElseThrow(() -> new InvalidOtpException("Sessão de verificação inválida ou expirada."));

@@ -2,7 +2,7 @@ package com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway;
 
 import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
-import java.security.SecureRandom;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
 import java.time.Duration;
 import java.util.UUID;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,24 +15,22 @@ public class OtpAdapter implements OtpPort {
   private static final Duration OTP_EXPIRATION = Duration.ofMinutes(5);
 
   private final RedisTemplate<String, String> redisTemplate;
-  private final SecureRandom secureRandom;
 
-  public OtpAdapter(RedisTemplate<String, String> redisTemplate, SecureRandom secureRandom) {
-    this.secureRandom = secureRandom;
+  public OtpAdapter(RedisTemplate<String, String> redisTemplate) {
     this.redisTemplate = redisTemplate;
   }
 
   @Override
-  public String generateCodeOTP(UUID userId) {
-    String otp = String.format("%06d", secureRandom.nextInt(1_000_000));
-    redisTemplate.opsForValue().set(key(userId), otp, OTP_EXPIRATION);
-    return otp;
+  public OtpCode generateOtpCode(UUID userId) {
+    OtpCode otpCode = OtpCode.generate();
+    redisTemplate.opsForValue().set(key(userId), otpCode.value(), OTP_EXPIRATION);
+    return otpCode;
   }
 
   @Override
-  public void validateOtp(UUID userId, String code) {
+  public void validateOtp(UUID userId, OtpCode otpCode) {
     String stored = redisTemplate.opsForValue().get(key(userId));
-    if (stored == null || !stored.equals(code)) {
+    if (stored == null || !stored.equals(otpCode.value())) {
       throw new InvalidOtpException("Código de verificação inválido ou expirado.");
     }
     redisTemplate.delete(key(userId));

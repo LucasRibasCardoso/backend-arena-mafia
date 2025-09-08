@@ -11,9 +11,10 @@ import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.For
 import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.ResetPasswordUseCase;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.ValidatePasswordResetOtpUseCase;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ForgotPasswordRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.LoginRequestDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.RefreshTokenRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendOtpRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResetPasswordRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
@@ -73,7 +74,7 @@ public class AuthController {
 
   @PostMapping("/signup")
   public ResponseEntity<SignupResponseDto> signup(@Valid @RequestBody SignupRequestDto request) {
-    String otpSessionId = signUpUseCase.execute(request);
+    OtpSessionId otpSessionId = signUpUseCase.execute(request);
 
     SignupResponseDto signupResponseDto =
         new SignupResponseDto(
@@ -104,8 +105,9 @@ public class AuthController {
 
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(
-      @CookieValue(value = "refreshToken", required = false) String request) {
-    logoutUseCase.execute(request);
+      @CookieValue(value = "refreshToken", required = false) RefreshTokenVO refreshToken) {
+
+    logoutUseCase.execute(refreshToken);
     ResponseCookie expiredCookie = cookieUtils.createRefreshTokenExpiredCookie();
     return ResponseEntity.noContent()
         .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
@@ -114,9 +116,9 @@ public class AuthController {
 
   @PostMapping("/refresh-token")
   public ResponseEntity<AuthResponseDto> refreshToken(
-      @CookieValue(name = "refreshToken", required = false) String oldRefreshToken) {
-    RefreshTokenRequestDto refreshTokenRequest = new RefreshTokenRequestDto(oldRefreshToken);
-    AuthResult authResult = refreshTokenUseCase.execute(refreshTokenRequest);
+      @CookieValue(name = "refreshToken", required = false) RefreshTokenVO refreshToken) {
+
+    AuthResult authResult = refreshTokenUseCase.execute(refreshToken);
     return buildAuthResponse(authResult);
   }
 

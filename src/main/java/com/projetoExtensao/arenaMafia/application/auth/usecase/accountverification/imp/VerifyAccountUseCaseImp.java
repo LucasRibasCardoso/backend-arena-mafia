@@ -9,6 +9,7 @@ import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepos
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -39,14 +40,14 @@ public class VerifyAccountUseCaseImp implements VerifyAccountUseCase {
     UUID userId = getUserIdFromOtpSession(request.otpSessionId());
     User user = getUserById(userId);
 
-    otpPort.validateOtp(user.getId(), request.code());
+    otpPort.validateOtp(user.getId(), request.otpCode());
     user.confirmVerification();
     userRepository.save(user);
 
     return authPort.generateTokens(user);
   }
 
-  private UUID getUserIdFromOtpSession(String otpSessionId) {
+  private UUID getUserIdFromOtpSession(OtpSessionId otpSessionId) {
     return otpSessionPort
         .findUserIdByOtpSessionId(otpSessionId)
         .orElseThrow(() -> new InvalidOtpException("Sessão de verificação inválida ou expirada."));

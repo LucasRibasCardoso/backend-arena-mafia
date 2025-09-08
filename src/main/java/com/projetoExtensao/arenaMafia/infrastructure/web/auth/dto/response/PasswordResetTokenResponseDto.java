@@ -1,3 +1,5 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response;
 
-public record PasswordResetTokenResponseDto(String passwordResetToken) {}
+import com.projetoExtensao.arenaMafia.domain.valueobjects.ResetToken;
+
+public record PasswordResetTokenResponseDto(ResetToken passwordResetToken) {}

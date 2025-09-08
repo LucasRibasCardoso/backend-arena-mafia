@@ -8,6 +8,7 @@ import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidat
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,7 @@ public class SignUpUseCaseImp implements SignUpUseCase {
   }
 
   @Override
-  public String execute(SignupRequestDto request) {
+  public OtpSessionId execute(SignupRequestDto request) {
     String formattedPhone = phoneValidator.formatToE164(request.phone());
     validateUniqueness(request.username(), formattedPhone);
 
@@ -46,7 +47,7 @@ public class SignUpUseCaseImp implements SignUpUseCase {
         User.create(request.username(), request.fullName(), formattedPhone, encodedPassword);
 
     User savedUser = userRepository.save(userToSave);
-    String otpSessionId = otpSessionPort.generateOtpSession(savedUser.getId());
+    OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(savedUser.getId());
 
     eventPublisher.publishEvent(new OnVerificationRequiredEvent(savedUser));
     return otpSessionId;

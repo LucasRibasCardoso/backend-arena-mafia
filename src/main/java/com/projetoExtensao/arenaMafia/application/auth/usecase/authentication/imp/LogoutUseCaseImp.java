@@ -17,11 +17,10 @@ public class LogoutUseCaseImp implements LogoutUseCase {
   }
 
   @Override
-  public void execute(String refreshToken) {
-    if (refreshToken == null || refreshToken.isBlank()) {
+  public void execute(RefreshTokenVO refreshToken) {
+    if (refreshToken == null) {
       return;
     }
-    RefreshTokenVO refreshTokenVO = RefreshTokenVO.fromString(refreshToken);
-    refreshTokenRepository.findByToken(refreshTokenVO).ifPresent(refreshTokenRepository::delete);
+    refreshTokenRepository.findByToken(refreshToken).ifPresent(refreshTokenRepository::delete);
   }
 }

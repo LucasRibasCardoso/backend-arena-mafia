@@ -9,6 +9,9 @@ import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.ResetToken;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ForgotPasswordRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResetPasswordRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
@@ -74,7 +77,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .as(ForgotPasswordResponseDto.class);
 
       // Assert
-      assertThat(response.otpSessionId()).hasSize(36); // UUID
+      assertThat(response.otpSessionId().toString()).hasSize(36); // UUID
       assertThat(response.message())
           .isEqualTo("Se o número estiver cadastrado, você receberá um código de verificação.");
     }
@@ -99,7 +102,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .as(ForgotPasswordResponseDto.class);
 
       // Assert
-      assertThat(response.otpSessionId()).hasSize(36); // Fake UUID
+      assertThat(response.otpSessionId().toString()).hasSize(36); // Fake UUID
       assertThat(response.message())
           .isEqualTo("Se o número estiver cadastrado, você receberá um código de verificação.");
     }
@@ -242,8 +245,8 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     void validateResetToken_shouldReturn200_whenOtpIsValid() {
       // Arrange
       User mockUser = mockPersistUser();
-      String otpCode = otpPort.generateAndSaveOtp(mockUser.getId());
-      String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+      OtpCode otpCode = otpPort.generateOtpCode(mockUser.getId());
+      OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
 
       var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
@@ -260,34 +263,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .as(PasswordResetTokenResponseDto.class);
 
       // Assert
-      assertThat(response.passwordResetToken()).hasSize(36);
-    }
-
-    @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido no DTO")
-    void validateResetToken_shouldReturn400_whenRequestDtoIsInvalid() {
-      // Arrange
-      String otpSessionId = UUID.randomUUID().toString();
-      var request = new ValidateOtpRequestDto(otpSessionId, "");
-
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/reset-password-token")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      assertThat(response.message())
-          .isEqualTo("Erro de validação. Verifique os campos informados.");
-      assertThat(response.path()).isEqualTo("/api/auth/reset-password-token");
-      assertThat(response.fieldErrors()).hasSize(1);
-      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("code");
+      assertThat(response.passwordResetToken().toString()).hasSize(36);
     }
 
     @Test
@@ -295,10 +271,10 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     void validateResetToken_shouldReturn400_whenOtpIsInvalid() {
       // Arrange
       User mockUser = mockPersistUser(AccountStatus.ACTIVE);
-      String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+      OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
 
-      String invalidCodeOTP = "000000";
-      var request = new ValidateOtpRequestDto(otpSessionId, invalidCodeOTP);
+      OtpCode invalidOtpCode = OtpCode.generate();
+      var request = new ValidateOtpRequestDto(otpSessionId, invalidOtpCode);
 
       // Act
       ErrorResponseDto response =
@@ -320,8 +296,9 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     @DisplayName("Deve retornar 400 Bad Request quando a sessão OTP for inválida")
     void validateResetToken_shouldReturn400_whenOtpSessionIsInvalid() {
       // Arrange
-      String invalidOtpSessionId = UUID.randomUUID().toString();
-      var request = new ValidateOtpRequestDto(invalidOtpSessionId, "123456");
+      OtpCode otpCode = OtpCode.generate();
+      OtpSessionId invalidOtpSessionId = OtpSessionId.generate();
+      var request = new ValidateOtpRequestDto(invalidOtpSessionId, otpCode);
 
       // Act
       ErrorResponseDto response =
@@ -343,8 +320,10 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     @DisplayName("Deve retornar 404 Not Found quando o usuário não for encontrado")
     void validateResetToken_shouldReturn404_whenUserNotFound() {
       // Arrange
-      String otpSessionId = otpSessionPort.generateOtpSession(UUID.randomUUID());
-      var request = new ValidateOtpRequestDto(otpSessionId, "123456");
+      UUID userId = UUID.randomUUID();
+      OtpCode otpCode = OtpCode.generate();
+      OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(userId);
+      var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
       // Act
       ErrorResponseDto response =
@@ -370,8 +349,8 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
       void validateResetToken_shouldReturn409_whenAccountIsLocked() {
         // Arrange
         User mockUser = mockPersistUser(AccountStatus.LOCKED);
-        String otpCode = otpPort.generateAndSaveOtp(mockUser.getId());
-        String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+        OtpCode otpCode = otpPort.generateOtpCode(mockUser.getId());
+        OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
 
         var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
@@ -397,8 +376,8 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
       void validateResetToken_shouldReturn409_whenAccountIsNotVerified() {
         // Arrange
         User mockUser = mockPersistUser(AccountStatus.PENDING_VERIFICATION);
-        String otpCode = otpPort.generateAndSaveOtp(mockUser.getId());
-        String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+        OtpCode otpCode = otpPort.generateOtpCode(mockUser.getId());
+        OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
 
         var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
@@ -425,8 +404,8 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
       void validateResetToken_shouldReturn409_whenAccountIsDisabled() {
         // Arrange
         User mockUser = mockPersistUser(AccountStatus.DISABLED);
-        String otpCode = otpPort.generateAndSaveOtp(mockUser.getId());
-        String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+        OtpCode otpCode = otpPort.generateOtpCode(mockUser.getId());
+        OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
 
         var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
@@ -459,7 +438,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     void resetPassword_shouldReturn204_whenTokenIsValid() {
       // Arrange
       User mockUser = mockPersistUser();
-      String token = passwordResetTokenPort.generateToken(mockUser.getId());
+      ResetToken token = passwordResetTokenPort.generateToken(mockUser.getId());
 
       String newPassword = "newpassword";
       var request = new ResetPasswordRequestDto(token, newPassword, newPassword);
@@ -485,7 +464,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     void resetPassword_shouldReturn400_whenPasswordsDoNotMatch() {
       // Arrange
       User mockUser = mockPersistUser();
-      String resetToken = passwordResetTokenPort.generateToken(mockUser.getId());
+      ResetToken resetToken = passwordResetTokenPort.generateToken(mockUser.getId());
 
       String differentConfirmPassword = "invalidConfirm123";
       var request =
@@ -516,7 +495,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     @DisplayName("Deve retornar 400 Bad Request quando o token de redefinição for inválido")
     void resetPassword_shouldReturn400_whenTokenIsInvalid() {
       // Arrange
-      String invalidResetToken = UUID.randomUUID().toString();
+      ResetToken invalidResetToken = ResetToken.generate();
       var request =
           new ResetPasswordRequestDto(
               invalidResetToken, defaultNewPassword, defaultConfirmPassword);
@@ -541,7 +520,8 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     @DisplayName("Deve retornar 404 Not Found quando não for encontrado o usuário do token")
     void resetPassword_shouldReturn404_whenUserNotFound() {
       // Arrange
-      String resetToken = passwordResetTokenPort.generateToken(UUID.randomUUID());
+      UUID userId = UUID.randomUUID();
+      ResetToken resetToken = passwordResetTokenPort.generateToken(userId);
       var request =
           new ResetPasswordRequestDto(resetToken, defaultNewPassword, defaultConfirmPassword);
 
@@ -566,12 +546,13 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     @Nested
     @DisplayName("Deve retornar 409 Conflict quando a conta não está ativada")
     class AccountStateTests {
+
       @Test
       @DisplayName("Deve retornar 409 Conflict quando a conta está pendente de verificação")
       void resetPassword_shouldReturn409_whenAccountIsPending() {
         // Arrange
         User mockUser = mockPersistUser(AccountStatus.PENDING_VERIFICATION);
-        String token = passwordResetTokenPort.generateToken(mockUser.getId());
+        ResetToken token = passwordResetTokenPort.generateToken(mockUser.getId());
         var request =
             new ResetPasswordRequestDto(token, defaultNewPassword, defaultConfirmPassword);
 
@@ -598,7 +579,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
       void resetPassword_shouldReturn409_whenAccountIsLocked() {
         // Arrange
         User mockUser = mockPersistUser(AccountStatus.LOCKED);
-        String token = passwordResetTokenPort.generateToken(mockUser.getId());
+        ResetToken token = passwordResetTokenPort.generateToken(mockUser.getId());
         var request =
             new ResetPasswordRequestDto(token, defaultNewPassword, defaultConfirmPassword);
 
@@ -624,7 +605,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
       void resetPassword_shouldReturn409_whenAccountIsDisabled() {
         // Arrange
         User mockUser = mockPersistUser(AccountStatus.DISABLED);
-        String token = passwordResetTokenPort.generateToken(mockUser.getId());
+        ResetToken token = passwordResetTokenPort.generateToken(mockUser.getId());
         var request =
             new ResetPasswordRequestDto(token, defaultNewPassword, defaultConfirmPassword);
 

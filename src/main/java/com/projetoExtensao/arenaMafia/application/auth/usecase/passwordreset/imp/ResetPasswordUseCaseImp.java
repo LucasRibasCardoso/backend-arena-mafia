@@ -7,6 +7,7 @@ import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepos
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPasswordResetTokenException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.ResetToken;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResetPasswordRequestDto;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -30,20 +31,20 @@ public class ResetPasswordUseCaseImp implements ResetPasswordUseCase {
   }
 
   @Override
-  public void execute(ResetPasswordRequestDto requestDto) {
-    String token = requestDto.passwordResetToken();
+  public void execute(ResetPasswordRequestDto request) {
+    ResetToken token = request.passwordResetToken();
     UUID userId = getUserIdFromToken(token);
     User user = getUserById(userId);
 
     user.ensureAccountEnabled();
-    String newPasswordHash = passwordEncoder.encode(requestDto.newPassword());
+    String newPasswordHash = passwordEncoder.encode(request.newPassword());
     user.updatePasswordHash(newPasswordHash);
     userRepositoryPort.save(user);
 
     passwordResetTokenPort.delete(token);
   }
 
-  private UUID getUserIdFromToken(String token) {
+  private UUID getUserIdFromToken(ResetToken token) {
     return passwordResetTokenPort
         .findUserIdByResetToken(token)
         .orElseThrow(() -> new InvalidPasswordResetTokenException("Token inválido ou expirado."));

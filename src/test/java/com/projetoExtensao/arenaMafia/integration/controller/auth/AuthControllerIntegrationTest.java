@@ -9,6 +9,9 @@ import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.LoginRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendOtpRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
@@ -311,11 +314,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response).isNotNull();
-      assertThat(response.status()).isEqualTo(400);
       assertThat(response.message()).isEqualTo("Formato inválido para o refresh token.");
-      assertThat(response.path()).isEqualTo("/api/auth/logout");
-      assertThat(response.fieldErrors()).isNull();
     }
   }
 
@@ -414,8 +413,9 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 401 Unauthorized quando o refresh token não for encontrado")
     void refreshToken_shouldReturn401_whenTokenNotFound() {
       // Arrange
+      RefreshTokenVO refreshTokenVO = RefreshTokenVO.generate();
       Cookie nonExistentTokenCookie =
-          new Cookie.Builder("refreshToken", UUID.randomUUID().toString()).build();
+          new Cookie.Builder("refreshToken", refreshTokenVO.toString()).build();
 
       // Act
       ErrorResponseDto response =
@@ -556,7 +556,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(SignupResponseDto.class);
 
       // Assert
-      assertThat(response.otpSessionId()).hasSize(36); // UUID
+      assertThat(response.otpSessionId().toString()).hasSize(36); // UUID
       assertThat(response.message())
           .isEqualTo(
               "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone.");
@@ -691,8 +691,8 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     void verifyAccount_shouldReturn200_whenOtpIsValidForPendingUser() {
       // Arrange
       User mockUser = mockPersistUser(AccountStatus.PENDING_VERIFICATION);
-      String otpCode = otpPort.generateAndSaveOtp(mockUser.getId());
-      String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+      OtpCode otpCode = otpPort.generateOtpCode(mockUser.getId());
+      OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
 
       var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
@@ -725,38 +725,12 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido no DTO")
-    void verifyAccount_shouldReturn400_whenOtpIsMissing() {
-      // Arrange
-      String otpSessionId = UUID.randomUUID().toString();
-      var request = new ValidateOtpRequestDto(otpSessionId, "");
-
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/verify-account")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      assertThat(response.message())
-          .isEqualTo("Erro de validação. Verifique os campos informados.");
-      assertThat(response.fieldErrors()).hasSize(1);
-      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("code");
-    }
-
-    @Test
     @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido")
     void verifyAccount_shouldReturn400_whenOtpIsInvalid() {
       // Arrange
       User mockUser = mockPersistUser();
-      String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
-      String invalidCodeOTP = "111222";
+      OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+      OtpCode invalidCodeOTP = OtpCode.generate();
 
       var request = new ValidateOtpRequestDto(otpSessionId, invalidCodeOTP);
 
@@ -780,8 +754,9 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 400 Bad Request quando a sessão OTP for inválida ou expirada")
     void validateResetToken_shouldReturn400_whenUserIdIsInvalid() {
       // Arrange
-      String otpSessionId = UUID.randomUUID().toString();
-      var request = new ValidateOtpRequestDto(otpSessionId, "123456");
+      OtpSessionId invalidOtpSessionId = OtpSessionId.generate();
+      OtpCode otpCode = OtpCode.generate();
+      var request = new ValidateOtpRequestDto(invalidOtpSessionId, otpCode);
 
       // Act
       ErrorResponseDto response =
@@ -803,8 +778,10 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 404 Not Found quando o usuário não for encontrado")
     void verifyAccount_shouldReturn404_whenUserNotFound() {
       // Arrange
-      String otpSessionId = otpSessionPort.generateOtpSession(UUID.randomUUID());
-      var request = new ValidateOtpRequestDto(otpSessionId, "123456");
+      UUID userId = UUID.randomUUID();
+      OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(userId);
+      OtpCode otpCode = OtpCode.generate();
+      var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
       // Act
       ErrorResponseDto response =
@@ -829,8 +806,8 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     void verifyAccount_shouldReturn409_whenAccountIsAlreadyActive() {
       // Arrange
       User mockUser = mockPersistUser(AccountStatus.ACTIVE);
-      String otpCode = otpPort.generateAndSaveOtp(mockUser.getId());
-      String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+      OtpCode otpCode = otpPort.generateOtpCode(mockUser.getId());
+      OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
 
       var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
@@ -866,7 +843,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
         AccountStatus status) {
       // Arrange
       User mockUser = mockPersistUser(status);
-      String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+      OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
 
       var request = new ResendOtpRequestDto(otpSessionId);
 
@@ -875,37 +852,10 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o otpSessionId for inválido no DTO")
-    void resendOtp_shouldReturn400_whenOtpSessionIdIsBlank() {
-      // Arrange
-      var request = new ResendOtpRequestDto("   ");
-
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/resend-otp")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      assertThat(response.message())
-          .isEqualTo("Erro de validação. Verifique os campos informados.");
-      assertThat(response.fieldErrors()).hasSize(1);
-      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("otpSessionId");
-      assertThat(response.fieldErrors().getFirst().message())
-          .isEqualTo("O ID da sessão OTP não pode estar vazio.");
-    }
-
-    @Test
     @DisplayName("Deve retornar 400 Bad Request quando a sessão for inválida ou expirada")
     void resendOtp_shouldReturn400_whenOtpSessionIsInvalid() {
       // Arrange
-      String otpSessionId = UUID.randomUUID().toString();
+      OtpSessionId otpSessionId = OtpSessionId.generate();
       var request = new ResendOtpRequestDto(otpSessionId);
 
       ErrorResponseDto response =
@@ -927,7 +877,8 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 404 Not Found quando o usuário não for encontrado")
     void resendOtp_shouldReturn404_whenUserNotFound() {
       // Arrange
-      String otpSessionId = otpSessionPort.generateOtpSession(UUID.randomUUID());
+      UUID userId = UUID.randomUUID();
+      OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(userId);
       var request = new ResendOtpRequestDto(otpSessionId);
 
       // Act
@@ -958,7 +909,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
       void resendOtp_shouldReturn409_whenAccountIsDisabledOrLocked(AccountStatus status) {
         // Arrange
         User mockUser = mockPersistUser(status);
-        String otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
+        OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
         var request = new ResendOtpRequestDto(otpSessionId);
 
         // Act

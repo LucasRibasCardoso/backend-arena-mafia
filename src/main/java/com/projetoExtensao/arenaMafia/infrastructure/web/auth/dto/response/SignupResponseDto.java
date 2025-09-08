@@ -1,3 +1,5 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response;
 
-public record SignupResponseDto(String otpSessionId, String message) {}
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
+
+public record SignupResponseDto(OtpSessionId otpSessionId, String message) {}

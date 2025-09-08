@@ -2,11 +2,14 @@ package com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.im
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordResetTokenPort;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.ValidatePasswordResetOtpUseCase;
 import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.ResetToken;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.PasswordResetTokenResponseDto;
 import java.util.UUID;
@@ -15,21 +18,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
-public class ValidatePasswordResetOtpUseCase
-    implements com.projetoExtensao
-        .arenaMafia
-        .application
-        .auth
-        .usecase
-        .passwordreset
-        .ValidatePasswordResetOtpUseCase {
+public class ValidatePasswordResetOtpUseCaseImp implements ValidatePasswordResetOtpUseCase {
 
   private final OtpPort otpPort;
   private final OtpSessionPort otpSessionPort;
   private final UserRepositoryPort userRepository;
   private final PasswordResetTokenPort passwordResetToken;
 
-  public ValidatePasswordResetOtpUseCase(
+  public ValidatePasswordResetOtpUseCaseImp(
       OtpPort otpPort,
       OtpSessionPort otpSessionPort,
       UserRepositoryPort userRepository,
@@ -46,12 +42,12 @@ public class ValidatePasswordResetOtpUseCase
     User user = getUserById(userId);
 
     user.ensureAccountEnabled();
-    otpPort.validateOtp(user.getId(), request.code());
-    String token = passwordResetToken.generateToken(user.getId());
+    otpPort.validateOtp(user.getId(), request.otpCode());
+    ResetToken token = passwordResetToken.generateToken(user.getId());
     return new PasswordResetTokenResponseDto(token);
   }
 
-  private UUID getUserIdFromOtpSession(String otpSessionId) {
+  private UUID getUserIdFromOtpSession(OtpSessionId otpSessionId) {
     return otpSessionPort
         .findUserIdByOtpSessionId(otpSessionId)
         .orElseThrow(() -> new InvalidOtpException("Sessão de verificação inválida ou expirada."));

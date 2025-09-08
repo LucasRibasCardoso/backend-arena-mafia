@@ -5,10 +5,10 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.RefreshTokenUseCase;
 import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenExpiredException;
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenMissingException;
 import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.RefreshTokenRequestDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,10 +26,11 @@ public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
   }
 
   @Override
-  public AuthResult execute(RefreshTokenRequestDto requestDto) {
-    validateIfOldRefreshTokenExists(requestDto.refreshToken());
-
-    RefreshTokenVO refreshTokenVO = RefreshTokenVO.fromString(requestDto.refreshToken());
+  public AuthResult execute(RefreshTokenVO refreshTokenVO) {
+    if (refreshTokenVO == null) {
+      throw new RefreshTokenMissingException(
+          "Sua sessão expirou. Por favor, faça login novamente.");
+    }
     RefreshToken refreshToken = getRefreshTokenOrElseThrow(refreshTokenVO);
     refreshToken.getUser().ensureAccountEnabled();
 
@@ -38,7 +39,6 @@ public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
       return authPort.generateTokens(refreshToken.getUser());
     } catch (RefreshTokenExpiredException e) {
       refreshTokenRepository.delete(refreshToken);
-      // Relança a exceção para ser tratada no GlobalExceptionHandler
       throw e;
     }
   }
@@ -47,12 +47,5 @@ public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
     return refreshTokenRepository
         .findByToken(refreshTokenVO)
         .orElseThrow(() -> new RefreshTokenNotFoundException("Refresh token não encontrado."));
-  }
-
-  private void validateIfOldRefreshTokenExists(String oldRefreshToken) {
-    if (oldRefreshToken == null || oldRefreshToken.isBlank()) {
-      throw new RefreshTokenNotFoundException(
-          "Sua sessão expirou. Por favor, faça login novamente.");
-    }
   }
 }

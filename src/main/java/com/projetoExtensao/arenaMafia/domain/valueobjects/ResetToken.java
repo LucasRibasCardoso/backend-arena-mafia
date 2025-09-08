@@ -33,6 +33,6 @@ public record ResetToken(@JsonValue UUID value) {
 
   @Override
   public String toString() {
-    return value.toString();
+    return this.value.toString();
   }
 }

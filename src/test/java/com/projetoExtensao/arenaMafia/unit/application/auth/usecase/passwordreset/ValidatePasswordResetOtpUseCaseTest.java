@@ -6,7 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordResetTokenPort;
-import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.imp.ValidatePasswordResetOtpUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.imp.ValidatePasswordResetOtpUseCaseImp;
 import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
@@ -15,6 +15,9 @@ import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundExce
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.ResetToken;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.PasswordResetTokenResponseDto;
 import java.time.Instant;
@@ -37,9 +40,11 @@ public class ValidatePasswordResetOtpUseCaseTest {
   @Mock private UserRepositoryPort userRepository;
   @Mock private PasswordResetTokenPort passwordResetTokenPort;
 
-  @InjectMocks private ValidatePasswordResetOtpUseCase generatePasswordResetTokenUseCase;
+  @InjectMocks private ValidatePasswordResetOtpUseCaseImp generatePasswordResetTokenUseCase;
 
-  private final String defaultOtp = "123456";
+  private final OtpCode otpCode = OtpCode.generate();
+  private final OtpSessionId otpSessionId = OtpSessionId.generate();
+  private final ResetToken resetToken = ResetToken.generate();
 
   private User createUser(AccountStatus accountStatus) {
     Instant now = Instant.now();
@@ -62,24 +67,21 @@ public class ValidatePasswordResetOtpUseCaseTest {
     User user = createUser(AccountStatus.ACTIVE);
     UUID userId = user.getId();
 
-    String passwordResetToken = UUID.randomUUID().toString();
-    String otpSessionId = UUID.randomUUID().toString();
-
-    var request = new ValidateOtpRequestDto(otpSessionId, defaultOtp);
+    var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(passwordResetTokenPort.generateToken(userId)).thenReturn(passwordResetToken);
+    when(passwordResetTokenPort.generateToken(userId)).thenReturn(resetToken);
 
     // Act
     PasswordResetTokenResponseDto response = generatePasswordResetTokenUseCase.execute(request);
 
     // Assert
-    assertThat(response.passwordResetToken()).isEqualTo(passwordResetToken);
+    assertThat(response.passwordResetToken()).isEqualTo(resetToken);
 
     verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
     verify(userRepository, times(1)).findById(userId);
-    verify(otpPort, times(1)).validateOtp(userId, defaultOtp);
+    verify(otpPort, times(1)).validateOtp(userId, otpCode);
     verify(passwordResetTokenPort, times(1)).generateToken(userId);
   }
 
@@ -87,8 +89,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
   @DisplayName("Deve lançar exceção quando o ID da sessão OTP for inválido")
   void execute_shouldThrowInvalidOtpException_whenOtpSessionIdIsInvalid() {
     // Arrange
-    String otpSessionId = UUID.randomUUID().toString();
-    var request = new ValidateOtpRequestDto(otpSessionId, defaultOtp);
+    var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.empty());
 
@@ -99,7 +100,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
 
     verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
     verify(userRepository, never()).findById(any(UUID.class));
-    verify(otpPort, never()).validateOtp(any(UUID.class), anyString());
+    verify(otpPort, never()).validateOtp(any(UUID.class), any(OtpCode.class));
     verify(passwordResetTokenPort, never()).generateToken(any(UUID.class));
   }
 
@@ -107,10 +108,9 @@ public class ValidatePasswordResetOtpUseCaseTest {
   @DisplayName("Deve lançar exceção quando o usuário não for encontrado")
   void execute_shouldThrowException_whenUserIsNotFound() {
     // Arrange
-    String otpSessionId = UUID.randomUUID().toString();
     UUID userId = UUID.randomUUID();
 
-    var request = new ValidateOtpRequestDto(otpSessionId, defaultOtp);
+    var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
     when(userRepository.findById(userId)).thenReturn(Optional.empty());
@@ -122,7 +122,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
 
     verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
     verify(userRepository, times(1)).findById(userId);
-    verify(otpPort, never()).validateOtp(any(UUID.class), anyString());
+    verify(otpPort, never()).validateOtp(any(UUID.class), any(OtpCode.class));
     verify(passwordResetTokenPort, never()).generateToken(any(UUID.class));
   }
 
@@ -133,17 +133,13 @@ public class ValidatePasswordResetOtpUseCaseTest {
     User user = createUser(AccountStatus.ACTIVE);
     UUID userId = user.getId();
 
-    String otpSessionId = UUID.randomUUID().toString();
-    String invalidOtp = "000000";
-    var request = new ValidateOtpRequestDto(otpSessionId, invalidOtp);
+    var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
     String errorMessage = "Código de verificação inválido ou expirado.";
-    doThrow(new InvalidOtpException(errorMessage))
-        .when(otpPort)
-        .validateOtp(user.getId(), invalidOtp);
+    doThrow(new InvalidOtpException(errorMessage)).when(otpPort).validateOtp(user.getId(), otpCode);
 
     // Act & Assert
     assertThatThrownBy(() -> generatePasswordResetTokenUseCase.execute(request))
@@ -152,7 +148,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
 
     verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
     verify(userRepository, times(1)).findById(userId);
-    verify(otpPort, times(1)).validateOtp(userId, invalidOtp);
+    verify(otpPort, times(1)).validateOtp(userId, otpCode);
     verify(passwordResetTokenPort, never()).generateToken(any(UUID.class));
   }
 
@@ -166,8 +162,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
       User user = createUser(AccountStatus.LOCKED);
       UUID userId = user.getId();
 
-      String otpSessionId = UUID.randomUUID().toString();
-      var request = new ValidateOtpRequestDto(otpSessionId, defaultOtp);
+      var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
       when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -179,7 +174,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
 
       verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
       verify(userRepository, times(1)).findById(userId);
-      verify(otpPort, never()).validateOtp(any(UUID.class), anyString());
+      verify(otpPort, never()).validateOtp(any(UUID.class), any(OtpCode.class));
       verify(passwordResetTokenPort, never()).generateToken(any());
     }
 
@@ -190,8 +185,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
       User user = createUser(AccountStatus.PENDING_VERIFICATION);
       UUID userId = user.getId();
 
-      String otpSessionId = UUID.randomUUID().toString();
-      var request = new ValidateOtpRequestDto(otpSessionId, defaultOtp);
+      var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
       when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -204,7 +198,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
 
       verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
       verify(userRepository, times(1)).findById(userId);
-      verify(otpPort, never()).validateOtp(any(UUID.class), anyString());
+      verify(otpPort, never()).validateOtp(any(UUID.class), any(OtpCode.class));
       verify(passwordResetTokenPort, never()).generateToken(any());
     }
 
@@ -215,8 +209,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
       User user = createUser(AccountStatus.DISABLED);
       UUID userId = user.getId();
 
-      String otpSessionId = UUID.randomUUID().toString();
-      var request = new ValidateOtpRequestDto(otpSessionId, defaultOtp);
+      var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
       when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -229,7 +222,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
 
       verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
       verify(userRepository, times(1)).findById(userId);
-      verify(otpPort, never()).validateOtp(any(UUID.class), anyString());
+      verify(otpPort, never()).validateOtp(any(UUID.class), any(OtpCode.class));
       verify(passwordResetTokenPort, never()).generateToken(any());
     }
   }

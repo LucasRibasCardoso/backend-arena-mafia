@@ -1,5 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth.util;
 
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
@@ -11,8 +12,8 @@ public class CookieUtils {
   @Value("${spring.security.jwt.refresh-token-expiration-days}")
   private long refreshTokenExpirationDays;
 
-  public ResponseCookie createRefreshTokenCookie(String refreshToken) {
-    return ResponseCookie.from("refreshToken", refreshToken)
+  public ResponseCookie createRefreshTokenCookie(RefreshTokenVO refreshToken) {
+    return ResponseCookie.from("refreshToken", refreshToken.toString())
         .httpOnly(true)
         .secure(true)
         .path("/api/auth")

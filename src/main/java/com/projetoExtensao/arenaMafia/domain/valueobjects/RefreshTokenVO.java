@@ -1,9 +1,11 @@
 package com.projetoExtensao.arenaMafia.domain.valueobjects;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidTokenFormatException;
 import java.util.UUID;
 
-public record RefreshTokenVO(UUID value) {
+public record RefreshTokenVO(@JsonValue UUID value) {
 
   public RefreshTokenVO {
     if (value == null) {
@@ -11,6 +13,7 @@ public record RefreshTokenVO(UUID value) {
     }
   }
 
+  @JsonCreator
   public static RefreshTokenVO fromString(String token) {
     if (token == null || token.isBlank()) {
       throw new InvalidTokenFormatException("Refresh token não pode ser nulo ou vazio.");
@@ -28,6 +31,6 @@ public record RefreshTokenVO(UUID value) {
 
   @Override
   public String toString() {
-    return value.toString();
+    return this.value.toString();
   }
 }

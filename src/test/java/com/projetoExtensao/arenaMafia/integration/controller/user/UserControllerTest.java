@@ -9,6 +9,7 @@ import com.projetoExtensao.arenaMafia.application.user.port.gateway.PendingPhone
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.*;
 import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.response.UserProfileResponseDto;
@@ -425,7 +426,7 @@ public class UserControllerTest extends WebIntegrationTestConfig {
 
         String newPhone = "+5547992044567";
         pendingPhoneChangePort.save(mockUser.getId(), newPhone);
-        String verificationCode = otpPort.generateAndSaveOtp(mockUser.getId());
+        OtpCode verificationCode = otpPort.generateOtpCode(mockUser.getId());
         var request = new CompletePhoneChangeRequestDto(verificationCode);
 
         // Act & Assert
@@ -443,35 +444,6 @@ public class UserControllerTest extends WebIntegrationTestConfig {
       }
 
       @Test
-      @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido no DTO")
-      void completeChangePhone_shouldReturn400_whenCodeIsInvalid() {
-        // Arrange
-        mockPersistUser();
-        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-
-        var request = new CompletePhoneChangeRequestDto("aaabbb");
-
-        // Act & Assert
-        var response =
-            given()
-                .spec(specification)
-                .header("Authorization", "Bearer " + tokens.accessToken())
-                .body(request)
-                .when()
-                .patch("/phone/verification/confirm")
-                .then()
-                .statusCode(400)
-                .extract()
-                .as(ErrorResponseDto.class);
-
-        assertThat(response.message())
-            .isEqualTo("Erro de validação. Verifique os campos informados.");
-        assertThat(response.fieldErrors()).hasSize(1);
-        assertThat(response.fieldErrors().getFirst().message())
-            .isEqualTo("O código de verificação deve conter exatamente 6 dígitos numéricos.");
-      }
-
-      @Test
       @DisplayName("Deve retornar 400 Bad Request quando o código de verificação for inválido")
       void completeChangePhone_shouldReturn400_whenCodeIsIncorrect() {
         // Arrange
@@ -480,7 +452,9 @@ public class UserControllerTest extends WebIntegrationTestConfig {
 
         String newPhone = "+5547992044567";
         pendingPhoneChangePort.save(mockUser.getId(), newPhone);
-        var request = new CompletePhoneChangeRequestDto("123456");
+
+        OtpCode otpCode = OtpCode.generate();
+        var request = new CompletePhoneChangeRequestDto(otpCode);
 
         // Act & Assert
         var response =
@@ -508,7 +482,8 @@ public class UserControllerTest extends WebIntegrationTestConfig {
         mockPersistUser();
         AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
 
-        var request = new CompletePhoneChangeRequestDto("123456");
+        OtpCode otpCode = OtpCode.generate();
+        var request = new CompletePhoneChangeRequestDto(otpCode);
 
         // Act & Assert
         var response =

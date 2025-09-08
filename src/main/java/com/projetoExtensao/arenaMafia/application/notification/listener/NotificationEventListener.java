@@ -4,6 +4,7 @@ import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificat
 import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.notification.gateway.SmsPort;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -25,15 +26,13 @@ public class NotificationEventListener {
 
   @Async
   @EventListener
-  public void osUserRegistration(OnVerificationRequiredEvent event) {
+  public void onUserRegistration(OnVerificationRequiredEvent event) {
     try {
       User user = event.getUser();
       String recipientPhone = event.getRecipientPhone();
 
-      // Gerar código OTP
-      String otpCode = otpPort.generateAndSaveOtp(user.getId());
+      OtpCode otpCode = otpPort.generateOtpCode(user.getId());
 
-      // Enviar SMS com o código OTP
       String message =
           String.format(
               "Seu código de verificação para a Arena Máfia é: %s. Não compartilhe este código.",

@@ -1,6 +1,7 @@
 package com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPort;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,22 +21,20 @@ public class OtpSessionPortAdapter implements OtpSessionPort {
   }
 
   @Override
-  public String generateOtpSession(UUID userId) {
-    String sessionId = UUID.randomUUID().toString();
-    String key = key(sessionId);
+  public OtpSessionId generateOtpSession(UUID userId) {
+    OtpSessionId sessionId = OtpSessionId.generate();
     String value = userId.toString();
-    redisTemplate.opsForValue().set(key, value, SESSION_EXPIRATION);
+    redisTemplate.opsForValue().set(key(sessionId), value, SESSION_EXPIRATION);
     return sessionId;
   }
 
   @Override
-  public Optional<UUID> findUserIdByOtpSessionId(String otpSessionId) {
-    String key = key(otpSessionId);
-    String userIdAsString = redisTemplate.opsForValue().get(key);
+  public Optional<UUID> findUserIdByOtpSessionId(OtpSessionId otpSessionId) {
+    String userIdAsString = redisTemplate.opsForValue().get(key(otpSessionId));
     return Optional.ofNullable(userIdAsString).map(UUID::fromString);
   }
 
-  private String key(String otpSessionId) {
+  private String key(OtpSessionId otpSessionId) {
     return SESSION_PREFIX + otpSessionId;
   }
 }

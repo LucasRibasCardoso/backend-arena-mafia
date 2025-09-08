@@ -1,10 +1,11 @@
 package com.projetoExtensao.arenaMafia.application.auth.port.gateway;
 
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface OtpSessionPort {
-  String generateOtpSession(UUID userId);
+  OtpSessionId generateOtpSession(UUID userId);
 
-  Optional<UUID> findUserIdByOtpSessionId(String otpSessionId);
+  Optional<UUID> findUserIdByOtpSessionId(OtpSessionId otpSessionId);
 }

@@ -5,6 +5,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.JwtTokenProvider;
 import com.projetoExtensao.arenaMafia.infrastructure.security.userDetails.UserDetailsAdapter;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,14 +45,14 @@ public class AuthAdapter implements AuthPort {
   public AuthResult generateTokens(User user) {
     refreshTokenRepositoryPort.deleteByUser(user);
     String accessToken = generateAccessToken(user);
-    String refreshToken = generateRefreshToken(user);
+    RefreshTokenVO refreshToken = generateRefreshToken(user);
     return new AuthResult(user, accessToken, refreshToken);
   }
 
-  private String generateRefreshToken(User user) {
+  private RefreshTokenVO generateRefreshToken(User user) {
     RefreshToken refreshToken = RefreshToken.create(refreshTokenExpirationDays, user);
     RefreshToken savedRefreshToken = refreshTokenRepositoryPort.save(refreshToken);
-    return savedRefreshToken.getToken().toString();
+    return savedRefreshToken.getToken();
   }
 
   private String generateAccessToken(User user) {

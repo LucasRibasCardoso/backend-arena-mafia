@@ -2,6 +2,7 @@ package com.projetoExtensao.arenaMafia.domain.valueobjects;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
 import java.security.SecureRandom;
 
@@ -11,8 +12,7 @@ public record OtpCode(@JsonValue String value) {
 
   public OtpCode {
     if (value == null || !value.matches("\\d{6}")) {
-      throw new InvalidOtpException(
-          "O código de verificação deve ser composto por 6 dígitos numéricos.");
+      throw new InvalidOtpException(ErrorCode.OTP_CODE_INVALID_FORMAT);
     }
   }
 

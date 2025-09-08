@@ -2,6 +2,7 @@ package com.projetoExtensao.arenaMafia.domain.valueobjects;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidTokenFormatException;
 import java.util.UUID;
 
@@ -9,19 +10,19 @@ public record OtpSessionId(@JsonValue UUID value) {
 
   public OtpSessionId {
     if (value == null) {
-      throw new InvalidTokenFormatException("O ID da sessão OTP não pode ser nulo.");
+      throw new InvalidTokenFormatException(ErrorCode.OTP_SESSION_ID_REQUIRED);
     }
   }
 
   @JsonCreator
   public static OtpSessionId fromString(String sessionId) {
     if (sessionId == null || sessionId.isBlank()) {
-      throw new InvalidTokenFormatException("O ID da sessão OTP não pode ser nulo ou vazio.");
+      throw new InvalidTokenFormatException(ErrorCode.OTP_SESSION_ID_REQUIRED);
     }
     try {
       return new OtpSessionId(UUID.fromString(sessionId));
     } catch (IllegalArgumentException e) {
-      throw new InvalidTokenFormatException("Formato inválido para o ID da sessão OTP.");
+      throw new InvalidTokenFormatException(ErrorCode.OTP_SESSION_ID_INVALID_FORMAT);
     }
   }
 

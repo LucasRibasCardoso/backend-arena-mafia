@@ -225,10 +225,6 @@ public class User {
     return this.status == AccountStatus.ACTIVE;
   }
 
-  public boolean isPending() {
-    return this.status == AccountStatus.PENDING_VERIFICATION;
-  }
-
   // Getters
   public UUID getId() {
     return id;

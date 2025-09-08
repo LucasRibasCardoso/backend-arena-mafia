@@ -80,17 +80,17 @@ public class AuthController {
     return ResponseEntity.accepted().body(signupResponseDto);
   }
 
-  @PostMapping("/resend-otp")
-  public ResponseEntity<Void> resendOtp(@Valid @RequestBody ResendOtpRequestDto request) {
-    resendOtpUseCase.execute(request.otpSessionId());
-    return ResponseEntity.noContent().build();
-  }
-
   @PostMapping("/verify-account")
   public ResponseEntity<AuthResponseDto> verifyAccount(
       @Valid @RequestBody ValidateOtpRequestDto request) {
     AuthResult authResult = verifyAccountUseCase.execute(request);
     return buildAuthResponse(authResult);
+  }
+
+  @PostMapping("/resend-otp")
+  public ResponseEntity<Void> resendOtp(@Valid @RequestBody ResendOtpRequestDto request) {
+    resendOtpUseCase.execute(request.otpSessionId());
+    return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/login")

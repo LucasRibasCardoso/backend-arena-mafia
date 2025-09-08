@@ -1,7 +1,9 @@
 package com.projetoExtensao.arenaMafia.domain.exception.badRequest;
 
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+
 public class InvalidOtpException extends BadRequestException {
-  public InvalidOtpException(String message) {
-    super(message);
+  public InvalidOtpException(ErrorCode errorCode) {
+    super(errorCode);
   }
 }

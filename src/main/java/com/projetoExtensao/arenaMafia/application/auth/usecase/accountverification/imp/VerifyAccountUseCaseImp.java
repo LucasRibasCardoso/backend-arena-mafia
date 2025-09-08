@@ -6,6 +6,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPo
 import com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification.VerifyAccountUseCase;
 import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
@@ -50,15 +51,10 @@ public class VerifyAccountUseCaseImp implements VerifyAccountUseCase {
   private UUID getUserIdFromOtpSession(OtpSessionId otpSessionId) {
     return otpSessionPort
         .findUserIdByOtpSessionId(otpSessionId)
-        .orElseThrow(() -> new InvalidOtpException("Sessão de verificação inválida ou expirada."));
+        .orElseThrow(() -> new InvalidOtpException(ErrorCode.INVALID_OR_EXPIRED_OTP_SESSION));
   }
 
   private User getUserById(UUID userId) {
-    return userRepository
-        .findById(userId)
-        .orElseThrow(
-            () ->
-                new UserNotFoundException(
-                    "Usuário não encontrado. Retorne ao início do cadastro para criar uma nova conta."));
+    return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
   }
 }

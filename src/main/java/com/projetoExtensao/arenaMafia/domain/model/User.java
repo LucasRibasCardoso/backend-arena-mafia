@@ -153,6 +153,18 @@ public class User {
   }
 
   // Validar status da conta
+  public void ensureCanRequestOtp() {
+    if (this.status == AccountStatus.ACTIVE || this.status == AccountStatus.PENDING_VERIFICATION) {
+      return;
+    }
+
+    switch (this.status) {
+      case LOCKED -> throw new AccountStateConflictException(ErrorCode.ACCOUNT_LOCKED);
+      case DISABLED -> throw new AccountStateConflictException(ErrorCode.ACCOUNT_DISABLED);
+      default -> throw new AccountStateConflictException(ErrorCode.ACCOUNT_STATE_CONFLICT);
+    }
+  }
+
   public void ensureAccountEnabled() {
     this.status.validateEnabled();
   }

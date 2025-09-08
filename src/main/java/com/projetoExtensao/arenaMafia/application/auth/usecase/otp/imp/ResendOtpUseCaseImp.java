@@ -4,8 +4,8 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPo
 import com.projetoExtensao.arenaMafia.application.auth.usecase.otp.ResendOtpUseCase;
 import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
-import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
@@ -35,26 +35,18 @@ public class ResendOtpUseCaseImp implements ResendOtpUseCase {
   public void execute(OtpSessionId otpSessionId) {
     UUID userId = getUserIdFromOtpSession(otpSessionId);
     User user = getUserById(userId);
-    ensureUserIsActiveOrPending(user);
+
+    user.ensureCanRequestOtp();
     eventPublisher.publishEvent(new OnVerificationRequiredEvent(user));
   }
 
   private UUID getUserIdFromOtpSession(OtpSessionId otpSessionId) {
     return otpSessionPort
         .findUserIdByOtpSessionId(otpSessionId)
-        .orElseThrow(() -> new InvalidOtpException("Sessão de verificação inválida ou expirada."));
+        .orElseThrow(() -> new InvalidOtpException(ErrorCode.INVALID_OR_EXPIRED_OTP_SESSION));
   }
 
   private User getUserById(UUID userId) {
-    return userRepository
-        .findById(userId)
-        .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado."));
-  }
-
-  private void ensureUserIsActiveOrPending(User user) {
-    if (!user.isEnabled() && !user.isPending()) {
-      throw new AccountStateConflictException(
-          "Atenção: Sua conta está bloqueada ou desativada. Por favor, contate o suporte.");
-    }
+    return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
   }
 }

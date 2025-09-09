@@ -1,5 +1,6 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.exception;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.projetoExtensao.arenaMafia.domain.exception.ApplicationException;
 import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.ConflictException;
@@ -16,6 +17,7 @@ import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,6 +35,31 @@ public class GlobalExceptionHandler {
     return buildErrorResponseEntity(mapExceptionToStatus(e), e.getErrorCode(), request);
   }
 
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ErrorResponseDto> handleHttpMessageNotReadable(
+      HttpMessageNotReadableException e, HttpServletRequest request) {
+
+    String fieldName = "unknown";
+    String errorCodeString = ErrorCode.MALFORMED_JSON_REQUEST.name();
+    String devMessage = ErrorCode.MALFORMED_JSON_REQUEST.getMessage();
+
+    Throwable rootCause = NestedExceptionUtils.getRootCause(e);
+
+    if (rootCause instanceof ApplicationException appException) {
+      errorCodeString = appException.getErrorCode().name();
+      devMessage = appException.getErrorCode().getMessage();
+
+      if (e.getCause() instanceof JsonMappingException jme && !jme.getPath().isEmpty()) {
+        fieldName = jme.getPath().getLast().getFieldName();
+      }
+    }
+
+    List<FieldErrorResponseDto> fieldErrors =
+        List.of(new FieldErrorResponseDto(fieldName, errorCodeString, devMessage));
+
+    return buildErrorResponseEntity(fieldErrors, request);
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponseDto> handleValidationException(
       MethodArgumentNotValidException e, HttpServletRequest request) {
@@ -45,7 +72,7 @@ public class GlobalExceptionHandler {
                   String devMessage;
                   try {
                     ErrorCode errorCode = ErrorCode.valueOf(errorCodeString);
-                    devMessage = errorCode.getDefaultMessage();
+                    devMessage = errorCode.getMessage();
                   } catch (IllegalArgumentException ex) {
                     devMessage = "Código de erro de validação não mapeado: " + errorCodeString;
                   }

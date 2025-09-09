@@ -1,6 +1,9 @@
 package com.projetoExtensao.arenaMafia.infrastructure.security.userDetails;
 
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.AccountStatusAuthenticationException;
+import com.projetoExtensao.arenaMafia.domain.model.User;
 import java.util.UUID;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -17,23 +20,38 @@ public class UserDetailsServiceImpl implements CustomUserDetailsService {
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    return userRepositoryPort
-        .findByUsername(username)
-        .map(UserDetailsAdapter::new)
-        .orElseThrow(
-            () ->
-                new UsernameNotFoundException(
-                    "Usuário com o nome '" + username + "' não foi encontrado."));
+    User user =
+        userRepositoryPort
+            .findByUsername(username)
+            .orElseThrow(
+                () -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+
+    validateAccountStatus(user);
+    return new UserDetailsAdapter(user);
   }
 
   @Override
   public UserDetails loadUserById(UUID id) throws UsernameNotFoundException {
-    return userRepositoryPort
-        .findById(id)
-        .map(UserDetailsAdapter::new)
-        .orElseThrow(
-            () ->
-                new UsernameNotFoundException(
-                    "Usuário com o ID '" + id + "' referenciado no token JWT não foi encontrado."));
+    User user =
+        userRepositoryPort
+            .findById(id)
+            .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + id));
+
+    validateAccountStatus(user);
+    return new UserDetailsAdapter(user);
+  }
+
+  private void validateAccountStatus(User user) {
+    switch (user.getStatus()) {
+      case ACTIVE:
+        break;
+      case LOCKED:
+        throw new AccountStatusAuthenticationException(ErrorCode.ACCOUNT_LOCKED);
+      case PENDING_VERIFICATION:
+        throw new AccountStatusAuthenticationException(ErrorCode.ACCOUNT_PENDING_VERIFICATION);
+      case DISABLED:
+      default:
+        throw new AccountStatusAuthenticationException(ErrorCode.ACCOUNT_DISABLED);
+    }
   }
 }

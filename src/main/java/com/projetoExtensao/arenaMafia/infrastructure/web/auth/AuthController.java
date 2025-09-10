@@ -101,9 +101,10 @@ public class AuthController {
 
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(
-      @CookieValue(value = "refreshToken", required = false) RefreshTokenVO refreshToken) {
+      @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
-    logoutUseCase.execute(refreshToken);
+    RefreshTokenVO refreshTokenVo = RefreshTokenVO.fromString(refreshToken);
+    logoutUseCase.execute(refreshTokenVo);
     ResponseCookie expiredCookie = cookieUtils.createRefreshTokenExpiredCookie();
     return ResponseEntity.noContent()
         .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
@@ -112,9 +113,10 @@ public class AuthController {
 
   @PostMapping("/refresh-token")
   public ResponseEntity<AuthResponseDto> refreshToken(
-      @CookieValue(name = "refreshToken", required = false) RefreshTokenVO refreshToken) {
+      @CookieValue(name = "refreshToken", required = false) String refreshToken) {
 
-    AuthResult authResult = refreshTokenUseCase.execute(refreshToken);
+    RefreshTokenVO refreshTokenVo = RefreshTokenVO.fromString(refreshToken);
+    AuthResult authResult = refreshTokenUseCase.execute(refreshTokenVo);
     return buildAuthResponse(authResult);
   }
 

@@ -5,7 +5,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidFormatF
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidFormatPhoneException;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPasswordHashException;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidUsernameFormatException;
-import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
+import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountStatusForbiddenException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import java.time.Instant;
@@ -159,9 +159,9 @@ public class User {
     }
 
     switch (this.status) {
-      case LOCKED -> throw new AccountStateConflictException(ErrorCode.ACCOUNT_LOCKED);
-      case DISABLED -> throw new AccountStateConflictException(ErrorCode.ACCOUNT_DISABLED);
-      default -> throw new AccountStateConflictException(ErrorCode.ACCOUNT_STATE_CONFLICT);
+      case LOCKED -> throw new AccountStatusForbiddenException(ErrorCode.ACCOUNT_LOCKED);
+      case DISABLED -> throw new AccountStatusForbiddenException(ErrorCode.ACCOUNT_DISABLED);
+      default -> throw new AccountStatusForbiddenException(ErrorCode.ACCOUNT_STATE_CONFLICT);
     }
   }
 
@@ -169,16 +169,10 @@ public class User {
     this.status.validateEnabled();
   }
 
-  public void ensurePendingVerification() {
-    if (this.status != AccountStatus.PENDING_VERIFICATION) {
-      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_PENDING_VERIFICATION);
-    }
-  }
-
   // Gerenciar status da conta
   public void confirmVerification() {
     if (this.status != AccountStatus.PENDING_VERIFICATION) {
-      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_PENDING_VERIFICATION);
+      throw new AccountStatusForbiddenException(ErrorCode.ACCOUNT_NOT_PENDING_VERIFICATION);
     }
     this.status = AccountStatus.ACTIVE;
     markAsUpdated();
@@ -186,7 +180,7 @@ public class User {
 
   public void disableAccount() {
     if (this.status != AccountStatus.ACTIVE) {
-      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_ACTIVE);
+      throw new AccountStatusForbiddenException(ErrorCode.ACCOUNT_NOT_ACTIVE);
     }
     this.status = AccountStatus.DISABLED;
     markAsUpdated();
@@ -194,7 +188,7 @@ public class User {
 
   public void enableAccount() {
     if (this.status != AccountStatus.DISABLED) {
-      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_DISABLED);
+      throw new AccountStatusForbiddenException(ErrorCode.ACCOUNT_NOT_DISABLED);
     }
     this.status = AccountStatus.ACTIVE;
     markAsUpdated();
@@ -202,7 +196,7 @@ public class User {
 
   public void lockAccount() {
     if (this.status != AccountStatus.ACTIVE) {
-      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_ACTIVE);
+      throw new AccountStatusForbiddenException(ErrorCode.ACCOUNT_NOT_ACTIVE);
     }
     this.status = AccountStatus.LOCKED;
     markAsUpdated();
@@ -210,7 +204,7 @@ public class User {
 
   public void unlockAccount() {
     if (this.status != AccountStatus.LOCKED) {
-      throw new AccountStateConflictException(ErrorCode.ACCOUNT_NOT_LOCKED);
+      throw new AccountStatusForbiddenException(ErrorCode.ACCOUNT_NOT_LOCKED);
     }
     this.status = AccountStatus.ACTIVE;
     markAsUpdated();

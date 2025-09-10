@@ -2,6 +2,7 @@ package com.projetoExtensao.arenaMafia.domain.exception;
 
 public enum ErrorCode {
   // Erros globais
+  MALFORMED_JSON_REQUEST("Requisição JSON malformada."),
   UNEXPECTED_ERROR("Ocorreu um erro inesperado. Por favor, tente novamente mais tarde."),
   ACCESS_DENIED("Acesso negado. Você não tem permissão para acessar este recurso."),
   DATA_INTEGRITY_VIOLATION("O recurso que você está tentando criar ou atualizar já existe."),
@@ -61,17 +62,16 @@ public enum ErrorCode {
 
   REFRESH_TOKEN_REQUIRED("O token de atualização é obrigatório."),
   REFRESH_TOKEN_INVALID_FORMAT("O formato do token de atualização é inválido."),
-  REFRESH_TOKEN_MISSING("Sua sessão é inválida. Por favor, faça login novamente."),
   REFRESH_TOKEN_NOT_FOUND("Sua sessão é inválida. Por favor, faça login novamente."),
   REFRESH_TOKEN_INVALID_OR_EXPIRED("Sua sessão expirou. Por favor, faça login novamente.");
 
-  private final String defaultMessage;
+  private final String message;
 
-  ErrorCode(String defaultMessage) {
-    this.defaultMessage = defaultMessage;
+  ErrorCode(String message) {
+    this.message = message;
   }
 
-  public String getDefaultMessage() {
-    return defaultMessage;
+  public String getMessage() {
+    return message;
   }
 }

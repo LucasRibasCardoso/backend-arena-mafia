@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -101,6 +102,18 @@ public class GlobalExceptionHandler {
     return buildErrorResponseEntity(HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED, request);
   }
 
+  @ExceptionHandler(AuthenticationException.class)
+  public ResponseEntity<ErrorResponseDto> handleAuthenticationException(
+      AuthenticationException e, HttpServletRequest request) {
+
+    ErrorCode errorCode = ErrorCode.INVALID_CREDENTIALS;
+
+    if (e instanceof UnauthorizedException customException) {
+      errorCode = customException.getErrorCode();
+    }
+    return buildErrorResponseEntity(HttpStatus.UNAUTHORIZED, errorCode, request);
+  }
+
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<ErrorResponseDto> handleDataIntegrityViolationException(
       HttpServletRequest request) {
@@ -120,7 +133,6 @@ public class GlobalExceptionHandler {
   private HttpStatus mapExceptionToStatus(ApplicationException e) {
     if (e instanceof NotFoundException) return HttpStatus.NOT_FOUND;
     if (e instanceof ConflictException) return HttpStatus.CONFLICT;
-    if (e instanceof UnauthorizedException) return HttpStatus.UNAUTHORIZED;
     if (e instanceof ForbiddenException) return HttpStatus.FORBIDDEN;
     return HttpStatus.BAD_REQUEST;
   }

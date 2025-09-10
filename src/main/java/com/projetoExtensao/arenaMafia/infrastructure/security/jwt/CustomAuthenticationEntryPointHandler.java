@@ -2,6 +2,7 @@ package com.projetoExtensao.arenaMafia.infrastructure.security.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.UnauthorizedException;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,6 +38,10 @@ public class CustomAuthenticationEntryPointHandler implements AuthenticationEntr
     }
 
     ErrorCode errorCode = ErrorCode.SESSION_EXPIRED;
+    if (authException instanceof UnauthorizedException unAuthorizedException) {
+      errorCode = unAuthorizedException.getErrorCode();
+    }
+
     var dto = ErrorResponseDto.forGeneralError(UNAUTHORIZED_STATUS, errorCode, originalPath);
 
     response.setStatus(UNAUTHORIZED_STATUS);

@@ -18,7 +18,7 @@ public record ErrorResponseDto(
   public static ErrorResponseDto forGeneralError(int status, ErrorCode errorCode, String path) {
     Instant timestamp = Instant.now();
     return new ErrorResponseDto(
-        timestamp, status, errorCode.name(), errorCode.getDefaultMessage(), path, null);
+        timestamp, status, errorCode.name(), errorCode.getMessage(), path, null);
   }
 
   public static ErrorResponseDto forValidationErrors(
@@ -29,7 +29,7 @@ public record ErrorResponseDto(
         Instant.now(),
         HttpStatus.BAD_REQUEST.value(),
         errorCode.name(),
-        errorCode.getDefaultMessage(),
+        errorCode.getMessage(),
         path,
         fieldErrors);
   }

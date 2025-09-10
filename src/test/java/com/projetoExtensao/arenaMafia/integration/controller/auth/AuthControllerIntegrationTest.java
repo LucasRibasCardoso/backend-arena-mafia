@@ -3,7 +3,6 @@ package com.projetoExtensao.arenaMafia.integration.controller.auth;
 import static com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus.LOCKED;
 import static com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus.PENDING_VERIFICATION;
 import static io.restassured.RestAssured.given;
-import static net.bytebuddy.implementation.Implementation.Context.FrameGeneration.DISABLED;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPort;

@@ -117,7 +117,7 @@ public class UserControllerTest extends WebIntegrationTestConfig {
       void updateProfile_shouldReturn400_whenFullNameIsEmptyOrNull(
           String fullName, String expectedErrorCode) {
         // Arrange
-        User mockUser = mockPersistUser();
+        mockPersistUser();
         AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
         var request = new UpdateProfileRequestDto(fullName);
 
@@ -446,7 +446,7 @@ public class UserControllerTest extends WebIntegrationTestConfig {
     @DisplayName("Deve retornar 400 Bad Request quando a senha atual estiver incorreta")
     void changePassword_shouldReturn400_whenCurrentPasswordIsIncorrect() {
       // Arrange
-      User mockUser = mockPersistUser();
+      mockPersistUser();
       AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
       var request = new ChangePasswordRequestDto("wrong_password", "new_password", "new_password");
 

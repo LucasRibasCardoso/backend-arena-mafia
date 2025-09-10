@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
 import com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway.OtpAdapter;
@@ -72,7 +73,7 @@ public class OtpAdapterIntegrationTest extends BaseTestContainersConfig {
     // Act & Assert
     assertThatThrownBy(() -> otpAdapter.validateOtp(userId, incorrectCode))
         .isInstanceOf(InvalidOtpException.class)
-        .hasMessage("Código de verificação inválido ou expirado.");
+        .hasMessage(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED.getMessage());
 
     Boolean keyExists = redisTemplate.hasKey(redisKey);
     assertThat(keyExists).isTrue();
@@ -90,6 +91,6 @@ public class OtpAdapterIntegrationTest extends BaseTestContainersConfig {
     // Act & Assert
     assertThatThrownBy(() -> otpAdapter.validateOtp(userId, otpCode))
         .isInstanceOf(InvalidOtpException.class)
-        .hasMessage("Código de verificação inválido ou expirado.");
+        .hasMessage(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED.getMessage());
   }
 }

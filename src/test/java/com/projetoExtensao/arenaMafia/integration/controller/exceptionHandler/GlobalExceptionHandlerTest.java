@@ -1,13 +1,17 @@
 package com.projetoExtensao.arenaMafia.integration.controller.exceptionHandler;
 
+import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,29 +29,76 @@ public class GlobalExceptionHandlerTest {
   @Nested
   @DisplayName("Testes para Erros 400 Bad Request")
   class BadRequestTests {
-    @Test
-    @DisplayName("Deve capturar BadRequestException (ex: BadPhoneNumberException)")
-    void shouldHandleBadRequestException() throws Exception {
-      mockMvc
-          .perform(get(BASE_URL + "/bad-request/bad-phone-number"))
-          .andExpect(status().isBadRequest())
-          .andExpect(jsonPath("$.status").value(400))
-          .andExpect(jsonPath("$.message").value("Número de telefone inválido."));
-    }
 
     @Test
-    @DisplayName("Deve capturar MethodArgumentNotValidException")
-    void shouldHandleMethodArgumentNotValidException() throws Exception {
+    @DisplayName("Deve retornar 400 Bad Request quando o campo otpSessionId for nulo")
+    void shouldReturn400_whenOtpSessionIdIsNull() throws Exception {
+      // Arrange
+      ErrorCode expectedFieldErrorCode = ErrorCode.OTP_SESSION_ID_REQUIRED;
+      String requestBody = "{\"otpCode\": \"123456\", \"otpSessionId\": null}";
+
+      // Act & Assert
       mockMvc
           .perform(
-              post(BASE_URL + "/method-argument-not-valid")
+              post(BASE_URL + "/bad-request/otp-session-invalid")
                   .contentType(MediaType.APPLICATION_JSON)
-                  .content("{\"fieldTestUsername\":\"a\"}"))
+                  .content(requestBody))
           .andExpect(status().isBadRequest())
-          .andExpect(jsonPath("$.status").value(400))
+          .andExpect(jsonPath("$.errorCode", is(ErrorCode.VALIDATION_FAILED.name())))
+          .andExpect(jsonPath("$.fieldErrors[0].fieldName", is("otpSessionId")))
+          .andExpect(jsonPath("$.fieldErrors[0].errorCode", is(expectedFieldErrorCode.name())))
           .andExpect(
-              jsonPath("$.message").value("Erro de validação. Verifique os campos informados."))
-          .andExpect(jsonPath("$.fieldErrors[0].fieldName").value("fieldTestUsername"));
+              jsonPath(
+                  "$.fieldErrors[0].developerMessage", is(expectedFieldErrorCode.getMessage())));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "  ", "not-a-valid-uuid"})
+    @DisplayName("Deve retornar 400 Bad Request quando o otpSessionId tiver formato inválido")
+    void shouldReturn400_whenOtpSessionIdIsMalformed(String invalidSessionId) throws Exception {
+      // Arrange
+      String requestBody =
+          "{\"otpCode\": \"123456\", \"otpSessionId\": \"" + invalidSessionId + "\"}";
+
+      // Determina o errorCode esperado com base na entrada
+      ErrorCode expectedFieldErrorCode =
+          invalidSessionId.trim().isEmpty()
+              ? ErrorCode.OTP_SESSION_ID_REQUIRED
+              : ErrorCode.OTP_SESSION_ID_INVALID_FORMAT;
+
+      // Act & Assert
+      mockMvc
+          .perform(
+              post(BASE_URL + "/bad-request/otp-session-invalid")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(requestBody))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.errorCode", is(ErrorCode.VALIDATION_FAILED.name())))
+          .andExpect(jsonPath("$.fieldErrors[0].fieldName", is("otpSessionId")))
+          .andExpect(jsonPath("$.fieldErrors[0].errorCode", is(expectedFieldErrorCode.name())))
+          .andExpect(
+              jsonPath(
+                  "$.fieldErrors[0].developerMessage", is(expectedFieldErrorCode.getMessage())));
+    }
+  }
+
+  @Nested
+  @DisplayName("Testes para Erros 401 Unauthorized")
+  class UnauthorizedTests {
+
+    @Test
+    @DisplayName("Deve capturar RefreshTokenExpiredException")
+    void shouldHandleRefreshTokenExpiredException() throws Exception {
+      ErrorCode expectedError = ErrorCode.REFRESH_TOKEN_INVALID_OR_EXPIRED;
+      String expectedPath = BASE_URL + "/unauthorized/refresh-token-expired";
+
+      mockMvc
+          .perform(get(expectedPath))
+          .andExpect(status().isUnauthorized())
+          .andExpect(jsonPath("$.status", is(401)))
+          .andExpect(jsonPath("$.path", is(expectedPath)))
+          .andExpect(jsonPath("$.errorCode", is(expectedError.name())))
+          .andExpect(jsonPath("$.developerMessage", is(expectedError.getMessage())));
     }
   }
 
@@ -57,13 +108,16 @@ public class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("Deve capturar AccessDeniedException")
     void shouldHandleAccessDeniedException() throws Exception {
+      ErrorCode errorCode = ErrorCode.ACCESS_DENIED;
+      String expectedPath = BASE_URL + "/forbidden/access-denied";
+
       mockMvc
-          .perform(get(BASE_URL + "/forbidden/access-denied"))
+          .perform(get(expectedPath))
           .andExpect(status().isForbidden())
           .andExpect(jsonPath("$.status").value(403))
-          .andExpect(
-              jsonPath("$.message")
-                  .value("Acesso negado. Você não tem permissão para acessar este recurso."));
+          .andExpect(jsonPath("$.path").value(expectedPath))
+          .andExpect(jsonPath("$.errorCode").value(errorCode.name()))
+          .andExpect(jsonPath("$.developerMessage").value(errorCode.getMessage()));
     }
   }
 
@@ -73,11 +127,16 @@ public class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("Deve capturar NotFoundException (ex: UserNotFoundException)")
     void shouldHandleNotFoundException() throws Exception {
+      ErrorCode expectedError = ErrorCode.USER_NOT_FOUND;
+      String expectedPath = BASE_URL + "/not-found/user-not-found";
+
       mockMvc
-          .perform(get(BASE_URL + "/not-found/user-not-found"))
+          .perform(get(expectedPath))
           .andExpect(status().isNotFound())
-          .andExpect(jsonPath("$.status").value(404))
-          .andExpect(jsonPath("$.message").value("Usuário não encontrado."));
+          .andExpect(jsonPath("$.status", is(404)))
+          .andExpect(jsonPath("$.path", is(expectedPath)))
+          .andExpect(jsonPath("$.errorCode", is(expectedError.name())))
+          .andExpect(jsonPath("$.developerMessage", is(expectedError.getMessage())));
     }
   }
 
@@ -87,24 +146,31 @@ public class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("Deve capturar ConflictException (ex: UserAlreadyExistsException)")
     void shouldHandleConflictException() throws Exception {
+      ErrorCode expectedError = ErrorCode.USERNAME_ALREADY_EXISTS;
+      String expectedPath = BASE_URL + "/conflict/user-already-exists";
+
       mockMvc
-          .perform(get(BASE_URL + "/conflict/user-already-exists"))
+          .perform(get(expectedPath))
           .andExpect(status().isConflict())
-          .andExpect(jsonPath("$.status").value(409))
-          .andExpect(jsonPath("$.message").value("Usuário já existe."));
+          .andExpect(jsonPath("$.status", is(409)))
+          .andExpect(jsonPath("$.path", is(expectedPath)))
+          .andExpect(jsonPath("$.errorCode", is(expectedError.name())))
+          .andExpect(jsonPath("$.developerMessage", is(expectedError.getMessage())));
     }
 
     @Test
     @DisplayName("Deve capturar DataIntegrityViolationException")
     void shouldHandleDataIntegrityViolationException() throws Exception {
+      ErrorCode expectedError = ErrorCode.DATA_INTEGRITY_VIOLATION;
+      String expectedPath = BASE_URL + "/conflict/data-integrity";
+
       mockMvc
-          .perform(get(BASE_URL + "/conflict/data-integrity"))
+          .perform(get(expectedPath))
           .andExpect(status().isConflict())
-          .andExpect(jsonPath("$.status").value(409))
-          .andExpect(
-              jsonPath("$.message")
-                  .value(
-                      "Conflito de dados. O recurso que você está tentando criar ou atualizar já existe."));
+          .andExpect(jsonPath("$.status", is(409)))
+          .andExpect(jsonPath("$.path", is(expectedPath)))
+          .andExpect(jsonPath("$.errorCode", is(expectedError.name())))
+          .andExpect(jsonPath("$.developerMessage", is(expectedError.getMessage())));
     }
   }
 
@@ -114,13 +180,16 @@ public class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("Deve capturar Exception genérica")
     void shouldHandleGenericException() throws Exception {
+      ErrorCode expectedError = ErrorCode.UNEXPECTED_ERROR;
+      String expectedPath = BASE_URL + "/internal-server-error";
+
       mockMvc
-          .perform(get(BASE_URL + "/internal-server-error"))
+          .perform(get(expectedPath))
           .andExpect(status().isInternalServerError())
-          .andExpect(jsonPath("$.status").value(500))
-          .andExpect(
-              jsonPath("$.message")
-                  .value("Erro interno do servidor. Por favor, tente novamente mais tarde."));
+          .andExpect(jsonPath("$.status", is(500)))
+          .andExpect(jsonPath("$.path", is(expectedPath)))
+          .andExpect(jsonPath("$.errorCode", is(expectedError.name())))
+          .andExpect(jsonPath("$.developerMessage", is(expectedError.getMessage())));
     }
   }
 }

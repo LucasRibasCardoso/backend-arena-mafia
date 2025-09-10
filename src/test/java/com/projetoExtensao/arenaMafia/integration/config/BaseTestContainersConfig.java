@@ -4,7 +4,6 @@ import static io.restassured.RestAssured.given;
 
 import com.projetoExtensao.arenaMafia.application.security.port.gateway.PasswordEncoderPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
-import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
@@ -158,10 +157,7 @@ public abstract class BaseTestContainersConfig {
     User user =
         userRepository
             .findById(userId)
-            .orElseThrow(
-                () ->
-                    new UserNotFoundException(
-                        "Usuário de teste não encontrado com o id: " + userId));
+            .orElseThrow();
 
     User lockedUser =
         User.reconstitute(

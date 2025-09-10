@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
@@ -36,105 +38,6 @@ public class SecurityIntegrationTest extends WebIntegrationTestConfig {
             .setBasePath("/api/users/me")
             .setContentType(MediaType.APPLICATION_JSON_VALUE)
             .build();
-  }
-
-  @Nested
-  @DisplayName("Deve retornar 401 Unauthorized quando o status conta for inválido")
-  class AccountStatusTests {
-    @Test
-    @DisplayName("Deve retornar 401 Unauthorized quando a conta está desativada")
-    void resendChangePhoneOtp_shouldReturn401_whenUserAccountIsDisabled() {
-      // Arrange
-      User mockUser = mockPersistUser();
-      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      alterAccountStatus(mockUser.getId(), AccountStatus.DISABLED);
-
-      String newPhone = "+5547992044567";
-      pendingPhoneChangePort.save(mockUser.getId(), newPhone);
-
-      var response =
-          given()
-              .spec(specification)
-              .header("Authorization", "Bearer " + tokens.accessToken())
-              .when()
-              .post("/phone/verification/resend")
-              .then()
-              .log()
-              .all()
-              .statusCode(401)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      ErrorCode errorCode = ErrorCode.ACCOUNT_DISABLED;
-
-      assertThat(response.status()).isEqualTo(401);
-      assertThat(response.path()).isEqualTo("/api/users/me/phone/verification/resend");
-      assertThat(response.errorCode()).isEqualTo(errorCode.name());
-      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
-    }
-
-    @Test
-    @DisplayName("Deve retornar 401 Unauthorized quando a conta está bloqueada")
-    void resendChangePhoneOtp_shouldReturn401_whenUserAccountIsLocked() {
-      // Arrange
-      User mockUser = mockPersistUser();
-      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      alterAccountStatus(mockUser.getId(), AccountStatus.LOCKED);
-
-      String newPhone = "+5547992044567";
-      pendingPhoneChangePort.save(mockUser.getId(), newPhone);
-
-      var response =
-          given()
-              .spec(specification)
-              .header("Authorization", "Bearer " + tokens.accessToken())
-              .when()
-              .post("/phone/verification/resend")
-              .then()
-              .statusCode(401)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      ErrorCode errorCode = ErrorCode.ACCOUNT_LOCKED;
-
-      assertThat(response.status()).isEqualTo(401);
-      assertThat(response.path()).isEqualTo("/api/users/me/phone/verification/resend");
-      assertThat(response.errorCode()).isEqualTo(errorCode.name());
-      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
-    }
-
-    @Test
-    @DisplayName("Deve retornar 401 Unauthorized quando a conta está pendente de verificação")
-    void resendChangePhoneOtp_shouldReturn401_whenUserAccountIsPendingVerification() {
-      // Arrange
-      User mockUser = mockPersistUser();
-      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      alterAccountStatus(mockUser.getId(), AccountStatus.PENDING_VERIFICATION);
-
-      String newPhone = "+5547992044567";
-      pendingPhoneChangePort.save(mockUser.getId(), newPhone);
-
-      var response =
-          given()
-              .spec(specification)
-              .header("Authorization", "Bearer " + tokens.accessToken())
-              .when()
-              .post("/phone/verification/resend")
-              .then()
-              .statusCode(401)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      ErrorCode errorCode = ErrorCode.ACCOUNT_PENDING_VERIFICATION;
-
-      assertThat(response.status()).isEqualTo(401);
-      assertThat(response.path()).isEqualTo("/api/users/me/phone/verification/resend");
-      assertThat(response.errorCode()).isEqualTo(errorCode.name());
-      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
-    }
   }
 
   @Test
@@ -190,5 +93,50 @@ public class SecurityIntegrationTest extends WebIntegrationTestConfig {
     assertThat(response.path()).isEqualTo("/api/users/me/profile");
     assertThat(response.errorCode()).isEqualTo(errorCode.name());
     assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
+  }
+
+  @Nested
+  @DisplayName("Deve retornar 401 Unauthorized quando o status da conta for inválido")
+  class AccountStatusTests {
+
+    @ParameterizedTest
+    @EnumSource(
+        value = AccountStatus.class,
+        names = {"DISABLED", "LOCKED", "PENDING_VERIFICATION"})
+    @DisplayName(
+        "Deve retornar 401 Unauthorized para os status: DISABLED, LOCKED, PENDING_VERIFICATION")
+    void protectedEndpoint_shouldReturn401_whenAccountStatusIsInvalid(AccountStatus invalidStatus) {
+      // Arrange
+      User mockUser = mockPersistUser();
+      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+      alterAccountStatus(mockUser.getId(), invalidStatus);
+
+      ErrorCode expectedErrorCode =
+          switch (invalidStatus) {
+            case DISABLED -> ErrorCode.ACCOUNT_DISABLED;
+            case LOCKED -> ErrorCode.ACCOUNT_LOCKED;
+            case PENDING_VERIFICATION -> ErrorCode.ACCOUNT_PENDING_VERIFICATION;
+            default -> throw new IllegalStateException("Status inesperado: " + invalidStatus);
+          };
+
+      String newPhone = "+5547992044567";
+      pendingPhoneChangePort.save(mockUser.getId(), newPhone);
+
+      var response =
+          given()
+              .spec(specification)
+              .header("Authorization", "Bearer " + tokens.accessToken())
+              .when()
+              .post("/phone/verification/resend")
+              .then()
+              .statusCode(401)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      assertThat(response.status()).isEqualTo(401);
+      assertThat(response.errorCode()).isEqualTo(expectedErrorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(expectedErrorCode.getMessage());
+    }
   }
 }

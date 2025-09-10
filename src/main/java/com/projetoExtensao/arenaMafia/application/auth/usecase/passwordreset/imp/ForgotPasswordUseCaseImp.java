@@ -5,7 +5,7 @@ import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.For
 import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
 import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
-import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
+import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountStatusForbiddenException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ForgotPasswordRequestDto;
@@ -57,12 +57,12 @@ public class ForgotPasswordUseCaseImp implements ForgotPasswordUseCase {
       OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(user.getId());
       eventPublisher.publishEvent(new OnVerificationRequiredEvent(user));
       return Optional.of(otpSessionId);
-    } catch (AccountStateConflictException e) {
+    } catch (AccountStatusForbiddenException e) {
       logger.warn(
           "Tentativa de redefinição de senha para conta com status inválido: [{}] : [{}] : [{}]",
           user.getId(),
           e.getErrorCode(),
-          e.getErrorCode().getDefaultMessage());
+          e.getErrorCode().getMessage());
       return Optional.empty();
     }
   }

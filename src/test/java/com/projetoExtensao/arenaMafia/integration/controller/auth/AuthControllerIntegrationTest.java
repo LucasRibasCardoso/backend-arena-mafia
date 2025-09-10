@@ -1,12 +1,16 @@
 package com.projetoExtensao.arenaMafia.integration.controller.auth;
 
+import static com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus.LOCKED;
+import static com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus.PENDING_VERIFICATION;
 import static io.restassured.RestAssured.given;
+import static net.bytebuddy.implementation.Implementation.Context.FrameGeneration.DISABLED;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
@@ -19,15 +23,21 @@ import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.Valida
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.AuthResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.SignupResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.FieldErrorResponseDto;
 import com.projetoExtensao.arenaMafia.integration.config.WebIntegrationTestConfig;
+import com.projetoExtensao.arenaMafia.integration.config.util.*;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.Cookie;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
@@ -93,41 +103,88 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
       assertThat(refreshTokenCookie.getMaxAge()).isGreaterThan(0);
     }
 
-    @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o username for inválido no DTO")
-    void login_shouldReturn400_whenUsernameIsBlank() {
-      // Arrange
-      String blankUsername = "   ";
-      LoginRequestDto request = new LoginRequestDto(blankUsername, defaultPassword);
+    @Nested
+    @DisplayName("Deve retornar 400 Bad Request quando os dados de entrada forem inválidos")
+    class InvalidInputTests {
 
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/login")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
+      @InvalidUsernameProvider
+      @DisplayName("Deve retornar 400 Bad Request para username inválido")
+      void login_shouldReturn400_whenUsernameIsInvalid(String username, String expectedErrorCode) {
+        // Arrange
+        LoginRequestDto request = new LoginRequestDto(username, defaultPassword);
 
-      // Assert
-      assertThat(response.status()).isEqualTo(400);
-      assertThat(response.message())
-          .isEqualTo("Erro de validação. Verifique os campos informados.");
-      assertThat(response.path()).isEqualTo("/api/auth/login");
-      assertThat(response.fieldErrors()).hasSize(1);
-      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("username");
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/login")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/login");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("username")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+
+      @InvalidPasswordProvider
+      @DisplayName("Deve retornar 400 Bad Request para password inválido")
+      void login_shouldReturn400_whenPasswordIsInvalid(String password, String expectedErrorCode) {
+        // Arrange
+        LoginRequestDto request = new LoginRequestDto(defaultUsername, password);
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/login")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/login");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("password")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
     }
 
     @Test
     @DisplayName("Deve retornar 401 Unauthorized quando as credenciais forem inválidas")
     void login_shouldReturn401_whenCredentialsAreInvalid() {
       // Arrange
-      String invalidUsername = "invaliduser";
-      String invalidPassword = "wrongpassword";
-      LoginRequestDto request = new LoginRequestDto(invalidUsername, invalidPassword);
+      LoginRequestDto request = new LoginRequestDto("invaliduser", "wrongpassword");
 
       // Act
       ErrorResponseDto response =
@@ -142,21 +199,59 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
+      ErrorCode errorCode = ErrorCode.INVALID_CREDENTIALS;
+
       assertThat(response.status()).isEqualTo(401);
-      assertThat(response.message())
-          .isEqualTo("Credenciais inválidas. Por favor, verifique seu usuário e senha.");
       assertThat(response.path()).isEqualTo("/api/auth/login");
-      assertThat(response.fieldErrors()).isNull();
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
 
     @Nested
-    @DisplayName("Deve retornar 409 Conflict quando a conta não está ativada")
+    @DisplayName("Deve retornar 401 Unauthorized quando a conta não está ativada")
     class AccountStateTests {
-      @Test
-      @DisplayName("Deve retornar 409 Conflict quando a conta está pendente de verificação")
-      void login_shouldReturn409_whenAccountIsPendingVerification() {
+      @ParameterizedTest
+      @EnumSource(
+          value = AccountStatus.class,
+          names = {"DISABLED", "LOCKED", "PENDING_VERIFICATION"})
+      void login_shouldReturn401_whenAccountNotActive(AccountStatus invalidStatus) {
         // Arrange
-        mockPersistUser(AccountStatus.PENDING_VERIFICATION);
+        mockPersistUser(invalidStatus);
+        LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
+
+        ErrorCode expectedErrorCode =
+            switch (invalidStatus) {
+              case DISABLED -> ErrorCode.ACCOUNT_DISABLED;
+              case LOCKED -> ErrorCode.ACCOUNT_LOCKED;
+              case PENDING_VERIFICATION -> ErrorCode.ACCOUNT_PENDING_VERIFICATION;
+              default -> throw new IllegalStateException("Status inesperado: " + invalidStatus);
+            };
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/login")
+                .then()
+                .statusCode(401)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+
+        assertThat(response.status()).isEqualTo(401);
+        assertThat(response.path()).isEqualTo("/api/auth/login");
+        assertThat(response.errorCode()).isEqualTo(expectedErrorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(expectedErrorCode.getMessage());
+      }
+
+      @Test
+      @DisplayName("Deve retornar 401 Unauthorized quando a conta está bloqueada")
+      void login_shouldReturn401_whenAccountIsLocked() {
+        // Arrange
+        mockPersistUser(LOCKED);
         LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
 
         // Act
@@ -167,49 +262,22 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
                 .when()
                 .post("/login")
                 .then()
-                .statusCode(409)
+                .statusCode(401)
                 .extract()
                 .as(ErrorResponseDto.class);
 
         // Assert
-        assertThat(response.status()).isEqualTo(409);
-        assertThat(response.message())
-            .isEqualTo(
-                "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
+        ErrorCode errorCode = ErrorCode.ACCOUNT_LOCKED;
+
+        assertThat(response.status()).isEqualTo(401);
         assertThat(response.path()).isEqualTo("/api/auth/login");
-        assertThat(response.fieldErrors()).isNull();
+        assertThat(response.errorCode()).isEqualTo(errorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
       }
 
       @Test
-      @DisplayName("Deve retornar 409 Conflict quando a conta está bloqueada")
-      void login_shouldReturn409_whenAccountIsLocked() {
-        // Arrange
-        mockPersistUser(AccountStatus.LOCKED);
-        LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
-
-        // Act
-        ErrorResponseDto response =
-            given()
-                .spec(specification)
-                .body(request)
-                .when()
-                .post("/login")
-                .then()
-                .statusCode(409)
-                .extract()
-                .as(ErrorResponseDto.class);
-
-        // Assert
-        assertThat(response.status()).isEqualTo(409);
-        assertThat(response.message())
-            .isEqualTo("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
-        assertThat(response.path()).isEqualTo("/api/auth/login");
-        assertThat(response.fieldErrors()).isNull();
-      }
-
-      @Test
-      @DisplayName("Deve retornar 409 Conflict quando a conta está desativada")
-      void login_shouldReturn409_whenAccountIsDisabled() {
+      @DisplayName("Deve retornar 401 Unauthorized quando a conta está desativada")
+      void login_shouldReturn401_whenAccountIsDisabled() {
         // Arrange
         mockPersistUser(AccountStatus.DISABLED);
         LoginRequestDto request = new LoginRequestDto(defaultUsername, defaultPassword);
@@ -222,17 +290,17 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
                 .when()
                 .post("/login")
                 .then()
-                .statusCode(409)
+                .statusCode(401)
                 .extract()
                 .as(ErrorResponseDto.class);
 
         // Assert
-        assertThat(response.status()).isEqualTo(409);
-        assertThat(response.message())
-            .isEqualTo(
-                "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
+        ErrorCode errorCode = ErrorCode.ACCOUNT_DISABLED;
+
+        assertThat(response.status()).isEqualTo(401);
         assertThat(response.path()).isEqualTo("/api/auth/login");
-        assertThat(response.fieldErrors()).isNull();
+        assertThat(response.errorCode()).isEqualTo(errorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
       }
     }
   }
@@ -283,11 +351,12 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .extract()
               .as(ErrorResponseDto.class);
 
+      ErrorCode errorCode = ErrorCode.SESSION_EXPIRED;
+
       assertThat(response.status()).isEqualTo(401);
-      assertThat(response.message())
-          .isEqualTo("Sua sessão é inválida ou expirou. Por favor, faça login novamente.");
       assertThat(response.path()).isEqualTo("/api/auth/logout");
-      assertThat(response.fieldErrors()).isNull();
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
 
     @Test
@@ -297,8 +366,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
       mockPersistUser(AccountStatus.ACTIVE);
       AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
 
-      Cookie invalidRefreshToken =
-          new Cookie.Builder("refreshToken", "invalid-refresh-token-format").build();
+      Cookie invalidRefreshToken = new Cookie.Builder("refreshToken", "invalid-token").build();
 
       // Act
       ErrorResponseDto response =
@@ -309,12 +377,19 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .when()
               .post("/logout")
               .then()
+              .log()
+              .all()
               .statusCode(400)
               .extract()
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response.message()).isEqualTo("Formato inválido para o refresh token.");
+      ErrorCode errorCode = ErrorCode.REFRESH_TOKEN_INVALID_FORMAT;
+
+      assertThat(response.status()).isEqualTo(400);
+      assertThat(response.path()).isEqualTo("/api/auth/logout");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
   }
 
@@ -359,63 +434,67 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
       assertThat(refreshTokenCookie.getValue()).isNotEqualTo(tokens.refreshToken().toString());
     }
 
-    @Test
-    @DisplayName("Deve retornar 400 BadRequest quando um refresh token for inválido")
-    void refreshToken_shouldReturn400_whenRefreshTokenIsInvalid() {
-      // Arrange
-      Cookie invalidCookie =
-          new Cookie.Builder("refreshToken", "invalid-refresh-token-format").build();
+    @Nested
+    @DisplayName("Deve retornar 400 Bad Request quando os dados de entrada forem inválidos")
+    class InvalidInputTests {
 
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .cookie(invalidCookie)
-              .when()
-              .post("/refresh-token")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
+      @Test
+      @DisplayName("Deve retornar 400 BadRequest quando o refresh token não for enviado")
+      void refreshToken_shouldReturn400_whenRefreshTokenIsNullOrEmpty() {
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .when()
+                .post("/refresh-token")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
 
-      // Assert
-      assertThat(response).isNotNull();
-      assertThat(response.status()).isEqualTo(400);
-      assertThat(response.message()).isEqualTo("Formato inválido para o refresh token.");
-      assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
-      assertThat(response.fieldErrors()).isNull();
-    }
+        // Assert
+        ErrorCode errorCode = ErrorCode.REFRESH_TOKEN_REQUIRED;
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
+        assertThat(response.errorCode()).isEqualTo(errorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
+      }
 
-    @Test
-    @DisplayName("Deve retornar 401 Unauthorized quando o refresh token não for enviado")
-    void refreshToken_shouldReturn401_whenTokenNotProvided() {
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .when()
-              .post("/refresh-token")
-              .then()
-              .statusCode(401)
-              .extract()
-              .as(ErrorResponseDto.class);
+      @InvalidRefreshTokenProvider
+      @DisplayName("Deve retornar 400 BadRequest quando um refresh token for inválido")
+      void refreshToken_shouldReturn400_whenRefreshTokenIsInvalid(
+          String refreshToken, String expectedErrorCode) {
+        // Arrange
+        Cookie invalidCookie = new Cookie.Builder("refreshToken", refreshToken).build();
 
-      // Assert
-      assertThat(response).isNotNull();
-      assertThat(response.status()).isEqualTo(401);
-      assertThat(response.message())
-          .isEqualTo("Sua sessão expirou. Por favor, faça login novamente.");
-      assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
-      assertThat(response.fieldErrors()).isNull();
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .cookie(invalidCookie)
+                .when()
+                .post("/refresh-token")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
+        assertThat(response.errorCode()).isEqualTo(errorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
+      }
     }
 
     @Test
     @DisplayName("Deve retornar 401 Unauthorized quando o refresh token não for encontrado")
     void refreshToken_shouldReturn401_whenTokenNotFound() {
       // Arrange
-      RefreshTokenVO refreshTokenVO = RefreshTokenVO.generate();
-      Cookie nonExistentTokenCookie =
-          new Cookie.Builder("refreshToken", refreshTokenVO.toString()).build();
+      String refreshTokenVO = RefreshTokenVO.generate().toString();
+      Cookie nonExistentTokenCookie = new Cookie.Builder("refreshToken", refreshTokenVO).build();
 
       // Act
       ErrorResponseDto response =
@@ -430,23 +509,35 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response).isNotNull();
+      ErrorCode errorCode = ErrorCode.REFRESH_TOKEN_NOT_FOUND;
+
       assertThat(response.status()).isEqualTo(401);
-      assertThat(response.message()).isEqualTo("Refresh token não encontrado.");
       assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
-      assertThat(response.fieldErrors()).isNull();
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
 
     @Nested
-    @DisplayName("Deve retornar 409 Conflict quando a conta não está ativada")
+    @DisplayName("Deve retornar 403 Forbidden quando a conta não está ativada")
     class AccountStateTests {
-      @Test
-      @DisplayName("Deve retornar 409 Conflict quando a conta está bloqueada")
-      void refreshToken_shouldReturn409_whenUserAccountIsLocked() {
+
+      @ParameterizedTest
+      @EnumSource(
+          value = AccountStatus.class,
+          names = {"DISABLED", "LOCKED", "PENDING_VERIFICATION"})
+      void refreshToken_shouldReturn403_whenAccountNotActive(AccountStatus invalidStatus) {
         // Arrange
         User mockUser = mockPersistUser();
         AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-        alterAccountStatus(mockUser.getId(), AccountStatus.LOCKED);
+        alterAccountStatus(mockUser.getId(), invalidStatus);
+
+        ErrorCode expectedErrorCode =
+            switch (invalidStatus) {
+              case DISABLED -> ErrorCode.ACCOUNT_DISABLED;
+              case LOCKED -> ErrorCode.ACCOUNT_LOCKED;
+              case PENDING_VERIFICATION -> ErrorCode.ACCOUNT_PENDING_VERIFICATION;
+              default -> throw new IllegalStateException("Status inesperado: " + invalidStatus);
+            };
 
         // Act
         ErrorResponseDto response =
@@ -456,77 +547,16 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
                 .when()
                 .post("/refresh-token")
                 .then()
-                .statusCode(409)
+                .statusCode(403)
                 .extract()
                 .as(ErrorResponseDto.class);
 
         // Assert
-        assertThat(response).isNotNull();
-        assertThat(response.status()).isEqualTo(409);
-        assertThat(response.message())
-            .isEqualTo("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
+
+        assertThat(response.status()).isEqualTo(403);
         assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
-        assertThat(response.fieldErrors()).isNull();
-      }
-
-      @Test
-      @DisplayName("Deve retornar 409 Conflict quando a conta está pendente de verificação")
-      void refreshToken_shouldReturn409_whenUserAccountIsPendingVerification() {
-        // Arrange
-        User mockUser = mockPersistUser();
-        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-        alterAccountStatus(mockUser.getId(), AccountStatus.PENDING_VERIFICATION);
-
-        // Act
-        ErrorResponseDto response =
-            given()
-                .spec(specification)
-                .cookie(tokens.refreshTokenCookie())
-                .when()
-                .post("/refresh-token")
-                .then()
-                .statusCode(409)
-                .extract()
-                .as(ErrorResponseDto.class);
-
-        // Assert
-        assertThat(response).isNotNull();
-        assertThat(response.status()).isEqualTo(409);
-        assertThat(response.message())
-            .isEqualTo(
-                "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
-        assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
-        assertThat(response.fieldErrors()).isNull();
-      }
-
-      @Test
-      @DisplayName("Deve retornar 409 Conflict quando a conta está desativada")
-      void refreshToken_shouldReturn409_whenUserAccountIsDisabled() {
-        // Arrange
-        User mockUser = mockPersistUser();
-        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-        alterAccountStatus(mockUser.getId(), AccountStatus.DISABLED);
-
-        // Act
-        ErrorResponseDto response =
-            given()
-                .spec(specification)
-                .cookie(tokens.refreshTokenCookie())
-                .when()
-                .post("/refresh-token")
-                .then()
-                .statusCode(409)
-                .extract()
-                .as(ErrorResponseDto.class);
-
-        // Assert
-        assertThat(response).isNotNull();
-        assertThat(response.status()).isEqualTo(409);
-        assertThat(response.message())
-            .isEqualTo(
-                "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte.");
-        assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
-        assertThat(response.fieldErrors()).isNull();
+        assertThat(response.errorCode()).isEqualTo(expectedErrorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(expectedErrorCode.getMessage());
       }
     }
   }
@@ -562,40 +592,249 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone.");
     }
 
-    @Test
-    @DisplayName("Deve retornar 400 Bad Request quando as senhas não coincidirem")
-    void signup_shouldReturn400_whenPasswordsNotCoincide() {
-      // Arrange
-      var request =
-          new SignupRequestDto(
-              defaultUsername, defaultFullName, defaultPhone, defaultPassword, "differentPassword");
+    @Nested
+    @DisplayName("Deve retornar 400 Bad Request quando os dados de entrada forem inválidos")
+    class InvalidInputTests {
 
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/signup")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
+      @Test
+      @DisplayName("Deve retornar 400 Bad Request quando as senhas não coincidirem")
+      void signup_shouldReturn400_whenPasswordsNotCoincide() {
+        // Arrange
+        var request =
+            new SignupRequestDto(
+                defaultUsername,
+                defaultFullName,
+                defaultPhone,
+                defaultPassword,
+                "differentPassword");
 
-      // Assert
-      assertThat(response.message())
-          .isEqualTo("Erro de validação. Verifique os campos informados.");
-      assertThat(response.fieldErrors()).hasSize(1);
-      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("confirmPassword");
-      assertThat(response.fieldErrors().getFirst().message())
-          .isEqualTo("A senha de confirmação não corresponde à senha.");
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/signup")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.PASSWORDS_DO_NOT_MATCH;
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/signup");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("confirmPassword")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+
+      @InvalidUsernameProvider
+      @DisplayName("Deve retornar 400 Bad Request quando o username for inválido")
+      void signup_shouldReturn400_whenUsernameIsInvalid(String username, String expectedErrorCode) {
+        // Arrange
+        var request =
+            new SignupRequestDto(
+                username, defaultFullName, defaultPhone, defaultPassword, defaultPassword);
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/signup")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/signup");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("username")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+
+      @InvalidFullNameProvider
+      @DisplayName("Deve retornar 400 Bad Request quando o nome completo for inválido")
+      void signup_shouldReturn400_whenFullNameIsInvalid(String fullName, String expectedErrorCode) {
+        // Arrange
+        var request =
+            new SignupRequestDto(
+                defaultUsername, fullName, defaultPhone, defaultPassword, defaultPassword);
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/signup")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/signup");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("fullName")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+
+      @InvalidPhoneProvider
+      @DisplayName("Deve retornar 400 Bad Request quando o telefone for inválido")
+      void signup_shouldReturn400_whenPhoneNumberIsInvalid(String phone, String expectedErrorCode) {
+        // Arrange
+        var request =
+            new SignupRequestDto(
+                defaultUsername, defaultFullName, phone, defaultPassword, defaultPassword);
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/signup")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/signup");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("phone")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+
+      @InvalidPasswordProvider
+      @DisplayName("Deve retornar 400 Bad Request quando a senha for inválida")
+      void signup_shouldReturn400_whenPasswordIsInvalid(String password, String expectedErrorCode) {
+        // Arrange
+        var request =
+            new SignupRequestDto(
+                defaultUsername, defaultFullName, defaultPhone, password, password);
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/signup")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/signup");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("password")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+
+      @ParameterizedTest
+      @NullAndEmptySource
+      @DisplayName("Deve retornar 400 Bad Request quando a senha de confirmação for nula ou vazia")
+      void signup_shouldReturn400_whenConfirmPasswordIsNullOrEmpty(String confirmPassword) {
+        // Arrange
+        var request =
+            new SignupRequestDto(
+                defaultUsername, defaultFullName, defaultPhone, defaultPassword, confirmPassword);
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/signup")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.CONFIRM_PASSWORD_REQUIRED;
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/signup");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("confirmPassword")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o telefone for inválido")
-    void signup_shouldReturn400_whenPhoneNumberIsInvalid() {
+    @DisplayName("Deve retornar 400 Bad Request quando o número de telefone for inválido")
+    void signup_shouldReturn400_whenPhoneNumberIsInvalidFormat() {
       // Arrange
-      String invalidPhone = "+999123456789";
+      String invalidPhone = "+999123456789"; // Código de país inválido
       var request =
           new SignupRequestDto(
               defaultUsername, defaultFullName, invalidPhone, defaultPassword, defaultPassword);
@@ -613,12 +852,16 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response.message())
-          .isEqualTo("Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
+      ErrorCode errorCode = ErrorCode.PHONE_INVALID_FORMAT;
+
+      assertThat(response.status()).isEqualTo(400);
+      assertThat(response.path()).isEqualTo("/api/auth/signup");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
 
     @Nested
-    @DisplayName("Deve retornar 409 Conflict quando o usuário já existe")
+    @DisplayName("Deve retornar 409 Conflict quando os dados já estão em uso")
     class UserAlreadyExistsTests {
       @Test
       @DisplayName("Deve retornar 409 Conflict quando o username já está em uso")
@@ -647,7 +890,12 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
                 .as(ErrorResponseDto.class);
 
         // Assert
-        assertThat(response.message()).isEqualTo("Esse nome de usuário já está em uso.");
+        ErrorCode errorCode = ErrorCode.USERNAME_ALREADY_EXISTS;
+
+        assertThat(response.status()).isEqualTo(409);
+        assertThat(response.path()).isEqualTo("/api/auth/signup");
+        assertThat(response.errorCode()).isEqualTo(errorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
       }
 
       @Test
@@ -677,7 +925,12 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
                 .as(ErrorResponseDto.class);
 
         // Assert
-        assertThat(response.message()).isEqualTo("Esse número de telefone já está em uso.");
+        ErrorCode errorCode = ErrorCode.PHONE_ALREADY_EXISTS;
+
+        assertThat(response.status()).isEqualTo(409);
+        assertThat(response.path()).isEqualTo("/api/auth/signup");
+        assertThat(response.errorCode()).isEqualTo(errorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
       }
     }
   }
@@ -687,10 +940,10 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
   class VerifyAccountTests {
 
     @Test
-    @DisplayName("Deve retornar 200 OK quando o código OTP for válido e a conta estiver pendente")
-    void verifyAccount_shouldReturn200_whenOtpIsValidForPendingUser() {
+    @DisplayName("Deve retornar 200 OK quando a conta for ativada com sucesso")
+    void verifyAccount_shouldReturn200_whenActiveAccountSuccessful() {
       // Arrange
-      User mockUser = mockPersistUser(AccountStatus.PENDING_VERIFICATION);
+      User mockUser = mockPersistUser(PENDING_VERIFICATION);
       OtpCode otpCode = otpPort.generateOtpCode(mockUser.getId());
       OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
 
@@ -724,6 +977,119 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
       assertThat(activatedUser.getStatus()).isEqualTo(AccountStatus.ACTIVE);
     }
 
+    @Nested
+    @DisplayName("Deve retornar 400 Bad Request quando os dados de entrada forem inválidos")
+    class InvalidInputTests {
+
+      @InvalidOtpSessionIdProvider
+      @DisplayName("Deve retornar 400 Bad Request quando o otpSessionId for inválido")
+      void verifyAccount_shouldReturn400_whenOtpSessionIdIsInvalid(
+          String otpSessionId, String expectedErrorCode) {
+        // Arrange
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("otpSessionId", otpSessionId);
+        requestBody.put("otpCode", "123456");
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(requestBody)
+                .when()
+                .post("/verify-account")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/verify-account");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("otpSessionId")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+
+      @InvalidOtpCodeProvider
+      @DisplayName("Deve retornar 400 Bad Request quando o otpCode for inválido")
+      void verifyAccount_shouldReturn400_whenOtpCodeIsInvalid(
+          String otpCode, String expectedErrorCode) {
+        // Arrange
+        String otpSessionId = OtpSessionId.generate().toString();
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("otpSessionId", otpSessionId);
+        requestBody.put("otpCode", otpCode);
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(requestBody)
+                .when()
+                .post("/verify-account")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/verify-account");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("otpCode")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+    }
+
+    @Test
+    @DisplayName("Deve retornar 404 Not Found quando a sessão OTP for inválida ou expirada")
+    void validateResetToken_shouldReturn404_whenUserIdIsInvalid() {
+      // Arrange
+      OtpSessionId invalidOtpSessionId = OtpSessionId.generate();
+      OtpCode otpCode = OtpCode.generate();
+      var request = new ValidateOtpRequestDto(invalidOtpSessionId, otpCode);
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .body(request)
+              .when()
+              .post("/verify-account")
+              .then()
+              .statusCode(404)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      ErrorCode errorCode = ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED;
+
+      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.path()).isEqualTo("/api/auth/verify-account");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
+    }
+
     @Test
     @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido")
     void verifyAccount_shouldReturn400_whenOtpIsInvalid() {
@@ -747,31 +1113,12 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response.message()).isEqualTo("Código de verificação inválido ou expirado.");
-    }
+      ErrorCode errorCode = ErrorCode.OTP_CODE_INVALID_OR_EXPIRED;
 
-    @Test
-    @DisplayName("Deve retornar 400 Bad Request quando a sessão OTP for inválida ou expirada")
-    void validateResetToken_shouldReturn400_whenUserIdIsInvalid() {
-      // Arrange
-      OtpSessionId invalidOtpSessionId = OtpSessionId.generate();
-      OtpCode otpCode = OtpCode.generate();
-      var request = new ValidateOtpRequestDto(invalidOtpSessionId, otpCode);
-
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/verify-account")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      assertThat(response.message()).isEqualTo("Sessão de verificação inválida ou expirada.");
+      assertThat(response.status()).isEqualTo(400);
+      assertThat(response.path()).isEqualTo("/api/auth/verify-account");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
 
     @Test
@@ -796,14 +1143,17 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response.message())
-          .isEqualTo(
-              "Usuário não encontrado. Retorne ao início do cadastro para criar uma nova conta.");
+      ErrorCode errorCode = ErrorCode.USER_NOT_FOUND;
+
+      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.path()).isEqualTo("/api/auth/verify-account");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
 
     @Test
-    @DisplayName("Deve retornar 409 Conflict ao tentar ativar uma conta que já está ativa")
-    void verifyAccount_shouldReturn409_whenAccountIsAlreadyActive() {
+    @DisplayName("Deve retornar 403 Forbidden ao tentar ativar uma conta que já está ativa")
+    void verifyAccount_shouldReturn403_whenAccountIsAlreadyActive() {
       // Arrange
       User mockUser = mockPersistUser(AccountStatus.ACTIVE);
       OtpCode otpCode = otpPort.generateOtpCode(mockUser.getId());
@@ -819,13 +1169,17 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .when()
               .post("/verify-account")
               .then()
-              .statusCode(409)
+              .statusCode(403)
               .extract()
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response.message())
-          .isEqualTo("Não é possível ativar uma conta que não está pendente de verificação.");
+      ErrorCode errorCode = ErrorCode.ACCOUNT_NOT_PENDING_VERIFICATION;
+
+      assertThat(response.status()).isEqualTo(403);
+      assertThat(response.path()).isEqualTo("/api/auth/verify-account");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
   }
 
@@ -851,9 +1205,53 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
       given().spec(specification).body(request).when().post("/resend-otp").then().statusCode(204);
     }
 
+    @Nested
+    @DisplayName("Deve retornar 400 Bad Request quando os dados de entrada forem inválidos")
+    class InvalidInputTests {
+
+      @InvalidOtpSessionIdProvider
+      @DisplayName("Deve retornar 400 Bad Request quando o otpSessionId for inválido")
+      void resendOtp_shouldReturn400_whenOtpSessionIdIsInvalid(
+          String otpSessionId, String expectedErrorCode) {
+        // Arrange
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("otpSessionId", otpSessionId);
+        requestBody.put("otpCode", "123456");
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(requestBody)
+                .when()
+                .post("/resend-otp")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/resend-otp");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("otpSessionId")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+    }
+
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando a sessão for inválida ou expirada")
-    void resendOtp_shouldReturn400_whenOtpSessionIsInvalid() {
+    @DisplayName("Deve retornar 404 Not Found quando a sessão for inválida ou expirada")
+    void resendOtp_shouldReturn404_whenOtpSessionIsInvalid() {
       // Arrange
       OtpSessionId otpSessionId = OtpSessionId.generate();
       var request = new ResendOtpRequestDto(otpSessionId);
@@ -865,12 +1263,17 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .when()
               .post("/resend-otp")
               .then()
-              .statusCode(400)
+              .statusCode(404)
               .extract()
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response.message()).isEqualTo("Sessão de verificação inválida ou expirada.");
+      ErrorCode errorCode = ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED;
+
+      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.path()).isEqualTo("/api/auth/resend-otp");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
 
     @Test
@@ -894,23 +1297,35 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      assertThat(response.message()).isEqualTo("Usuário não encontrado.");
+      ErrorCode errorCode = ErrorCode.USER_NOT_FOUND;
+
+      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.path()).isEqualTo("/api/auth/resend-otp");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
 
     @Nested
-    @DisplayName("Deve retornar 409 Conflict quando a conta não está ativa ou pendente")
+    @DisplayName("Deve retornar 403 Forbidden quando a conta não está ativa ou pendente")
     class AccountStateConflictTests {
 
       @ParameterizedTest
       @EnumSource(
           value = AccountStatus.class,
           names = {"DISABLED", "LOCKED"})
-      @DisplayName("Deve lançar exceção quando a conta está desativada ou bloqueada")
-      void resendOtp_shouldReturn409_whenAccountIsDisabledOrLocked(AccountStatus status) {
+      @DisplayName("Deve lançar 403 Forbidden quando a conta está desativada ou bloqueada")
+      void resendOtp_shouldReturn403_whenAccountIsDisabledOrLocked(AccountStatus invalidStatus) {
         // Arrange
-        User mockUser = mockPersistUser(status);
+        User mockUser = mockPersistUser(invalidStatus);
         OtpSessionId otpSessionId = otpSessionPort.generateOtpSession(mockUser.getId());
         var request = new ResendOtpRequestDto(otpSessionId);
+
+        ErrorCode expectedErrorCode =
+            switch (invalidStatus) {
+              case DISABLED -> ErrorCode.ACCOUNT_DISABLED;
+              case LOCKED -> ErrorCode.ACCOUNT_LOCKED;
+              default -> throw new IllegalStateException("Status inesperado: " + invalidStatus);
+            };
 
         // Act
         ErrorResponseDto response =
@@ -920,14 +1335,15 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
                 .when()
                 .post("/resend-otp")
                 .then()
-                .statusCode(409)
+                .statusCode(403)
                 .extract()
                 .as(ErrorResponseDto.class);
 
         // Assert
-        assertThat(response.message())
-            .isEqualTo(
-                "Atenção: Sua conta está bloqueada ou desativada. Por favor, contate o suporte.");
+        assertThat(response.status()).isEqualTo(403);
+        assertThat(response.path()).isEqualTo("/api/auth/resend-otp");
+        assertThat(response.errorCode()).isEqualTo(expectedErrorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(expectedErrorCode.getMessage());
       }
     }
   }

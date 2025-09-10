@@ -11,7 +11,10 @@ public record OtpCode(@JsonValue String value) {
   private static final SecureRandom random = new SecureRandom();
 
   public OtpCode {
-    if (value == null || !value.matches("\\d{6}")) {
+    if (value == null || value.isBlank()) {
+      throw new InvalidOtpException(ErrorCode.OTP_CODE_REQUIRED);
+    }
+    if (!value.matches("\\d{6}")) {
       throw new InvalidOtpException(ErrorCode.OTP_CODE_INVALID_FORMAT);
     }
   }

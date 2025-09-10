@@ -5,7 +5,6 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.AuthPort;
 import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.RefreshTokenUseCase;
 import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenExpiredException;
-import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenMissingException;
 import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.RefreshTokenNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
@@ -27,8 +26,6 @@ public class RefreshTokenUseCaseImp implements RefreshTokenUseCase {
 
   @Override
   public AuthResult execute(RefreshTokenVO refreshTokenVO) {
-    if (refreshTokenVO == null) throw new RefreshTokenMissingException();
-
     RefreshToken refreshToken = getRefreshTokenOrElseThrow(refreshTokenVO);
     refreshToken.getUser().ensureAccountEnabled();
 

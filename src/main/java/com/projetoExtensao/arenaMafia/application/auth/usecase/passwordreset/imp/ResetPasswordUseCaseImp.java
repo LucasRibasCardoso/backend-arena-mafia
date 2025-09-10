@@ -32,8 +32,8 @@ public class ResetPasswordUseCaseImp implements ResetPasswordUseCase {
 
   @Override
   public void execute(ResetPasswordRequestDto request) {
-    ResetToken token = request.passwordResetToken();
-    UUID userId = getUserIdFromToken(token);
+    ResetToken resetToken = request.passwordResetToken();
+    UUID userId = getUserIdFromToken(resetToken);
     User user = getUserById(userId);
     user.ensureAccountEnabled();
 
@@ -41,7 +41,7 @@ public class ResetPasswordUseCaseImp implements ResetPasswordUseCase {
     user.updatePasswordHash(newPasswordHash);
     userRepositoryPort.save(user);
 
-    passwordResetTokenPort.delete(token);
+    passwordResetTokenPort.delete(resetToken);
   }
 
   private UUID getUserIdFromToken(ResetToken token) {

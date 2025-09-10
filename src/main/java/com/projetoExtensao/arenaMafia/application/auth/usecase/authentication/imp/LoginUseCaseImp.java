@@ -21,7 +21,6 @@ public class LoginUseCaseImp implements LoginUseCase {
   @Override
   public AuthResult execute(LoginRequestDto loginRequestDto) {
     User user = authPort.authenticate(loginRequestDto.username(), loginRequestDto.password());
-    user.ensureAccountEnabled();
     return authPort.generateTokens(user);
   }
 }

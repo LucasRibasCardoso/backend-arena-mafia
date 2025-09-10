@@ -2,7 +2,7 @@ package com.projetoExtensao.arenaMafia.domain.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
-import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
+import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountStatusForbiddenException;
 
 public enum AccountStatus {
   PENDING_VERIFICATION("pending_verification"),
@@ -24,10 +24,10 @@ public enum AccountStatus {
   public void validateEnabled() {
     switch (this) {
       case ACTIVE -> {}
-      case LOCKED -> throw new AccountStateConflictException(ErrorCode.ACCOUNT_LOCKED);
+      case LOCKED -> throw new AccountStatusForbiddenException(ErrorCode.ACCOUNT_LOCKED);
       case PENDING_VERIFICATION ->
-          throw new AccountStateConflictException(ErrorCode.ACCOUNT_PENDING_VERIFICATION);
-      default -> throw new AccountStateConflictException(ErrorCode.ACCOUNT_DISABLED);
+          throw new AccountStatusForbiddenException(ErrorCode.ACCOUNT_PENDING_VERIFICATION);
+      default -> throw new AccountStatusForbiddenException(ErrorCode.ACCOUNT_DISABLED);
     }
   }
 }

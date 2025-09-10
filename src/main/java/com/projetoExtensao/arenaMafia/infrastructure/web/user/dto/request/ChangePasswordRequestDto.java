@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-@PasswordsMatch(message = "A senha de confirmação não corresponde à senha.")
+@PasswordsMatch(message = "PASSWORDS_DO_NOT_MATCH")
 public record ChangePasswordRequestDto(
     @NotBlank(message = "PASSWORD_REQUIRED")
     @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")

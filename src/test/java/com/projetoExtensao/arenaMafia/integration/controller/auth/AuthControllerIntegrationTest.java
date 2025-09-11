@@ -489,6 +489,29 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     }
 
     @Test
+    @DisplayName("Deve retornar 400 Bad Request se o refresh token não for enviado")
+    void refreshToken_shouldReturn400_whenRefreshTokenIsMissing() {
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .when()
+              .post("/refresh-token")
+              .then()
+              .statusCode(400)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      ErrorCode errorCode = ErrorCode.REFRESH_TOKEN_REQUIRED;
+
+      assertThat(response.status()).isEqualTo(400);
+      assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
+    }
+
+    @Test
     @DisplayName("Deve retornar 401 Unauthorized quando o refresh token não for encontrado")
     void refreshToken_shouldReturn401_whenTokenNotFound() {
       // Arrange

@@ -13,6 +13,8 @@ import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
 import java.time.Instant;
 import java.util.UUID;
+
+import com.projetoExtensao.arenaMafia.unit.config.TestDataProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,25 +33,11 @@ public class NotificationEventListenerTest {
 
   private final OtpCode otpCode = OtpCode.generate();
 
-  private User createUser() {
-    Instant now = Instant.now();
-    return User.reconstitute(
-        UUID.randomUUID(),
-        "testuser",
-        "Test User",
-        "+5511987654321",
-        "hashedPassword",
-        AccountStatus.ACTIVE,
-        RoleEnum.ROLE_USER,
-        now,
-        now);
-  }
-
   @Test
   @DisplayName("Deve gerar OTP e enviar SMS para o número atual do usuário")
   void onUserRegistration_shouldGenerateOtpAndSendSms_onEvent() {
     // Arrange
-    User user = createUser();
+    User user = TestDataProvider.createActiveUser();
     UUID userId = user.getId();
     OnVerificationRequiredEvent event = new OnVerificationRequiredEvent(user);
 
@@ -75,7 +63,7 @@ public class NotificationEventListenerTest {
   @DisplayName("Deve gerar o OTP e enviar SMS para o novo número de telefone do usuário")
   void onUserRegistration_shouldGenerateOtpAndSendSmsOnEvent() {
     // Arrange
-    User user = createUser();
+    User user = TestDataProvider.createActiveUser();
     UUID userId = user.getId();
     String newPhone = "+5511999999999";
     OnVerificationRequiredEvent event = new OnVerificationRequiredEvent(user, newPhone);
@@ -101,7 +89,7 @@ public class NotificationEventListenerTest {
   @DisplayName("Não deve enviar SMS se a geração de OTP falhar")
   void onUserRegistration_shouldNotSendSms_whenOtpGenerationFails() {
     // Arrange
-    User user = createUser();
+    User user = TestDataProvider.createActiveUser();
     OnVerificationRequiredEvent event = new OnVerificationRequiredEvent(user);
 
     when(otpPort.generateOtpCode(user.getId()))

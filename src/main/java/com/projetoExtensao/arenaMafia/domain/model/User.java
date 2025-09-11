@@ -29,11 +29,6 @@ public class User {
    * ROLE_USER e a conta pendente de verificação
    */
   public static User create(String username, String fullName, String phone, String passwordHash) {
-    validateUsername(username);
-    validateFullName(fullName);
-    validatePhone(phone);
-    validatePasswordHash(passwordHash);
-
     UUID newId = UUID.randomUUID();
     Instant now = Instant.now();
     AccountStatus status = AccountStatus.PENDING_VERIFICATION;
@@ -56,10 +51,7 @@ public class User {
       RoleEnum role,
       Instant createdAt,
       Instant updatedAt) {
-    validateUsername(username);
-    validateFullName(fullName);
-    validatePhone(phone);
-    validatePasswordHash(passwordHash);
+
     return new User(
         id, username, fullName, phone, passwordHash, status, role, createdAt, updatedAt);
   }
@@ -75,6 +67,10 @@ public class User {
       Instant createdAt,
       Instant updatedAt) {
 
+    validateUsername(username);
+    validateFullName(fullName);
+    validatePhone(phone);
+    validatePasswordHash(passwordHash);
     this.id = id;
     this.username = username;
     this.fullName = fullName;
@@ -117,7 +113,7 @@ public class User {
   }
 
   public static void validateFullName(String fullName) {
-    if (fullName.isBlank()) {
+    if (fullName == null || fullName.isBlank()) {
       throw new InvalidFormatFullNameException(ErrorCode.FULL_NAME_REQUIRED);
     }
     if (fullName.length() < 3 || fullName.length() > 100) {

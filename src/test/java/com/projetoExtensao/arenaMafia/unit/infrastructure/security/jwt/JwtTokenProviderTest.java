@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.InvalidJwtTokenException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.infrastructure.security.jwt.JwtTokenProvider;
@@ -31,7 +32,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class JwtTokenProviderTest {
 
   @Mock private CustomUserDetailsService customUserDetailsService;
-
   @InjectMocks private JwtTokenProvider tokenProvider;
 
   private final String secretKey = "I5fbSc1fDSiV0jRABD2hwVqn/RZweuO96QHRM+BmyoY=";
@@ -114,7 +114,12 @@ public class JwtTokenProviderTest {
       // Act & Assert
       assertThatThrownBy(() -> tokenProvider.getAuthentication(expiredToken))
           .isInstanceOf(InvalidJwtTokenException.class)
-          .hasMessage("Token JWT inválido ou expirado.");
+          .satisfies(
+              ex -> {
+                InvalidJwtTokenException exception = (InvalidJwtTokenException) ex;
+                assertThat(exception.getErrorCode())
+                    .isEqualTo(ErrorCode.JWT_TOKEN_INVALID_OR_EXPIRED);
+              });
 
       // Verify
       verify(customUserDetailsService, never()).loadUserByUsername(anyString());
@@ -130,7 +135,12 @@ public class JwtTokenProviderTest {
       // Act & Assert
       assertThatThrownBy(() -> tokenProvider.getAuthentication(tamperedToken))
           .isInstanceOf(InvalidJwtTokenException.class)
-          .hasMessage("Token JWT inválido ou expirado.");
+          .satisfies(
+              ex -> {
+                InvalidJwtTokenException exception = (InvalidJwtTokenException) ex;
+                assertThat(exception.getErrorCode())
+                    .isEqualTo(ErrorCode.JWT_TOKEN_INVALID_OR_EXPIRED);
+              });
 
       // Verify
       verify(customUserDetailsService, never()).loadUserByUsername(anyString());
@@ -145,7 +155,12 @@ public class JwtTokenProviderTest {
       // Act & Assert
       assertThatThrownBy(() -> tokenProvider.getAuthentication(malformedToken))
           .isInstanceOf(InvalidJwtTokenException.class)
-          .hasMessage("Token JWT inválido ou expirado.");
+          .satisfies(
+              ex -> {
+                InvalidJwtTokenException exception = (InvalidJwtTokenException) ex;
+                assertThat(exception.getErrorCode())
+                    .isEqualTo(ErrorCode.JWT_TOKEN_INVALID_OR_EXPIRED);
+              });
 
       // Verify
       verify(customUserDetailsService, never()).loadUserByUsername(anyString());

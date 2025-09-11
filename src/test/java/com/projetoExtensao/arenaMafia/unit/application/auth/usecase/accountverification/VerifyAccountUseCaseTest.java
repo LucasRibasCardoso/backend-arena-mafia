@@ -2,6 +2,7 @@ package com.projetoExtensao.arenaMafia.unit.application.auth.usecase.accountveri
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
 
 import com.projetoExtensao.arenaMafia.application.auth.model.AuthResult;
@@ -10,22 +11,26 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPo
 import com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification.imp.VerifyAccountUseCaseImp;
 import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
-import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
+import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountStatusForbiddenException;
+import com.projetoExtensao.arenaMafia.domain.exception.notFound.InvalidOtpSessionException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
-import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
-import java.time.Instant;
+import com.projetoExtensao.arenaMafia.unit.config.TestDataProvider;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -43,30 +48,15 @@ public class VerifyAccountUseCaseTest {
   private final OtpCode otpCode = OtpCode.generate();
   private final OtpSessionId otpSessionId = OtpSessionId.generate();
 
-  private User createUser(AccountStatus accountStatus) {
-    Instant now = Instant.now();
-    return User.reconstitute(
-        UUID.randomUUID(),
-        "testuser",
-        "Test User",
-        "+558320548181",
-        "123456",
-        accountStatus,
-        RoleEnum.ROLE_USER,
-        now,
-        now);
-  }
-
   @Test
   @DisplayName("Deve verificar e ativar a conta do usuário com sucesso")
   void execute_shouldCheckAndActivateUserAccount_successfully() {
     // Arrange
-    User user = createUser(AccountStatus.PENDING_VERIFICATION);
+    User user = TestDataProvider.createPendintUser();
     UUID userId = user.getId();
 
-    String accessToken = "access_token";
     RefreshTokenVO refreshToken = RefreshTokenVO.generate();
-    var authResult = new AuthResult(user, accessToken, refreshToken);
+    var authResult = new AuthResult(user, "access_token", refreshToken);
 
     var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
 
@@ -78,44 +68,21 @@ public class VerifyAccountUseCaseTest {
     AuthResult response = verifyAccountUseCase.execute(request);
 
     // Assert
-    assertThat(response.user()).isEqualTo(user);
-    assertThat(response.accessToken()).isEqualTo(accessToken);
-    assertThat(response.refreshToken()).isEqualTo(refreshToken);
+    ArgumentCaptor<User> userCaptor = forClass(User.class);
 
-    verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
-    verify(userRepository, times(1)).findById(userId);
-    verify(otpPort, times(1)).validateOtp(user.getId(), otpCode);
-    verify(userRepository, times(1)).save(user);
+    assertThat(response.accessToken()).isEqualTo(authResult.accessToken());
+    assertThat(response.refreshToken()).isEqualTo(authResult.refreshToken());
+
+    verify(userRepository, times(1)).save(userCaptor.capture());
     verify(authPort, times(1)).generateTokens(user);
+
+    User savedUser = userCaptor.getValue();
+    assertThat(savedUser.getStatus()).isEqualTo(AccountStatus.ACTIVE);
   }
 
   @Test
-  @DisplayName("Deve lançar UserNotFoundException quando o usuário não for encontrado")
-  void execute_shouldThrowUserNotFoundException_whenUserIsNotFound() {
-    // Arrange
-    UUID userId = UUID.randomUUID();
-
-    var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
-
-    when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
-    when(userRepository.findById(userId)).thenReturn(Optional.empty());
-
-    // Act & Assert
-    assertThatThrownBy(() -> verifyAccountUseCase.execute(request))
-        .isInstanceOf(UserNotFoundException.class)
-        .hasMessage(
-            "Usuário não encontrado. Retorne ao início do cadastro para criar uma nova conta.");
-
-    verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
-    verify(userRepository, times(1)).findById(userId);
-    verify(otpPort, never()).validateOtp(any(UUID.class), any(OtpCode.class));
-    verify(userRepository, never()).save(any(User.class));
-    verify(authPort, never()).generateTokens(any(User.class));
-  }
-
-  @Test
-  @DisplayName("Deve lançar uma exceção quando a sessão OTP for inválida")
-  void execute_shouldThrowException_whenOtpSessionIsInvalid() {
+  @DisplayName("Deve lançar InvalidOtpSessionException quando a sessão OTP for inválida")
+  void execute_shouldThrowInvalidOtpSessionException_whenOtpSessionIsInvalid() {
     // Arrange
     OtpSessionId invalidOtpSessionId = OtpSessionId.generate();
     var request = new ValidateOtpRequestDto(invalidOtpSessionId, otpCode);
@@ -124,12 +91,37 @@ public class VerifyAccountUseCaseTest {
 
     // Act & Assert
     assertThatThrownBy(() -> verifyAccountUseCase.execute(request))
-        .isInstanceOf(InvalidOtpException.class)
-        .hasMessage("Sessão de verificação inválida ou expirada.");
+        .isInstanceOf(InvalidOtpSessionException.class)
+        .satisfies(
+            ex -> {
+              InvalidOtpSessionException exception = (InvalidOtpSessionException) ex;
+              assertThat(exception.getErrorCode())
+                  .isEqualTo(ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED);
+            });
 
-    verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(invalidOtpSessionId);
-    verify(userRepository, never()).findById(any(UUID.class));
-    verify(otpPort, never()).validateOtp(any(UUID.class), any(OtpCode.class));
+    verify(userRepository, never()).save(any(User.class));
+    verify(authPort, never()).generateTokens(any(User.class));
+  }
+
+  @Test
+  @DisplayName("Deve lançar UserNotFoundException quando o usuário não for encontrado")
+  void execute_shouldThrowUserNotFoundException_whenUserIsNotFound() {
+    // Arrange
+    UUID userId = UUID.randomUUID();
+    var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
+
+    when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
+    when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+    // Act & Assert
+    assertThatThrownBy(() -> verifyAccountUseCase.execute(request))
+        .isInstanceOf(UserNotFoundException.class)
+        .satisfies(
+            ex -> {
+              UserNotFoundException exception = (UserNotFoundException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+            });
+
     verify(userRepository, never()).save(any(User.class));
     verify(authPort, never()).generateTokens(any(User.class));
   }
@@ -138,8 +130,7 @@ public class VerifyAccountUseCaseTest {
   @DisplayName("Deve lançar InvalidOtpException para um código de verificação inválido")
   void execute_shouldThrowInvalidOtpException_forInvalidOtpCode() {
     // Arrange
-    String errorMessage = "Código de verificação inválido ou expirado.";
-    User user = createUser(AccountStatus.PENDING_VERIFICATION);
+    User user = TestDataProvider.createPendintUser();
     UUID userId = user.getId();
 
     OtpCode invalidOtp = OtpCode.generate();
@@ -147,27 +138,33 @@ public class VerifyAccountUseCaseTest {
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    doThrow(new InvalidOtpException(errorMessage))
-        .when(otpPort)
-        .validateOtp(user.getId(), invalidOtp);
+
+    ErrorCode errorCode = ErrorCode.OTP_CODE_INVALID_OR_EXPIRED;
+    doThrow(new InvalidOtpException(errorCode)).when(otpPort).validateOtp(user.getId(), invalidOtp);
 
     // Act & Assert
     assertThatThrownBy(() -> verifyAccountUseCase.execute(request))
         .isInstanceOf(InvalidOtpException.class)
-        .hasMessage(errorMessage);
+        .satisfies(
+            ex -> {
+              InvalidOtpException exception = (InvalidOtpException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED);
+            });
 
-    verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
-    verify(userRepository, times(1)).findById(userId);
     verify(otpPort, times(1)).validateOtp(user.getId(), invalidOtp);
     verify(userRepository, never()).save(any(User.class));
     verify(authPort, never()).generateTokens(any(User.class));
   }
 
-  @Test
-  @DisplayName("Deve lançar exceção ao tentar verificar uma conta que já estiver ativa")
-  void execute_shouldThrowException_whenAccountIsNotPendingVerification() {
+  @ParameterizedTest
+  @EnumSource(
+      value = AccountStatus.class,
+      names = {"ACTIVE", "LOCKED", "DISABLED"})
+  @DisplayName("Deve retornar AccountStatusForbiddenException quando o status da conta é inválido")
+  void execute_shouldThrowAccountStatusForbiddenException_whenAccountStatusIsInvalid(
+      AccountStatus invalidStatus) {
     // Arrange
-    User user = createUser(AccountStatus.ACTIVE);
+    User user = TestDataProvider.UserBuilder.defaultUser().withStatus(invalidStatus).build();
     UUID userId = user.getId();
 
     var request = new ValidateOtpRequestDto(otpSessionId, otpCode);
@@ -177,13 +174,14 @@ public class VerifyAccountUseCaseTest {
 
     // Act & Assert
     assertThatThrownBy(() -> verifyAccountUseCase.execute(request))
-        .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Não é possível ativar uma conta que não está pendente de verificação.");
+        .isInstanceOf(AccountStatusForbiddenException.class)
+        .satisfies(
+            ex -> {
+              AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
+              assertThat(exception.getErrorCode())
+                  .isEqualTo(ErrorCode.ACCOUNT_NOT_PENDING_VERIFICATION);
+            });
 
-    // Verify
-    verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
-    verify(userRepository, times(1)).findById(userId);
-    verify(otpPort, times(1)).validateOtp(user.getId(), otpCode);
     verify(userRepository, never()).save(any(User.class));
     verify(authPort, never()).generateTokens(any(User.class));
   }

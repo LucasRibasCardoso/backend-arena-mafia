@@ -3,9 +3,9 @@ package com.projetoExtensao.arenaMafia.integration.config.util;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.provider.Arguments;
 
-public final class TestDataFactory {
+public final class TestDataProvider {
 
-  private TestDataFactory() {}
+  private TestDataProvider() {}
 
   public static Stream<Arguments> invalidResetTokenProvider() {
     return Stream.of(

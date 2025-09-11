@@ -3,6 +3,7 @@ package com.projetoExtensao.arenaMafia.unit.domain.valueobjects;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidTokenFormatException;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import java.util.UUID;
@@ -10,8 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 @DisplayName("Testes para o Value Object: OtpSessionId")
 class OtpSessionIdTest {
@@ -36,36 +36,19 @@ class OtpSessionIdTest {
     }
 
     @ParameterizedTest
-    @NullAndEmptySource
-    @ValueSource(strings = {" ", "\t", "\n"})
-    @DisplayName("Deve lançar InvalidTokenFormatException para strings nulas, vazias ou em branco")
-    void fromString_shouldThrowException_whenValueIsNullOrBlank(String invalidToken) {
+    @MethodSource(
+        "com.projetoExtensao.arenaMafia.unit.config.TestDataProvider#invalidOtpSessionIdProvider")
+    @DisplayName("Deve lançar InvalidTokenFormatException quando o formato do  token for inválido")
+    void fromString_shouldThrowException_whenValueIsNullOrBlank(
+        String invalidToken, ErrorCode errorCode) {
       // Act & Assert
       assertThatThrownBy(() -> OtpSessionId.fromString(invalidToken))
           .isInstanceOf(InvalidTokenFormatException.class)
-          .hasMessage("O ID da sessão OTP não pode ser nulo ou vazio.");
-    }
-
-    @Test
-    @DisplayName("Deve lançar InvalidTokenFormatException para string com formato de UUID inválido")
-    void fromString_shouldThrowException_whenUuidFormatIsInvalid() {
-      // Arrange
-      String malformedUuid = "not-a-valid-uuid";
-
-      // Act & Assert
-      assertThatThrownBy(() -> OtpSessionId.fromString(malformedUuid))
-          .isInstanceOf(InvalidTokenFormatException.class)
-          .hasMessage("Formato inválido para o ID da sessão OTP.");
-    }
-
-    @Test
-    @DisplayName(
-        "Deve lançar InvalidTokenFormatException ao tentar criar com um UUID nulo diretamente")
-    void constructor_shouldThrowException_whenUuidIsNull() {
-      // Act & Assert
-      assertThatThrownBy(() -> new OtpSessionId(null))
-          .isInstanceOf(InvalidTokenFormatException.class)
-          .hasMessage("O ID da sessão OTP não pode ser nulo.");
+          .satisfies(
+              ex -> {
+                InvalidTokenFormatException exception = (InvalidTokenFormatException) ex;
+                assertThat(exception.getErrorCode()).isEqualTo(errorCode);
+              });
     }
   }
 

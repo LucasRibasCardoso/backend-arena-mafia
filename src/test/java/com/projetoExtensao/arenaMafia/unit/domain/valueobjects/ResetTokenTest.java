@@ -3,6 +3,7 @@ package com.projetoExtensao.arenaMafia.unit.domain.valueobjects;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidTokenFormatException;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.ResetToken;
 import java.util.UUID;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -36,36 +38,19 @@ class ResetTokenTest {
     }
 
     @ParameterizedTest
-    @NullAndEmptySource
-    @ValueSource(strings = {" ", "\t", "\n"})
-    @DisplayName("Deve lançar InvalidTokenFormatException para strings nulas, vazias ou em branco")
-    void fromString_shouldThrowException_whenValueIsNullOrBlank(String invalidToken) {
+    @MethodSource(
+        "com.projetoExtensao.arenaMafia.unit.config.TestDataProvider#invalidResetTokenProvider")
+    @DisplayName("Deve lançar InvalidTokenFormatException quando o formato do token é inválido")
+    void fromString_shouldThrowException_whenValueIsNullOrBlank(
+        String invalidToken, ErrorCode expectedError) {
       // Act & Assert
       assertThatThrownBy(() -> ResetToken.fromString(invalidToken))
           .isInstanceOf(InvalidTokenFormatException.class)
-          .hasMessage("O token de redefinição de senha não pode ser nulo ou vazio.");
-    }
-
-    @Test
-    @DisplayName("Deve lançar InvalidTokenFormatException para string com formato de UUID inválido")
-    void fromString_shouldThrowException_whenUuidFormatIsInvalid() {
-      // Arrange
-      String malformedUuid = "not-a-valid-uuid";
-
-      // Act & Assert
-      assertThatThrownBy(() -> ResetToken.fromString(malformedUuid))
-          .isInstanceOf(InvalidTokenFormatException.class)
-          .hasMessage("Formato inválido para o token de redefinição de senha.");
-    }
-
-    @Test
-    @DisplayName(
-        "Deve lançar InvalidTokenFormatException ao tentar criar com um UUID nulo diretamente")
-    void constructor_shouldThrowException_whenUuidIsNull() {
-      // Act & Assert
-      assertThatThrownBy(() -> new ResetToken(null))
-          .isInstanceOf(InvalidTokenFormatException.class)
-          .hasMessage("O token de redefinição de senha não pode ser nulo.");
+          .satisfies(
+              ex -> {
+                InvalidTokenFormatException exception = (InvalidTokenFormatException) ex;
+                assertThat(exception.getErrorCode()).isEqualTo(expectedError);
+              });
     }
   }
 

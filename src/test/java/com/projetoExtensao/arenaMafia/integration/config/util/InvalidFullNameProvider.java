@@ -11,5 +11,5 @@ import org.junit.jupiter.params.provider.MethodSource;
 @Target(ElementType.METHOD)
 @ParameterizedTest
 @MethodSource(
-    "com.projetoExtensao.arenaMafia.integration.config.util.TestDataFactory#invalidFullNameProvider")
+    "com.projetoExtensao.arenaMafia.integration.config.util.TestDataProvider#invalidFullNameProvider")
 public @interface InvalidFullNameProvider {}

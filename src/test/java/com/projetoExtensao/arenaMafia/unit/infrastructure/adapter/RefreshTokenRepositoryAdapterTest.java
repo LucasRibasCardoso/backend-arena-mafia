@@ -11,6 +11,7 @@ import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEnti
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper.RefreshTokenMapper;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper.UserMapper;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.RefreshTokenJpaRepository;
+import com.projetoExtensao.arenaMafia.unit.config.TestDataProvider;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -36,25 +37,23 @@ public class RefreshTokenRepositoryAdapterTest {
     @DisplayName("Deve salvar e retornar o RefreshToken mapeado")
     void save_shouldSaveAndReturnMappedRefreshToken() {
       // Arrange
-      RefreshToken refreshTokenToSave = RefreshToken.create(2L, mock(User.class));
+      RefreshToken refreshToken = TestDataProvider.createRefreshToken(mock(User.class));
       RefreshTokenEntity refreshTokenEntityMapped = mock(RefreshTokenEntity.class);
       RefreshTokenEntity refreshTokenEntitySaved = mock(RefreshTokenEntity.class);
-      RefreshToken refreshTokenReturned = refreshTokenToSave;
 
-      when(refreshTokenMapper.toEntity(refreshTokenToSave)).thenReturn(refreshTokenEntityMapped);
+      when(refreshTokenMapper.toEntity(refreshToken)).thenReturn(refreshTokenEntityMapped);
       when(refreshTokenJpaRepository.save(refreshTokenEntityMapped))
           .thenReturn(refreshTokenEntitySaved);
-      when(refreshTokenMapper.toDomain(refreshTokenEntitySaved)).thenReturn(refreshTokenReturned);
+      when(refreshTokenMapper.toDomain(refreshTokenEntitySaved)).thenReturn(refreshToken);
 
       // Act
-      RefreshToken result = refreshTokenRepositoryAdapter.save(refreshTokenToSave);
+      RefreshToken result = refreshTokenRepositoryAdapter.save(refreshToken);
 
       // Assert
-      assertThat(result).isNotNull();
-      assertThat(result.getToken()).isEqualTo(refreshTokenToSave.getToken());
-      assertThat(result.getUser()).isEqualTo(refreshTokenToSave.getUser());
+      assertThat(result.getToken()).isEqualTo(refreshToken.getToken());
+      assertThat(result.getUser()).isEqualTo(refreshToken.getUser());
 
-      verify(refreshTokenMapper).toEntity(refreshTokenToSave);
+      verify(refreshTokenMapper).toEntity(refreshToken);
       verify(refreshTokenJpaRepository).save(refreshTokenEntityMapped);
       verify(refreshTokenMapper).toDomain(refreshTokenEntitySaved);
     }
@@ -115,8 +114,6 @@ public class RefreshTokenRepositoryAdapterTest {
       UserEntity userEntity = mock(UserEntity.class);
 
       when(userMapper.toEntity(user)).thenReturn(userEntity);
-      doNothing().when(refreshTokenJpaRepository).deleteByUser(userEntity);
-      doNothing().when(refreshTokenJpaRepository).flush();
 
       // Act
       refreshTokenRepositoryAdapter.deleteByUser(user);
@@ -138,7 +135,6 @@ public class RefreshTokenRepositoryAdapterTest {
       RefreshTokenEntity refreshTokenEntity = mock(RefreshTokenEntity.class);
 
       when(refreshTokenMapper.toEntity(refreshToken)).thenReturn(refreshTokenEntity);
-      doNothing().when(refreshTokenJpaRepository).delete(refreshTokenEntity);
 
       // Act
       refreshTokenRepositoryAdapter.delete(refreshToken);

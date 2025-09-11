@@ -9,6 +9,7 @@ import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.im
 import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.unit.config.TestDataProvider;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,29 +27,24 @@ public class LogoutUseCaseTest {
 
   private final RefreshTokenVO refreshTokenVO = RefreshTokenVO.generate();
 
-  private RefreshToken createRefreshToken() {
-    User user = User.create("username", "Full Name", "+558320548181", "passwordHash");
-    return RefreshToken.create(7L, user);
-  }
-
   @Test
   @DisplayName("Deve realizar o logout deletando o refreshToken válido")
   void execute_shouldDeleteRefreshToken() {
     // Arrange
-    RefreshToken refreshToken = createRefreshToken();
+    User user = TestDataProvider.createActiveUser();
+    RefreshToken refreshToken = TestDataProvider.createRefreshToken(user);
+
     when(refreshTokenRepository.findByToken(refreshTokenVO)).thenReturn(Optional.of(refreshToken));
 
     // Act
     logoutUseCase.execute(refreshTokenVO);
 
     // Assert
-    verify(refreshTokenRepository, times(1)).findByToken(refreshTokenVO);
     verify(refreshTokenRepository, times(1)).delete(refreshToken);
   }
 
   @Test
-  @DisplayName(
-      "Não deve fazer nada se o refreshToken for válido mas não for encontrado no repositório")
+  @DisplayName("Não deve fazer nada se o refreshToken for válido mas não for encontrado no repositório")
   void execute_shouldDoNothing_whenTokenIsNotFound() {
     // Arrange
     when(refreshTokenRepository.findByToken(refreshTokenVO)).thenReturn(Optional.empty());

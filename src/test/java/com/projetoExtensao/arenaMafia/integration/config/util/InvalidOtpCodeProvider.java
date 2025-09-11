@@ -12,5 +12,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @ParameterizedTest
 @MethodSource(
-    "com.projetoExtensao.arenaMafia.integration.config.util.TestDataFactory#invalidOtpCodeProvider")
+    "com.projetoExtensao.arenaMafia.integration.config.util.TestDataProvider#invalidOtpCodeProvider")
 public @interface InvalidOtpCodeProvider {}

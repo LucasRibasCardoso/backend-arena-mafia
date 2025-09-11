@@ -24,7 +24,7 @@ public class UserDetailsServiceImpl implements CustomUserDetailsService {
         userRepositoryPort
             .findByUsername(username)
             .orElseThrow(
-                () -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+                () -> new UsernameNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
 
     validateAccountStatus(user);
     return new UserDetailsAdapter(user);
@@ -35,7 +35,8 @@ public class UserDetailsServiceImpl implements CustomUserDetailsService {
     User user =
         userRepositoryPort
             .findById(id)
-            .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + id));
+            .orElseThrow(
+                () -> new UsernameNotFoundException(ErrorCode.USER_NOT_FOUND.getMessage()));
 
     validateAccountStatus(user);
     return new UserDetailsAdapter(user);

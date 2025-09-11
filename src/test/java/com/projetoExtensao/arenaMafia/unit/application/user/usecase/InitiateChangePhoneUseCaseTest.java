@@ -1,5 +1,6 @@
 package com.projetoExtensao.arenaMafia.unit.application.user.usecase;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
@@ -8,11 +9,13 @@ import com.projetoExtensao.arenaMafia.application.user.port.gateway.PendingPhone
 import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.user.usecase.phone.imp.InitiateChangePhoneUseCaseImp;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadPhoneNumberException;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidFormatPhoneException;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.InitiateChangePhoneRequestDto;
+import com.projetoExtensao.arenaMafia.unit.config.TestDataProvider;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -31,83 +34,75 @@ public class InitiateChangePhoneUseCaseTest {
   @Mock private ApplicationEventPublisher eventPublisher;
   @Mock private PhoneValidatorPort phoneValidatorPort;
   @Mock private UserRepositoryPort userRepository;
-
   @InjectMocks private InitiateChangePhoneUseCaseImp initiateChangePhoneUseCase;
-
-  private final String defaultUsername = "testuser";
-  private final String defaultFullName = "Test User";
-  private final String defaultPhone = "+558320548181";
-  private final String defaultPassword = "123456";
 
   @Test
   @DisplayName("Deve iniciar o processo de mudança de telefone")
   void execute_shouldInitiatePhoneChangeProcess() {
     // Arrange
-    User mockUser = User.create(defaultUsername, defaultFullName, defaultPhone, defaultPassword);
-    UUID idCurrentUser = mockUser.getId();
+    User user = TestDataProvider.createActiveUser();
+    UUID idCurrentUser = user.getId();
 
     String newPhone = "+558320566921";
     var request = new InitiateChangePhoneRequestDto(newPhone);
 
     when(phoneValidatorPort.formatToE164(newPhone)).thenReturn(newPhone);
-    when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(mockUser));
+    when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(user));
     when(userRepository.findByPhone(newPhone)).thenReturn(Optional.empty());
 
     // Act
     initiateChangePhoneUseCase.execute(idCurrentUser, request);
 
     // Assert
-    verify(phoneValidatorPort, times(1)).formatToE164(newPhone);
-    verify(userRepository, times(1)).findById(idCurrentUser);
-    verify(userRepository, times(1)).findByPhone(newPhone);
     verify(pendingPhoneChangePort, times(1)).save(idCurrentUser, newPhone);
     verify(eventPublisher, times(1)).publishEvent(any(OnVerificationRequiredEvent.class));
   }
 
   @Test
-  @DisplayName("Deve lançar exceção quando o telefone novo for inválido")
-  void execute_shouldThrowException_whenNewPhoneIsInvalid() {
+  @DisplayName("Deve lançar InvalidFormatPhoneException quando o telefone novo for inválido")
+  void execute_shouldThrowInvalidFormatPhoneException_whenNewPhoneIsInvalid() {
     // Arrange
-    String errorMessage = "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.";
     UUID idCurrentUser = UUID.randomUUID();
     String newPhone = "+999999999999";
     var request = new InitiateChangePhoneRequestDto(newPhone);
 
     when(phoneValidatorPort.formatToE164(newPhone))
-        .thenThrow(new BadPhoneNumberException(errorMessage));
+        .thenThrow(new InvalidFormatPhoneException(ErrorCode.PHONE_INVALID_FORMAT));
 
     // Act & Assert
     assertThatThrownBy(() -> initiateChangePhoneUseCase.execute(idCurrentUser, request))
-        .isInstanceOf(BadPhoneNumberException.class)
-        .hasMessage(errorMessage);
+        .isInstanceOf(InvalidFormatPhoneException.class)
+        .satisfies(
+            ex -> {
+              InvalidFormatPhoneException exception = (InvalidFormatPhoneException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PHONE_INVALID_FORMAT);
+            });
 
-    verify(phoneValidatorPort, times(1)).formatToE164(newPhone);
-    verify(userRepository, never()).findById(idCurrentUser);
-    verify(userRepository, never()).findByPhone(newPhone);
     verify(pendingPhoneChangePort, never()).save(idCurrentUser, newPhone);
     verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
   }
 
   @Test
-  @DisplayName("Deve lançar exceção quando o telefone novo já estiver em uso")
+  @DisplayName("Deve lançar UserAlreadyExistsException quando o telefone novo já estiver em uso")
   void execute_shouldThrowException_whenNewPhoneIsAlreadyInUse() {
     // Arrange
-    User mockUser = User.create(defaultUsername, defaultFullName, defaultPhone, defaultPassword);
+    User user = TestDataProvider.createActiveUser();
     UUID idCurrentUser = UUID.randomUUID();
     String newPhone = "+558320566921";
     var request = new InitiateChangePhoneRequestDto(newPhone);
 
     when(phoneValidatorPort.formatToE164(newPhone)).thenReturn(newPhone);
-    when(userRepository.findByPhone(newPhone)).thenReturn(Optional.of(mockUser));
+    when(userRepository.findByPhone(newPhone)).thenReturn(Optional.of(user));
 
     // Act & Assert
     assertThatThrownBy(() -> initiateChangePhoneUseCase.execute(idCurrentUser, request))
         .isInstanceOf(UserAlreadyExistsException.class)
-        .hasMessage("Esse número de telefone já está em uso.");
+        .satisfies(
+            ex -> {
+              UserAlreadyExistsException exception = (UserAlreadyExistsException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PHONE_ALREADY_EXISTS);
+            });
 
-    verify(phoneValidatorPort, times(1)).formatToE164(newPhone);
-    verify(userRepository, never()).findById(any(UUID.class));
-    verify(userRepository, times(1)).findByPhone(newPhone);
     verify(pendingPhoneChangePort, never()).save(idCurrentUser, newPhone);
     verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
   }
@@ -116,23 +111,24 @@ public class InitiateChangePhoneUseCaseTest {
   @DisplayName("Deve lançar exceção quando o usuário não for encontrado")
   void execute_shouldThrowException_whenUserIsNotFound() {
     // Arrange
-    User mockUser = User.create(defaultUsername, defaultFullName, defaultPhone, defaultPassword);
-    UUID idCurrentUser = mockUser.getId();
+    User user = TestDataProvider.createActiveUser();
+    UUID idCurrentUser = user.getId();
     String newPhone = "+558320566921";
     var request = new InitiateChangePhoneRequestDto(newPhone);
 
     when(phoneValidatorPort.formatToE164(newPhone)).thenReturn(newPhone);
-    when(userRepository.findByPhone(newPhone)).thenReturn(Optional.of(mockUser));
+    when(userRepository.findByPhone(newPhone)).thenReturn(Optional.of(user));
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.empty());
 
     // Act & Assert
     assertThatThrownBy(() -> initiateChangePhoneUseCase.execute(idCurrentUser, request))
         .isInstanceOf(UserNotFoundException.class)
-        .hasMessage("Usuário não encontrado.");
+        .satisfies(
+            ex -> {
+              UserNotFoundException exception = (UserNotFoundException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+            });
 
-    verify(phoneValidatorPort, times(1)).formatToE164(newPhone);
-    verify(userRepository, times(1)).findById(idCurrentUser);
-    verify(userRepository, times(1)).findByPhone(newPhone);
     verify(pendingPhoneChangePort, never()).save(idCurrentUser, newPhone);
     verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
   }

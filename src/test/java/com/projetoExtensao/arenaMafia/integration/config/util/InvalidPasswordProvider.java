@@ -11,5 +11,5 @@ import org.junit.jupiter.params.provider.MethodSource;
 @Target(ElementType.METHOD)
 @ParameterizedTest
 @MethodSource(
-    "com.projetoExtensao.arenaMafia.integration.config.util.TestDataFactory#invalidPasswordProvider")
+    "com.projetoExtensao.arenaMafia.integration.config.util.TestDataProvider#invalidPasswordProvider")
 public @interface InvalidPasswordProvider {}

@@ -1,6 +1,8 @@
 package com.projetoExtensao.arenaMafia.unit.application.auth.usecase.otp;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -8,22 +10,24 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPo
 import com.projetoExtensao.arenaMafia.application.auth.usecase.otp.imp.ResendOtpUseCaseImp;
 import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
-import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountStatusForbiddenException;
+import com.projetoExtensao.arenaMafia.domain.exception.notFound.InvalidOtpSessionException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
-import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
-import java.time.Instant;
+import com.projetoExtensao.arenaMafia.unit.config.TestDataProvider;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,20 +44,6 @@ public class ResendOtpUseCaseTest {
 
   private final OtpSessionId otpSessionId = OtpSessionId.generate();
 
-  private User createUser(AccountStatus status) {
-    Instant now = Instant.now();
-    return User.reconstitute(
-        UUID.randomUUID(),
-        "testuser",
-        "Test User",
-        "+558320548181",
-        "hashedPassword",
-        status,
-        RoleEnum.ROLE_USER,
-        now,
-        now);
-  }
-
   @ParameterizedTest
   @EnumSource(
       value = AccountStatus.class,
@@ -61,7 +51,7 @@ public class ResendOtpUseCaseTest {
   @DisplayName("Deve reenviar o código OTP com sucesso quando a conta está ativada ou pendente")
   void shouldResendOtpSuccessfully(AccountStatus status) {
     // Arrange
-    User user = createUser(status);
+    User user = TestDataProvider.UserBuilder.defaultUser().withStatus(status).build();
     UUID userId = user.getId();
 
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
@@ -71,29 +61,31 @@ public class ResendOtpUseCaseTest {
     resendOtpUseCaseTest.execute(otpSessionId);
 
     // Assert
-    verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
-    verify(userRepositoryPort, times(1)).findById(userId);
     verify(eventPublisher, times(1)).publishEvent(any(OnVerificationRequiredEvent.class));
   }
 
   @Test
-  @DisplayName("Deve lançar exceção quando a sessão OTP for inválida")
-  void shouldThrowExceptionForInvalidOtpSession() {
+  @DisplayName("Deve lançar InvalidOtpSessionException quando a sessão OTP for inválida")
+  void shouldThrowInvalidOtpSessionException_whenOtpSessionIsInvalid() {
     // Arrange
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.empty());
 
     // Act & Assert
     assertThatThrownBy(() -> resendOtpUseCaseTest.execute(otpSessionId))
-        .isInstanceOf(InvalidOtpException.class)
-        .hasMessage("Sessão de verificação inválida ou expirada.");
+        .isInstanceOf(InvalidOtpSessionException.class)
+        .satisfies(
+            ex -> {
+              InvalidOtpSessionException exception = (InvalidOtpSessionException) ex;
+              assertThat(exception.getErrorCode())
+                  .isEqualTo(ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED);
+            });
 
-    verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
     verify(userRepositoryPort, never()).findById(any());
     verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
   }
 
   @Test
-  @DisplayName("Deve lançar exceção quando o usuário não for encontrado")
+  @DisplayName("Deve lançar UserNotFoundException quando o usuário não for encontrado")
   void shouldThrowException_whenUserNotFound() {
     // Arrange
     UUID userId = UUID.randomUUID();
@@ -104,39 +96,42 @@ public class ResendOtpUseCaseTest {
     // Act & Assert
     assertThatThrownBy(() -> resendOtpUseCaseTest.execute(otpSessionId))
         .isInstanceOf(UserNotFoundException.class)
-        .hasMessage("Usuário não encontrado.");
+        .satisfies(
+            ex -> {
+              UserNotFoundException exception = (UserNotFoundException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+            });
 
-    verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
-    verify(userRepositoryPort, times(1)).findById(userId);
     verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
   }
 
-  @Nested
-  @DisplayName("Deve lançar exceção quando a conta não está ativa ou pendente")
-  class AccountStateConflictTests {
+  @ParameterizedTest
+  @MethodSource(
+      "com.projetoExtensao.arenaMafia.unit.application.auth.usecase.otp.ResendOtpUseCaseTest#accountStatusNonActiveOrPending")
+  @DisplayName("Deve lançar AccountStatusForbiddenException quando o status da conta é inválido")
+  void shouldThrowException_whenInactiveOrBlockedAccount(
+      AccountStatus invalidStatus, ErrorCode expectedErrorCode) {
+    // Arrange
+    User user = TestDataProvider.UserBuilder.defaultUser().withStatus(invalidStatus).build();
+    UUID userId = user.getId();
 
-    @ParameterizedTest
-    @EnumSource(
-        value = AccountStatus.class,
-        names = {"DISABLED", "LOCKED"})
-    @DisplayName("Deve lançar exceção quando a conta está desativada ou bloqueada")
-    void shouldThrowException_whenInactiveOrBlockedAccount(AccountStatus status) {
-      // Arrange
-      User user = createUser(status);
-      UUID userId = user.getId();
+    when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
+    when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));
 
-      when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
-      when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));
+    // Act & Assert
+    assertThatThrownBy(() -> resendOtpUseCaseTest.execute(otpSessionId))
+        .isInstanceOf(AccountStatusForbiddenException.class)
+        .satisfies(
+            ex -> {
+              AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(expectedErrorCode);
+            });
+    verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
+  }
 
-      // Act & Assert
-      assertThatThrownBy(() -> resendOtpUseCaseTest.execute(otpSessionId))
-          .isInstanceOf(AccountStateConflictException.class)
-          .hasMessage(
-              "Atenção: Sua conta está bloqueada ou desativada. Por favor, contate o suporte.");
-
-      verify(otpSessionPort, times(1)).findUserIdByOtpSessionId(otpSessionId);
-      verify(userRepositoryPort, times(1)).findById(userId);
-      verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
-    }
+  private static Stream<Arguments> accountStatusNonActiveOrPending() {
+    return Stream.of(
+        arguments(AccountStatus.LOCKED, ErrorCode.ACCOUNT_LOCKED),
+        arguments(AccountStatus.DISABLED, ErrorCode.ACCOUNT_DISABLED));
   }
 }

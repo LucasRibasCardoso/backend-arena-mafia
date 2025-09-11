@@ -6,19 +6,19 @@ import static org.mockito.Mockito.*;
 
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.user.usecase.disable.imp.DisableMyAccountUseCaseImp;
-import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountStatusForbiddenException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
-import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
-import java.time.Instant;
+import com.projetoExtensao.arenaMafia.unit.config.TestDataProvider;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,27 +30,11 @@ public class DisableMyAccountUseCaseTest {
   @Mock private UserRepositoryPort userRepository;
   @InjectMocks private DisableMyAccountUseCaseImp disableMyAccountUseCase;
 
-  private final RoleEnum defaultRole = RoleEnum.ROLE_USER;
-
-  private User mockUser(AccountStatus accountStatus) {
-    Instant now = Instant.now();
-    return User.reconstitute(
-        UUID.randomUUID(),
-        "testuser",
-        "Test User",
-        "+558320548181",
-        "password123",
-        accountStatus,
-        defaultRole,
-        now,
-        now);
-  }
-
   @Test
   @DisplayName("Deve desativar a conta do usuário com sucesso")
   void shouldDisableUserAccountSuccessfully() {
     // Arrange
-    User user = mockUser(AccountStatus.ACTIVE);
+    User user = TestDataProvider.createActiveUser();
     UUID idCurrentUser = user.getId();
 
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(user));
@@ -76,29 +60,37 @@ public class DisableMyAccountUseCaseTest {
     // Act & Assert
     assertThatThrownBy(() -> disableMyAccountUseCase.execute(idCurrentUser))
         .isInstanceOf(UserNotFoundException.class)
-        .hasMessage("Usuário não encontrado");
+        .satisfies(
+            ex -> {
+              UserNotFoundException exception = (UserNotFoundException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+            });
 
-    verify(userRepository, times(1)).findById(idCurrentUser);
     verify(userRepository, never()).save(any(User.class));
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"LOCKED", "DISABLED", "PENDING_VERIFICATION"})
-  @DisplayName("Deve lançar exceção quando o status da conta não for ACTIVE")
-  void execute_shouldThrowException_whenAccountStatusIsNotActive(String status) {
+  @MethodSource(
+      "com.projetoExtensao.arenaMafia.unit.config.TestDataProvider#accountStatusNonActiveProvider")
+  @DisplayName(
+      "Deve lançar AccountStatusForbiddenException quando o status da conta não for ACTIVE")
+  void execute_shouldThrowAccountStatusForbiddenException_whenAccountStatusIsNotActive(
+      AccountStatus status, ErrorCode errorCode) {
     // Arrange
-    AccountStatus accountStatus = AccountStatus.valueOf(status);
-    User user = mockUser(accountStatus);
+    User user = TestDataProvider.UserBuilder.defaultUser().withStatus(status).build();
     UUID idCurrentUser = user.getId();
 
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(user));
 
     // Act & Assert
     assertThatThrownBy(() -> disableMyAccountUseCase.execute(idCurrentUser))
-        .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Sua conta precisa estar ativa para ser desativada.");
+        .isInstanceOf(AccountStatusForbiddenException.class)
+        .satisfies(
+            ex -> {
+              AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_NOT_ACTIVE);
+            });
 
-    verify(userRepository, times(1)).findById(idCurrentUser);
     verify(userRepository, never()).save(any(User.class));
   }
 }

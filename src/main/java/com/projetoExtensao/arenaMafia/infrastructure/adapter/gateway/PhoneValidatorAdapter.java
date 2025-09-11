@@ -19,6 +19,9 @@ public class PhoneValidatorAdapter implements PhoneValidatorPort {
 
   @Override
   public String formatToE164(String phoneNumber) {
+    if (phoneNumber == null || phoneNumber.isBlank()) {
+      throw new InvalidFormatPhoneException(ErrorCode.PHONE_REQUIRED);
+    }
     try {
       Phonenumber.PhoneNumber parsedPhone = phoneUtil.parse(phoneNumber, null);
       if (!phoneUtil.isValidNumber(parsedPhone)) {

@@ -1,5 +1,6 @@
 package com.projetoExtensao.arenaMafia.unit.application.auth.usecase.authentication;
 
+import static com.projetoExtensao.arenaMafia.unit.config.TestDataProvider.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -10,16 +11,19 @@ import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificat
 import com.projetoExtensao.arenaMafia.application.security.port.gateway.PasswordEncoderPort;
 import com.projetoExtensao.arenaMafia.application.user.port.gateway.PhoneValidatorPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
-import com.projetoExtensao.arenaMafia.domain.exception.badRequest.BadPhoneNumberException;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidFormatPhoneException;
 import com.projetoExtensao.arenaMafia.domain.exception.conflict.UserAlreadyExistsException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
+import com.projetoExtensao.arenaMafia.unit.config.TestDataProvider;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,38 +40,24 @@ public class SignUpUseCaseTest {
   @Mock private ApplicationEventPublisher eventPublisher;
   @InjectMocks private SignUpUseCaseImp signUpUseCase;
 
-  private final String defaultUsername = "testuser";
-  private final String defaultFullName = "Test User";
-  private final String defaultPassword = "password123";
-  private final String defaultConfirmPassword = "password123";
-  private final String encodedPassword = "hashedPassword";
-  private final String formattedPhone = "+558320548181";
-  private final String unformattedPhone = "+558320548181";
-
-  private User createUser() {
-    return User.create(defaultUsername, defaultFullName, formattedPhone, encodedPassword);
-  }
-
   @Test
   @DisplayName("Deve criar um novo usuário e publicar um evento quando os dados forem válidos")
   void execute_shouldCreateUserAndPublishEvent_whenDataIsValid() {
     // Arrange
-    User savedUser = createUser();
+    User user = TestDataProvider.createActiveUser();
+    UUID userId = user.getId();
+    String encodedPassword = "encodedPassword";
     OtpSessionId otpSessionId = OtpSessionId.generate();
     var request =
         new SignupRequestDto(
-            defaultUsername,
-            defaultFullName,
-            unformattedPhone,
-            defaultPassword,
-            defaultConfirmPassword);
+            defaultUsername, defaultFullName, defaultPhone, defaultPassword, defaultPassword);
 
-    when(phoneValidator.formatToE164(unformattedPhone)).thenReturn(formattedPhone);
+    when(phoneValidator.formatToE164(defaultPhone)).thenReturn(defaultPhone);
     when(userRepository.existsByUsername(defaultUsername)).thenReturn(false);
-    when(userRepository.existsByPhone(formattedPhone)).thenReturn(false);
+    when(userRepository.existsByPhone(defaultPhone)).thenReturn(false);
     when(passwordEncoderPort.encode(defaultPassword)).thenReturn(encodedPassword);
-    when(userRepository.save(any(User.class))).thenReturn(savedUser);
-    when(otpSessionPort.generateOtpSession(savedUser.getId())).thenReturn(otpSessionId);
+    when(userRepository.save(any(User.class))).thenReturn(user);
+    when(otpSessionPort.generateOtpSession(userId)).thenReturn(otpSessionId);
 
     // Act
     OtpSessionId response = signUpUseCase.execute(request);
@@ -75,104 +65,89 @@ public class SignUpUseCaseTest {
     // Assert
     assertThat(response).isEqualTo(otpSessionId);
 
-    verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
-    verify(userRepository, times(1)).existsByUsername(defaultUsername);
-    verify(userRepository, times(1)).existsByPhone(formattedPhone);
-    verify(userRepository, times(1)).save(any(User.class));
-    verify(passwordEncoderPort, times(1)).encode(defaultPassword);
-    verify(eventPublisher, times(1)).publishEvent(any(OnVerificationRequiredEvent.class));
-    verify(otpSessionPort, times(1)).generateOtpSession(savedUser.getId());
-  }
+    ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+    verify(userRepository, times(1)).save(userCaptor.capture());
+    User userBeingSaved = userCaptor.getValue();
 
-  @Nested
-  @DisplayName("Deve lançar exceção quando o usuário já existir")
-  class UserAlreadyExistsTests {
-    @Test
-    @DisplayName("Deve lançar UserAlreadyExistsException se o telefone já existir ")
-    void execute_shouldThrowException_whenPhoneAlreadyExists() {
-      // Arrange
-      var request =
-          new SignupRequestDto(
-              defaultUsername,
-              defaultFullName,
-              unformattedPhone,
-              defaultPassword,
-              defaultConfirmPassword);
-
-      when(phoneValidator.formatToE164(unformattedPhone)).thenReturn(formattedPhone);
-      when(userRepository.existsByUsername(defaultUsername)).thenReturn(false);
-      when(userRepository.existsByPhone(formattedPhone)).thenReturn(true);
-
-      // Act & Assert
-      assertThatThrownBy(() -> signUpUseCase.execute(request))
-          .isInstanceOf(UserAlreadyExistsException.class)
-          .hasMessage("Esse número de telefone já está em uso.");
-
-      verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
-      verify(userRepository, times(1)).existsByUsername(defaultUsername);
-      verify(userRepository, times(1)).existsByPhone(formattedPhone);
-      verify(passwordEncoderPort, never()).encode(defaultPassword);
-      verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
-      verify(otpSessionPort, never()).generateOtpSession(any(UUID.class));
-    }
-
-    @Test
-    @DisplayName("Deve lançar UserAlreadyExistsException se username já existir ")
-    void execute_shouldThrowExceptionWhenUsernameAlreadyExists() {
-      // Arrange
-      var request =
-          new SignupRequestDto(
-              defaultUsername,
-              defaultFullName,
-              unformattedPhone,
-              defaultPassword,
-              defaultConfirmPassword);
-
-      when(phoneValidator.formatToE164(unformattedPhone)).thenReturn(formattedPhone);
-      when(userRepository.existsByUsername(defaultUsername)).thenReturn(true);
-
-      // Act & Assert
-      assertThatThrownBy(() -> signUpUseCase.execute(request))
-          .isInstanceOf(UserAlreadyExistsException.class)
-          .hasMessage("Esse nome de usuário já está em uso.");
-
-      verify(phoneValidator, times(1)).formatToE164(unformattedPhone);
-      verify(userRepository, times(1)).existsByUsername(defaultUsername);
-      verify(userRepository, never()).existsByPhone(formattedPhone);
-      verify(passwordEncoderPort, never()).encode(defaultPassword);
-      verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
-      verify(otpSessionPort, never()).generateOtpSession(any(UUID.class));
-    }
+    assertThat(userBeingSaved.getUsername()).isEqualTo(defaultUsername);
+    assertThat(userBeingSaved.getFullName()).isEqualTo(defaultFullName);
+    assertThat(userBeingSaved.getPhone()).isEqualTo(defaultPhone);
+    assertThat(userBeingSaved.getPasswordHash()).isEqualTo(encodedPassword);
+    assertThat(userBeingSaved.getStatus()).isEqualTo(AccountStatus.PENDING_VERIFICATION);
   }
 
   @Test
-  @DisplayName("Deve lançar BadPhoneNumberException quando o telefone for inválido")
-  void execute_shouldThrowBadPhoneNumberException_whenPhoneIsInvalid() {
+  @DisplayName("Deve lançar InvalidFormatPhoneException quando o telefone for inválido")
+  void execute_shouldThrowInvalidFormatPhoneException_whenPhoneIsInvalid() {
     // Arrange
-    String errorMessage = "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.";
-    String invalidPhone = "+123456789";
+    String invalidPhone = "+999123456789";
     var request =
         new SignupRequestDto(
-            defaultUsername,
-            defaultFullName,
-            invalidPhone,
-            defaultPassword,
-            defaultConfirmPassword);
+            defaultUsername, defaultFullName, invalidPhone, defaultPassword, defaultPassword);
 
-    doThrow(new BadPhoneNumberException(errorMessage))
+    doThrow(new InvalidFormatPhoneException(ErrorCode.PHONE_INVALID_FORMAT))
         .when(phoneValidator)
         .formatToE164(invalidPhone);
 
     // Act & Assert
     assertThatThrownBy(() -> signUpUseCase.execute(request))
-        .isInstanceOf(BadPhoneNumberException.class)
-        .hasMessage(errorMessage);
+        .isInstanceOf(InvalidFormatPhoneException.class)
+        .satisfies(
+            ex -> {
+              InvalidFormatPhoneException exception = (InvalidFormatPhoneException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PHONE_INVALID_FORMAT);
+            });
 
-    verify(phoneValidator, times(1)).formatToE164(invalidPhone);
-    verify(userRepository, never()).existsByUsername(defaultUsername);
-    verify(userRepository, never()).existsByPhone(formattedPhone);
-    verify(passwordEncoderPort, never()).encode(defaultPassword);
     verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
     verify(otpSessionPort, never()).generateOtpSession(any(UUID.class));
+  }
+
+  @Test
+  @DisplayName("Deve lançar UserAlreadyExistsException quando o telefone já existir")
+  void execute_shouldThrowUserAlreadyExistsException_whenPhoneAlreadyExist() {
+    // Arrange
+    var request =
+        new SignupRequestDto(
+            defaultUsername, defaultFullName, defaultPhone, defaultPassword, defaultPassword);
+
+    when(phoneValidator.formatToE164(defaultPhone)).thenReturn(defaultPhone);
+    when(userRepository.existsByUsername(defaultUsername)).thenReturn(false);
+    when(userRepository.existsByPhone(defaultPhone)).thenReturn(true);
+
+    // Act & Assert
+    assertThatThrownBy(() -> signUpUseCase.execute(request))
+        .isInstanceOf(UserAlreadyExistsException.class)
+        .satisfies(
+            ex -> {
+              UserAlreadyExistsException exception = (UserAlreadyExistsException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PHONE_ALREADY_EXISTS);
+            });
+
+    verify(otpSessionPort, never()).generateOtpSession(any(UUID.class));
+    verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
+  }
+
+  @Test
+  @DisplayName("Deve lançar UserAlreadyExistsException quando o username já existir")
+  void execute_shouldThrowUserAlreadyExistsException_whenUsernameAlreadyExist() {
+    // Arrange
+    var request =
+        new SignupRequestDto(
+            defaultUsername, defaultFullName, defaultPhone, defaultPassword, defaultPassword);
+
+    when(phoneValidator.formatToE164(defaultPhone)).thenReturn(defaultPhone);
+    when(userRepository.existsByUsername(defaultUsername)).thenReturn(true);
+
+    // Act & Assert
+    assertThatThrownBy(() -> signUpUseCase.execute(request))
+        .isInstanceOf(UserAlreadyExistsException.class)
+        .satisfies(
+            ex -> {
+              UserAlreadyExistsException exception = (UserAlreadyExistsException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USERNAME_ALREADY_EXISTS);
+            });
+
+    verify(otpSessionPort, never()).generateOtpSession(any(UUID.class));
+    verify(eventPublisher, never()).publishEvent(any(OnVerificationRequiredEvent.class));
   }
 }

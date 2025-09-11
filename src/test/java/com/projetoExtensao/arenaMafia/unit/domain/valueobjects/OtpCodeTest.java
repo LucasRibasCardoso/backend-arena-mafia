@@ -3,13 +3,14 @@ package com.projetoExtensao.arenaMafia.unit.domain.valueobjects;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 @DisplayName("Testes para o Value Object: OtpCode")
 class OtpCodeTest {
@@ -33,13 +34,18 @@ class OtpCodeTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"12345", "1234567", "abcdef", "123 45"})
-    @DisplayName("Deve lançar InvalidOtpException para strings com formato inválido")
-    void fromString_shouldThrowException_whenFormatIsInvalid(String invalidCode) {
+    @MethodSource("com.projetoExtensao.arenaMafia.unit.config.TestDataProvider#invalidOtpCodeProvider")
+    @DisplayName("Deve lançar InvalidTokenFormatException quando o formato do  token for inválido")
+    void fromString_shouldThrowException_whenFormatIsInvalid(
+        String invalidCode, ErrorCode expectedError) {
       // Act & Assert
       assertThatThrownBy(() -> OtpCode.fromString(invalidCode))
           .isInstanceOf(InvalidOtpException.class)
-          .hasMessage("O código de verificação deve ser composto por 6 dígitos numéricos.");
+          .satisfies(
+              ex -> {
+                InvalidOtpException exception = (InvalidOtpException) ex;
+                assertThat(exception.getErrorCode()).isEqualTo(expectedError);
+              });
     }
   }
 

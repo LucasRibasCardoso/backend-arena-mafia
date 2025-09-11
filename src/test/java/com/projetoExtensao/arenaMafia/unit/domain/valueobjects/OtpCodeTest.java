@@ -34,7 +34,8 @@ class OtpCodeTest {
     }
 
     @ParameterizedTest
-    @MethodSource("com.projetoExtensao.arenaMafia.unit.config.TestDataProvider#invalidOtpCodeProvider")
+    @MethodSource(
+        "com.projetoExtensao.arenaMafia.unit.config.TestDataProvider#invalidOtpCodeProvider")
     @DisplayName("Deve lançar InvalidTokenFormatException quando o formato do  token for inválido")
     void fromString_shouldThrowException_whenFormatIsInvalid(
         String invalidCode, ErrorCode expectedError) {

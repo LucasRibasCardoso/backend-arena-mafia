@@ -8,13 +8,9 @@ import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.notification.gateway.SmsPort;
 import com.projetoExtensao.arenaMafia.application.notification.listener.NotificationEventListener;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
-import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
-import java.time.Instant;
-import java.util.UUID;
-
 import com.projetoExtensao.arenaMafia.unit.config.TestDataProvider;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

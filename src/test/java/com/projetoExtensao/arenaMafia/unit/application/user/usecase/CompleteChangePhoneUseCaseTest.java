@@ -70,7 +70,8 @@ public class CompleteChangePhoneUseCaseTest {
     UUID idCurrentUser = UUID.randomUUID();
     var request = new CompletePhoneChangeRequestDto(otpCode);
 
-    when(pendingPhoneChangePort.findPhoneByUserId(idCurrentUser)).thenReturn(Optional.ofNullable(phone));
+    when(pendingPhoneChangePort.findPhoneByUserId(idCurrentUser))
+        .thenReturn(Optional.ofNullable(phone));
     when(userRepository.findById(idCurrentUser)).thenReturn(Optional.of(user));
 
     // Act & Assert

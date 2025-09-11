@@ -1,5 +1,7 @@
 package com.projetoExtensao.arenaMafia.unit.infrastructure.security.jwt;
 
+import static com.projetoExtensao.arenaMafia.unit.config.TestDataProvider.defaultRole;
+import static com.projetoExtensao.arenaMafia.unit.config.TestDataProvider.defaultUsername;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
@@ -35,8 +37,6 @@ public class JwtTokenProviderTest {
   @InjectMocks private JwtTokenProvider tokenProvider;
 
   private final String secretKey = "I5fbSc1fDSiV0jRABD2hwVqn/RZweuO96QHRM+BmyoY=";
-  private final String username = "testUser";
-  private final RoleEnum role = RoleEnum.ROLE_USER;
   private UUID userId;
 
   @BeforeEach
@@ -69,7 +69,7 @@ public class JwtTokenProviderTest {
     void getAccessToken_shouldReturnValidTokenJwt() {
 
       // Act
-      String tokenJWT = tokenProvider.generateAccessToken(userId, username, role);
+      String tokenJWT = tokenProvider.generateAccessToken(userId, defaultUsername, defaultRole);
 
       // Assert
       assertThat(tokenJWT).isNotBlank();
@@ -90,7 +90,7 @@ public class JwtTokenProviderTest {
     @DisplayName("Deve retornar um objeto Authentication para um token válido")
     void getAuthentication_shouldReturnAuthenticationForValidToken() {
       // Arrange
-      String tokenJWT = tokenProvider.generateAccessToken(userId, username, role);
+      String tokenJWT = tokenProvider.generateAccessToken(userId, defaultUsername, defaultRole);
       UserDetails userDetails = mock(UserDetails.class);
 
       // Configura o comportamento do mock
@@ -109,7 +109,7 @@ public class JwtTokenProviderTest {
     @DisplayName("Deve lançar InvalidJwtTokenException para um token expirado")
     void getAuthentication_shouldThrowExceptionForExpiredToken() {
       // Arrange
-      String expiredToken = createExpiredToken(username);
+      String expiredToken = createExpiredToken();
 
       // Act & Assert
       assertThatThrownBy(() -> tokenProvider.getAuthentication(expiredToken))
@@ -129,7 +129,7 @@ public class JwtTokenProviderTest {
     @DisplayName("Deve lançar InvalidJwtTokenException para um token com assinatura inválida")
     void getAuthentication_shouldThrowExceptionForInvalidSignatureToken() {
       // Arrange
-      String validToken = tokenProvider.generateAccessToken(userId, username, role);
+      String validToken = tokenProvider.generateAccessToken(userId, defaultUsername, defaultRole);
       String tamperedToken = validToken + "invalid-signature";
 
       // Act & Assert
@@ -214,7 +214,7 @@ public class JwtTokenProviderTest {
     }
   }
 
-  private String createExpiredToken(String username) {
+  private String createExpiredToken() {
     Instant now = Instant.now();
     String encodedSecret = Base64.getEncoder().encodeToString(secretKey.getBytes());
     Algorithm algorithm = Algorithm.HMAC256(encodedSecret.getBytes());
@@ -223,7 +223,7 @@ public class JwtTokenProviderTest {
         .withClaim("role", RoleEnum.ROLE_USER.name())
         .withIssuedAt(now.minusSeconds(7200)) // Criado 2 horas atrás
         .withExpiresAt(now.minusSeconds(3600)) // Expirou 1 hora atrás
-        .withSubject(username)
+        .withSubject(defaultUsername)
         .sign(algorithm);
   }
 }

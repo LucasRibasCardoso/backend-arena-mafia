@@ -44,7 +44,8 @@ public class LogoutUseCaseTest {
   }
 
   @Test
-  @DisplayName("Não deve fazer nada se o refreshToken for válido mas não for encontrado no repositório")
+  @DisplayName(
+      "Não deve fazer nada se o refreshToken for válido mas não for encontrado no repositório")
   void execute_shouldDoNothing_whenTokenIsNotFound() {
     // Arrange
     when(refreshTokenRepository.findByToken(refreshTokenVO)).thenReturn(Optional.empty());

@@ -154,10 +154,7 @@ public abstract class BaseTestContainersConfig {
   }
 
   public void alterAccountStatus(UUID userId, AccountStatus status) {
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow();
+    User user = userRepository.findById(userId).orElseThrow();
 
     User lockedUser =
         User.reconstitute(

@@ -11,17 +11,12 @@ import jakarta.validation.constraints.Size;
 
 @PasswordsMatch(message = "PASSWORDS_DO_NOT_MATCH")
 public record ResetPasswordRequestDto(
-    @NotNull(message = "RESET_TOKEN_REQUIRED")
-    @Valid
-    ResetToken passwordResetToken,
-
+    @NotNull(message = "RESET_TOKEN_REQUIRED") @Valid ResetToken passwordResetToken,
     @NotBlank(message = "PASSWORD_REQUIRED")
-    @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
-    @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
-    String newPassword,
-
-    @NotBlank(message = "CONFIRM_PASSWORD_REQUIRED")
-    String confirmPassword)
+        @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
+        @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
+        String newPassword,
+    @NotBlank(message = "CONFIRM_PASSWORD_REQUIRED") String confirmPassword)
     implements PasswordConfirmationProvider {
 
   @Override

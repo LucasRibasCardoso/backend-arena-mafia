@@ -18,6 +18,7 @@ public final class TestDataProvider {
   public static final String defaultUsername = "testuser";
   public static final String defaultFullName = "Test User";
   public static final String defaultPassword = "password123";
+  public static final RoleEnum defaultRole = RoleEnum.ROLE_USER;
 
   public static User createPendintUser() {
     return UserBuilder.defaultUser().withStatus(AccountStatus.PENDING_VERIFICATION).build();

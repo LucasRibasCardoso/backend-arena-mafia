@@ -62,7 +62,7 @@ public enum ErrorCode {
 
   REFRESH_TOKEN_REQUIRED("O token de atualização é obrigatório."),
   REFRESH_TOKEN_INVALID_FORMAT("O formato do token de atualização é inválido."),
-  REFRESH_TOKEN_NOT_FOUND("Sua sessão é inválida. Por favor, faça login novamente."),
+  REFRESH_TOKEN_NOT_FOUND("Sua sessão expirou. Por favor, faça login novamente."),
   REFRESH_TOKEN_INVALID_OR_EXPIRED("Sua sessão expirou. Por favor, faça login novamente.");
 
   private final String message;

@@ -293,7 +293,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o OTP for inválido")
+    @DisplayName("Deve retornar 400 Bad Request quando o OTP for inválido ou expirado")
     void validateResetToken_shouldReturn400_whenOtpIsInvalid() {
       // Arrange
       User mockUser = mockPersistUser(AccountStatus.ACTIVE);
@@ -324,8 +324,8 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     }
 
     @Test
-    @DisplayName("Deve retornar 404 Not Found quando a sessão OTP não for encontrada/for expirada")
-    void validateResetToken_shouldReturn404_whenOtpSessionIdNotFound() {
+    @DisplayName("Deve retornar 400 Bad Request quando a sessão OTP for inválida ou expirada")
+    void validateResetToken_shouldReturn400_whenOtpSessionIsInvalid() {
       // Arrange
       OtpCode otpCode = OtpCode.generate();
       OtpSessionId invalidOtpSessionId = OtpSessionId.generate();
@@ -339,14 +339,14 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .when()
               .post("/reset-password-token")
               .then()
-              .statusCode(404)
+              .statusCode(400)
               .extract()
               .as(ErrorResponseDto.class);
 
       // Assert
       ErrorCode errorCode = ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED;
 
-      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.status()).isEqualTo(400);
       assertThat(response.path()).isEqualTo("/api/auth/reset-password-token");
       assertThat(response.errorCode()).isEqualTo(errorCode.name());
       assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
@@ -514,6 +514,41 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     @DisplayName("Deve retornar 400 Bad Request quando os dados de entrada forem inválidos")
     class InvalidInputTests {
 
+      @Test
+      @DisplayName("Deve retornar 400 Bad Request quando às senhas não coincidirem")
+      void resetPassword_shouldReturn400_whenPasswordsDoNotMatch() {
+        // Arrange
+        User mockUser = mockPersistUser();
+        ResetToken resetToken = passwordResetTokenPort.generateToken(mockUser.getId());
+
+        var request =
+            new ResetPasswordRequestDto(resetToken, defaultNewPassword, "invalidConfirm123");
+
+        // Act
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .body(request)
+                .when()
+                .post("/reset-password")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        // Assert
+        ErrorCode errorCode = ErrorCode.PASSWORDS_DO_NOT_MATCH;
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/auth/reset-password");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(response.fieldErrors()).hasSize(1);
+        assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("confirmPassword");
+        assertThat(response.fieldErrors().getFirst().errorCode()).isEqualTo(errorCode.name());
+      }
+
       @InvalidResetTokenProvider
       @DisplayName("Deve retornar 400 Bad Request quando o token de redefinição for inválido")
       void resetPassword_shouldReturn400_whenResetTokenIsInvalid(
@@ -628,73 +663,8 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando às senhas não coincidirem")
-    void resetPassword_shouldReturn400_whenPasswordsDoNotMatch() {
-      // Arrange
-      User mockUser = mockPersistUser();
-      ResetToken resetToken = passwordResetTokenPort.generateToken(mockUser.getId());
-
-      var request =
-          new ResetPasswordRequestDto(resetToken, defaultNewPassword, "invalidConfirm123");
-
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/reset-password")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      ErrorCode errorCode = ErrorCode.PASSWORDS_DO_NOT_MATCH;
-
-      assertThat(response.status()).isEqualTo(400);
-      assertThat(response.path()).isEqualTo("/api/auth/reset-password");
-      assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
-      assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
-
-      assertThat(response.fieldErrors()).hasSize(1);
-      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("confirmPassword");
-      assertThat(response.fieldErrors().getFirst().errorCode()).isEqualTo(errorCode.name());
-    }
-
-    @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o token de redefinição estiver expirado")
-    void resetPassword_shouldReturn400_whenTokenIsExpired() {
-      // Arrange
-      mockPersistUser();
-      ResetToken invalidToken = ResetToken.generate(); // Token 'expirado'
-
-      var request =
-          new ResetPasswordRequestDto(invalidToken, defaultNewPassword, defaultConfirmPassword);
-
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .body(request)
-              .when()
-              .post("/reset-password")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      ErrorCode errorCode = ErrorCode.RESET_TOKEN_INVALID_OR_EXPIRED;
-
-      assertThat(response.status()).isEqualTo(400);
-      assertThat(response.path()).isEqualTo("/api/auth/reset-password");
-      assertThat(response.errorCode()).isEqualTo(errorCode.name());
-      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
-    }
-
-    @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o token de redefinição for inválido")
+    @DisplayName(
+        "Deve retornar 400 Bad Request quando o token de redefinição for inválido ou expirado")
     void resetPassword_shouldReturn400_whenTokenIsInvalid() {
       // Arrange
       ResetToken invalidResetToken = ResetToken.generate();

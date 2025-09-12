@@ -4,7 +4,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.gateway.OtpSessionPo
 import com.projetoExtensao.arenaMafia.application.auth.usecase.otp.ResendOtpUseCase;
 import com.projetoExtensao.arenaMafia.application.notification.event.OnVerificationRequiredEvent;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
-import com.projetoExtensao.arenaMafia.domain.exception.notFound.InvalidOtpSessionException;
+import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpSessionException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;

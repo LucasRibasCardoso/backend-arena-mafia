@@ -2,8 +2,10 @@ package com.projetoExtensao.arenaMafia.integration.config;
 
 import static io.restassured.RestAssured.given;
 
+import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTokenRepositoryPort;
 import com.projetoExtensao.arenaMafia.application.security.port.gateway.PasswordEncoderPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
@@ -48,6 +50,7 @@ public abstract class BaseTestContainersConfig {
   @Autowired private PasswordEncoderPort passwordEncoder;
   @Autowired private UserRepositoryPort userRepository;
   @Autowired private UserJpaRepository userJpaRepository;
+  @Autowired private RefreshTokenRepositoryPort refreshTokenRepository;
 
   public final String defaultUsername = "test_user";
   public final String defaultPassword = "123456";
@@ -96,6 +99,11 @@ public abstract class BaseTestContainersConfig {
 
   public User mockPersistUser() {
     return mockPersistUser(AccountStatus.ACTIVE);
+  }
+
+  public RefreshToken mockPersistRefreshToken(Long expirationTime, User user) {
+    RefreshToken refreshToken = RefreshToken.create(expirationTime, user);
+    return refreshTokenRepository.save(refreshToken);
   }
 
   public User mockPersistUser(AccountStatus status) {

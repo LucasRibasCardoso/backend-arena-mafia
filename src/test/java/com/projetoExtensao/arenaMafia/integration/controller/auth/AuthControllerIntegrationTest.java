@@ -10,6 +10,7 @@ import com.projetoExtensao.arenaMafia.application.auth.port.repository.RefreshTo
 import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+import com.projetoExtensao.arenaMafia.domain.model.RefreshToken;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
@@ -337,28 +338,6 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 401 Unauthorized ao tentar fazer logout sem autenticação")
-    void logout_shouldReturn401_whenNotAuthenticated() {
-      // Act & Assert
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .when()
-              .post("/logout")
-              .then()
-              .statusCode(401)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      ErrorCode errorCode = ErrorCode.SESSION_EXPIRED;
-
-      assertThat(response.status()).isEqualTo(401);
-      assertThat(response.path()).isEqualTo("/api/auth/logout");
-      assertThat(response.errorCode()).isEqualTo(errorCode.name());
-      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
-    }
-
-    @Test
     @DisplayName("Deve retornar 400 Bad Request quando o refresh token for inválido")
     void logout_shouldReturn400_whenRefreshTokenIsInvalid() {
       // Arrange
@@ -386,6 +365,28 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
       ErrorCode errorCode = ErrorCode.REFRESH_TOKEN_INVALID_FORMAT;
 
       assertThat(response.status()).isEqualTo(400);
+      assertThat(response.path()).isEqualTo("/api/auth/logout");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
+    }
+
+    @Test
+    @DisplayName("Deve retornar 401 Unauthorized ao tentar fazer logout sem autenticação")
+    void logout_shouldReturn401_whenNotAuthenticated() {
+      // Act & Assert
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .when()
+              .post("/logout")
+              .then()
+              .statusCode(401)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      ErrorCode errorCode = ErrorCode.SESSION_EXPIRED;
+
+      assertThat(response.status()).isEqualTo(401);
       assertThat(response.path()).isEqualTo("/api/auth/logout");
       assertThat(response.errorCode()).isEqualTo(errorCode.name());
       assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
@@ -489,29 +490,6 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request se o refresh token não for enviado")
-    void refreshToken_shouldReturn400_whenRefreshTokenIsMissing() {
-      // Act
-      ErrorResponseDto response =
-          given()
-              .spec(specification)
-              .when()
-              .post("/refresh-token")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
-
-      // Assert
-      ErrorCode errorCode = ErrorCode.REFRESH_TOKEN_REQUIRED;
-
-      assertThat(response.status()).isEqualTo(400);
-      assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
-      assertThat(response.errorCode()).isEqualTo(errorCode.name());
-      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
-    }
-
-    @Test
     @DisplayName("Deve retornar 401 Unauthorized quando o refresh token não for encontrado")
     void refreshToken_shouldReturn401_whenTokenNotFound() {
       // Arrange
@@ -532,6 +510,37 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
 
       // Assert
       ErrorCode errorCode = ErrorCode.REFRESH_TOKEN_NOT_FOUND;
+
+      assertThat(response.status()).isEqualTo(401);
+      assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
+    }
+
+    @Test
+    @DisplayName("Deve retornar 401 Unauthorized quando o refresh token estiver expirado")
+    void refreshToken_shouldReturn401_whenTokenExpired() {
+      // Arrange
+      User user = mockPersistUser(AccountStatus.ACTIVE);
+      RefreshToken expiredToken = mockPersistRefreshToken(-1L, user);
+
+      Cookie expiredTokenCookie =
+          new Cookie.Builder("refreshToken", expiredToken.getToken().toString()).build();
+
+      // Act
+      ErrorResponseDto response =
+          given()
+              .spec(specification)
+              .cookie(expiredTokenCookie)
+              .when()
+              .post("/refresh-token")
+              .then()
+              .statusCode(401)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      ErrorCode errorCode = ErrorCode.REFRESH_TOKEN_INVALID_OR_EXPIRED;
 
       assertThat(response.status()).isEqualTo(401);
       assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
@@ -1084,8 +1093,8 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 404 Not Found quando a sessão OTP for inválida ou expirada")
-    void validateResetToken_shouldReturn404_whenUserIdIsInvalid() {
+    @DisplayName("Deve retornar 400 Bad Request quando a sessão OTP for inválida ou expirada")
+    void validateResetToken_shouldReturn400_whenUserIdIsInvalid() {
       // Arrange
       OtpSessionId invalidOtpSessionId = OtpSessionId.generate();
       OtpCode otpCode = OtpCode.generate();
@@ -1099,14 +1108,14 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .when()
               .post("/verify-account")
               .then()
-              .statusCode(404)
+              .statusCode(400)
               .extract()
               .as(ErrorResponseDto.class);
 
       // Assert
       ErrorCode errorCode = ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED;
 
-      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.status()).isEqualTo(400);
       assertThat(response.path()).isEqualTo("/api/auth/verify-account");
       assertThat(response.errorCode()).isEqualTo(errorCode.name());
       assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
@@ -1272,8 +1281,8 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 404 Not Found quando a sessão for inválida ou expirada")
-    void resendOtp_shouldReturn404_whenOtpSessionIsInvalid() {
+    @DisplayName("Deve retornar 400 Bad Request quando a sessão for inválida ou expirada")
+    void resendOtp_shouldReturn400_whenOtpSessionIsInvalid() {
       // Arrange
       OtpSessionId otpSessionId = OtpSessionId.generate();
       var request = new ResendOtpRequestDto(otpSessionId);
@@ -1285,14 +1294,14 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .when()
               .post("/resend-otp")
               .then()
-              .statusCode(404)
+              .statusCode(400)
               .extract()
               .as(ErrorResponseDto.class);
 
       // Assert
       ErrorCode errorCode = ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED;
 
-      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.status()).isEqualTo(400);
       assertThat(response.path()).isEqualTo("/api/auth/resend-otp");
       assertThat(response.errorCode()).isEqualTo(errorCode.name());
       assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());

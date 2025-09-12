@@ -5,10 +5,17 @@ info:
   description: |
     Backend do projeto para a Arena Mafia, desenvolvido como parte do curso de
     Análise e Desenvolvimento de Sistemas do Instituto Federal de Santa Catarina.
-  termsOfService: https://github.com/LucasRibasCardoso/backend-arena-mafia
-  license:
-    name: Apache 2.0
-    url: https://github.com/LucasRibasCardoso
+    
+    A seguir estão os códigos de erro mais comuns que podem ser retornados por qualquer endpoint. 
+    Erros específicos de cada operação estão documentados nos exemplos de resposta de cada endpoint.
+    
+    | Código (`errorCode`) | Mensagem (`developerMessage`) |
+    |---|---|
+    | `UNEXPECTED_ERROR` | Ocorreu um erro inesperado. Tente novamente. |
+    | `VALIDATION_FAILED` | A validação falhou. Verifique os campos. |
+    | `ACCESS_DENIED` | Acesso negado. Você não tem permissão. |
+    | `SESSION_EXPIRED` | Sua sessão expirou. Faça login novamente. |
+    | `MALFORMED_JSON_REQUEST` | Requisição JSON malformada. |
 
 components:
   securitySchemes:
@@ -19,1435 +26,1054 @@ components:
       description: "Token de autenticação JWT obtido no login."
 
   schemas:
-    FieldErrorResponseDto:
+    FieldError:
       type: object
+      required: [ fieldName, errorCode, developerMessage ]
       properties:
-        fieldName: {
-          type: string,
-          description: "Nome do campo que falhou na validação.",
+        fieldName:
+          type: string
           example: "username"
-        }
-        message: {
-          type: string,
-          description: "Mensagem de erro para o campo.",
-          example: "O usuário é obrigatório"
-        }
-      required: [ fieldName, message ]
+        errorCode:
+          type: string
+          example: "USERNAME_REQUIRED"
+        developerMessage:
+          type: string
+          example: "O nome de usuário é obrigatório."
 
-    ErrorResponseDto:
+    ErrorResponse:
       type: object
+      required: [ timestamp, status, errorCode, developerMessage, path ]
       properties:
-        timestamp: {
-          type: string,
-          format: date-time,
-          example: "2025-08-15T13:55:00Z"
-        }
-        status: {
-          type: integer,
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-06-15T14:30:00Z"
+        status:
+          type: integer
           example: 400
-        }
-        message: {
-          type: string,
-          example: "Requisição inválida."
-        }
-        path: {
-          type: string,
-          example: "/api/some/endpoint"
-        }
+        errorCode:
+          type: string
+          example: "VALIDATION_FAILED"
+        developerMessage:
+          type: string
+          example: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+        path:
+          type: string
+          example: "/api/auth/login"
         fieldErrors:
           type: array
-          description: "Lista de erros de validação de campos, se houver."
-          items: { $ref: "#/components/schemas/FieldErrorResponseDto" }
           nullable: true
-      required: [ timestamp, status, message, path, fieldErrors ]
+          items:
+            $ref: '#/components/schemas/FieldError'
 
     LoginRequestDto:
       type: object
+      description: Corpo da requisição para realizar o login.
       required: [ username, password ]
-      properties:
-        username: {
-          type: string,
-          description: "Nome de usuário.",
-          example: "testuser"
-        }
-        password: {
-          type: string,
-          description: "Senha do usuário.",
-          example: "123456"
-        }
-
-    TokenResponseDto:
-      type: object
-      properties:
-        phone: {
-          type: string,
-          description: "Telefone do usuário autenticado.",
-          example: "+5547912345678"
-        }
-        username: {
-          type: string,
-          description: "Nome de usuário autenticado.",
-          example: "usuario123"
-        }
-        fullName: {
-          type: string,
-          description: "Nome completo do usuário autenticado.",
-          example: "João da Silva"
-        }
-        role: {
-          type: string,
-          description: "Permissão do usuário autenticado.",
-          example: "ROLE_USER"
-        }
-        accessToken: {
-          type: string,
-          description: "JWT de acesso.",
-          example: "eyJhbGci..."
-        }
-
-    SignupRequestDto:
-      type: object
-      description: "Dados necessários para o cadastro de um novo usuário. A senha e a confirmação de senha devem ser idênticas."
-      required: [ username, fullName, phone, password, confirmPassword ]
       properties:
         username:
           type: string
-          description: "Nome de usuário único, deve conter apenas letras, números e underscore (_)."
-          example: "joao_silva99"
-        fullName:
-          type: string
-          description: "Nome completo do usuário."
-          example: "João da Silva"
-        phone:
-          type: string
-          description: "Número de telefone no formato internacional, incluindo o código do país e DDD."
-          example: "+5547912345678"
+          description: Nome de usuário para login.
+          pattern: '^[a-zA-Z0-9_]+$'
+          minLength: 3
+          maxLength: 50
+          example: "test_user"
         password:
           type: string
-          format: "password"
-          description: "Senha do usuário. Deve ter entre 6 e 20 caracteres."
-          example: "senhaForte123"
-        confirmPassword:
-          type: string
-          format: "password"
-          description: "Confirmação da senha. Deve ser idêntica ao campo 'password'."
-          example: "senhaForte123"
+          format: password
+          description: Senha do usuário.
+          pattern: '^\S+$'
+          minLength: 6
+          maxLength: 20
+          example: "password123"
 
-    SignupResponseDto:
+    AuthResponseDto:
       type: object
+      description: Resposta contendo os dados do usuário autenticado e o token de acesso.
+      required: [ userId, phone, username, fullName, role, accessToken ]
       properties:
         userId:
           type: string
           format: uuid
-          description: "Identificador único (UUID) do usuário recém-criado."
-          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
-        username:
-          type: string
-          description: "Nome de usuário do usuário recém-criado."
-          example: "joao_silva99"
+          description: ID único do usuário autenticado.
+          example: "c1a2b3d4-e5f6-7890-1234-567890abcdef"
         phone:
           type: string
-          description: "Telefone do usuário recém-criado."
-          example: "+5547912345678"
+          description: Número de telefone do usuário.
+          example: "+5547991234567"
+        username:
+          type: string
+          description: Nome de usuário.
+          example: "test_user"
         fullName:
           type: string
-          description: "Nome completo do usuário recém-criado."
-          example: "João da Silva"
-        status:
+          description: Nome completo do usuário.
+          example: "Usuário de Teste"
+        role:
           type: string
-          description: "Status da conta do usuário após o registro."
-          example: "pending_verification"
+          description: Nível de permissão do usuário no sistema.
+          example: "ROLE_USER"
+        accessToken:
+          type: string
+          description: Token JWT (JSON Web Token) utilizado para autorizar requisições nos endpoints protegidos.
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+
+    ForgotPasswordRequestDto:
+      type: object
+      description: Corpo da requisição para iniciar o processo de redefinição de senha.
+      required:
+        - phone
+      properties:
+        phone:
+          type: string
+          description: |
+            Número de telefone do usuário no formato internacional E.164 para o qual o 
+            código foi de verificação será enviado."
+          pattern: '^\\+[1-9]\\d{1,14}$'
+          example: "+5547991234567"
+
+    ForgotPasswordResponseDto:
+      type: object
+      description: "Resposta após iniciar o processo de redefinição de senha."
+      required:
+        - otpSessionId
+        - message
+      properties:
+        otpSessionId:
+          type: string
+          format: uuid
+          description: "O ID da sessão de verificação OTP, que deve ser usado para validar o código recebido."
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
         message:
           type: string
-          description: "Mensagem de confirmação do sucesso da operação."
-          example: "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone."
+          description: "Mensagem informando que o código de verificação foi enviado por sms."
+          example: "Se o número estiver cadastrado, você receberá um código de verificação."
 
     ValidateOtpRequestDto:
       type: object
-      description: "Dados para verificação da conta via código OTP."
-      required: [ phone, code ]
+      description: Corpo da requisição para validar um código OTP (One-Time Password).
+      required:
+        - otpSessionId
+        - otpCode
       properties:
-        phone:
+        otpSessionId:
           type: string
-          description: "Telefone de usuário da conta a ser verificada."
-          example: "+5547912345678"
-        code:
+          format: uuid
+          description: O ID da sessão de verificação OTP, recebido ao solicitar o código.
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        otpCode:
           type: string
-          description: "Código OTP de 6 dígitos recebido por SMS."
+          description: O código de 6 dígitos enviado ao usuário.
+          pattern: '\d{6}'
+          minLength: 6
+          maxLength: 6
           example: "123456"
-
-    ResendCodeRequestDto:
-      type: object
-      description: "Telefone do usuário que está solicitando o reenvio do código OTP."
-      required: [ phone ]
-      properties:
-        phone:
-          type: string
-          description: "Telefone de usuário da conta para a qual o código deve ser reenviado."
-          example: "+5547912345678"
-
-    SimpleMessageResponseDto:
-      type: object
-      properties:
-        message:
-          type: string
-          example: "Operação realizada com sucesso."
-
-    ForgotPasswordRequestDto:
-      type: object
-      description: "Telefone do usuário que está solicitando a alteração da senha."
-      required: [ phone ]
-      properties:
-        phone:
-          type: string
-          description: "Telefone de usuário da conta para a qual a senha deve ser alterada."
-          example: "+5547912345678"
 
     PasswordResetTokenResponseDto:
       type: object
+      description: Resposta contendo o token de redefinição de senha após a validação do código OTP.
+      required:
+        - passwordResetToken
       properties:
         passwordResetToken:
           type: string
-          description: "Token temporário para redefinição de senha."
-          example: "dawda-1234-asdas-5678-asdasd-9876"
+          format: uuid
+          description: Token de redefinição de senha que deve ser usado para alterar a senha
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
 
     ResetPasswordRequestDto:
       type: object
-      description: "Dados necessários para a etapa final da redefinição de senha."
-      required: [ passwordResetToken, newPassword, confirmPassword ]
+      description: Corpo da requisição para definir uma nova senha. O campo confirmPassword deve ser idêntico ao newPassword.
+      required:
+        - passwordResetToken
+        - newPassword
+        - confirmPassword
       properties:
         passwordResetToken:
           type: string
-          description: "O token seguro de uso único recebido na etapa de validação do OTP."
+          format: uuid
+          description: "O token recebido na etapa anterior para autorizar a redefinição de senha."
           example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
         newPassword:
           type: string
-          format: "password"
-          description: "A nova senha do usuário. Deve ter entre 6 e 20 caracteres e não pode conter espaços."
-          example: "novaSenhaSegura123"
+          format: password
+          description: "A nova senha para a conta do usuário."
+          pattern: '^\\S+$'
+          minLength: 6
+          maxLength: 20
+          example: "novaSenha@123"
         confirmPassword:
           type: string
-          format: "password"
-          description: "Confirmação da nova senha. Deve ser idêntica ao campo 'newPassword'."
-          example: "novaSenhaSegura123"
+          format: password
+          description: "Confirmação da nova senha."
+          pattern: '^\\S+$'
+          minLength: 6
+          maxLength: 20
+          example: "novaSenha@123"
 
-    UserProfileResponseDTO:
+    SignupRequestDto:
       type: object
-      description: "Dados da conta, retornados para o usuário autenticado."
+      description: Corpo da requisição para o cadastro de um novo usuário. A senha e a confirmação de senha devem ser idênticas.
+      required:
+        - username
+        - fullName
+        - phone
+        - password
+        - confirmPassword
       properties:
         username:
           type: string
-          description: "Nome de usuário."
-          example: "joao_silva"
+          description: "Nome de usuário único para login."
+          pattern: '^[a-zA-Z0-9_]+$'
+          minLength: 3
+          maxLength: 50
+          example: "novo_usuario123"
         fullName:
           type: string
           description: "Nome completo do usuário."
-          example: "João da Silva"
+          minLength: 3
+          maxLength: 100
+          example: "Nome Completo de Exemplo"
         phone:
           type: string
-          description: "Telefone do usuário."
-          example: "+5547912345678"
-        role:
+          description: "Número de telefone do usuário no formato internacional E.164."
+          pattern: '^\\+[1-9]\\d{1,14}$'
+          example: "+5547991234567"
+        password:
           type: string
-          description: "Permissão do usuário."
-          example: "ROLE_USER"
-
-    UpdateProfileRequestDTO:
-      type: object
-      description: "Dados para atualização do perfil do usuário."
-      required: [ fullName ]
-      properties:
-        fullName:
-          type: string
-          description: "Novo nome completo do usuário."
-          example: "João da Silva"
-
-    ChangeUsernameRequestDTO:
-      type: object
-      description: "Nome de usuário para ser atualizado"
-      required: [ username ]
-      properties:
-        username:
-          type: string
-          description: "Novo nome de usuário"
-          example: "joao_silva"
-
-    ChangePasswordRequestDto:
-      type: object
-      description: "Dados necessários para alterar a senha do usuário autenticado."
-      required: [ currentPassword, newPassword, confirmPassword ]
-      properties:
-        currentPassword:
-          type: string
-          format: "password"
-          description: "Senha atual do usuário, para verificação."
-          example: "senhaAtual123"
-        newPassword:
-          type: string
-          format: "password"
-          description: "A nova senha do usuário. Deve ter entre 6 e 20 caracteres e não pode conter espaços."
-          example: "novaSenhaSegura123"
+          format: password
+          description: "Senha de acesso do usuário."
+          pattern: '^\\S+$'
+          minLength: 6
+          maxLength: 20
+          example: "senhaForte@123"
         confirmPassword:
           type: string
-          format: "password"
-          description: "Confirmação da nova senha. Deve ser idêntica ao campo 'newPassword'."
-          example: "novaSenhaSegura123"
-
-    ChangePhoneRequestDTO:
-      type: object
-      description: "Número de telefone para ser atualizado"
-      required: [ newPhone ]
-      properties:
-        newPhone:
-          type: string
-          description: "Novo número de telefone"
-          example: "+5521991234567"
-
-    CompletePhoneChangeRequestDTO:
-      type: object
-      description: "Código OTP para validar o novo número de telefone"
-      required: [ code ]
-      properties:
-        code:
-          type: string
-          description: "Código OTP de 6 dígitos recebido por SMS."
-          example: "123456"
-
-  headers:
-    Cookie:
-      description: "Cookie HttpOnly contendo o token de refresh. O navegador o armazena automaticamente e o anexa às requisições subsequentes."
-      schema:
-        type: string
-        example: "refreshToken=asdasda-asdasd-asdasd-asdasd..."
-    ExpiredCookie:
-      description: "Instrui o navegador a expirar e remover o cookie `refreshToken`. O valor do cookie é zerado e o `Max-Age` é definido como 0."
-      schema:
-        type: string
-        example: "refreshToken=; Path=/api/auth; Max-Age=0; HttpOnly; Secure"
-
-  responses:
-    ErrorResponseInternalServerError:
-      description: Erro interno do servidor.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponseDto"
-          example:
-            timestamp: "2025-08-15T13:55:00Z"
-            status: 500
-            message: "Erro interno do servidor. Por favor, tente novamente mais tarde."
-            path: "/api/some/endpoint"
-
-    AuthenticationExceptionResponse:
-      description: "Exceção lançada quando o usuário não está autenticado ou o token é inválido/expirado."
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponseDto"
-          example:
-            timestamp: "2025-08-15T13:55:00Z"
-            status: 401
-            message: "Sua sessão é inválida ou expirou. Por favor, faça login novamente."
-            path: "/api/auth/logout"
-
-    TokenResponseDto:
-      description: "Usuário autenticado com sucesso."
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/TokenResponseDto"
+          format: password
+          description: "Confirmação da senha. Deve ser idêntica ao campo 'password'."
+          pattern: '^\\S+$'
+          minLength: 6
+          maxLength: 20
+          example: "senhaForte@123"
 
     SignupResponseDto:
-      description: "Usuário registrado com sucesso. A conta está pendente de verificação."
+      type: object
+      description: Resposta da API após um cadastro bem-sucedido, indicando a necessidade de verificação por OTP.
+      required:
+        - otpSessionId
+        - message
+      properties:
+        otpSessionId:
+          type: string
+          format: uuid
+          description: "O ID da sessão de verificação OTP que deve ser usado na próxima etapa para validar o código."
+          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+        message:
+          type: string
+          description: "Uma mensagem informativa para o usuário sobre o próximo passo."
+          example: "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone."
+
+  headers:
+    Set-Cookie:
+      description: |
+        Contém o `refreshToken` utilizado para renovar a sessão. 
+        Este é um cookie seguro com os seguintes atributos:
+        - **HttpOnly**: Não pode ser acessado por JavaScript no navegador, protegendo contra ataques XSS.
+        - **Secure**: Só é enviado em requisições HTTPS.
+        - **SameSite=Strict**: Ajuda a proteger contra ataques CSRF.
+        - **Max-Age**: Define o tempo de vida do cookie (ex: 7 dias).
+      schema:
+        type: string
+        example: "refreshToken=73e597d3-21f0...; Max-Age=604800; Path=/; Secure; HttpOnly; SameSite=Strict"
+
+  parameters:
+    RefreshTokenCookie:
+      in: cookie
+      name: refreshToken
+      schema:
+        type: string
+        format: uuid
+      required: false
+      description: "Cookie contendo o refreshToken para atualização da sessão."
+
+  responses:
+
+    InternalServerError:
+      description: Erro lançado quando ocorre um erro inesperado no servidor.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SignupResponseDto'
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            timestamp: "2024-06-15T14:30:00Z"
+            status: 500
+            errorCode: "UNEXPECTED_ERROR"
+            developerMessage: "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde."
+            path: "/api/some/endpoint"
 
-    SimpleMessageResponseDto:
-      description: Operação realizada com sucesso.
+    UnauthorizedError:
+      description: |
+        Erro lançado quando o token de autenticação está ausente, inválido ou expirado. Também é 
+        lançado quando a conta do usuário não está mais ativa.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SimpleMessageResponseDto'
-
-    ForgotPasswordRequestDto:
-      description: Enviar o telefone do usuário para iniciar o processo de redefinição de senha.
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            SessionExpired:
+              summary: Sessão Expirada
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 401
+                errorCode: "SESSION_EXPIRED"
+                developerMessage: "Sua sessão expirou. Por favor, faça login novamente."
+                path: "/api/security/endpoint"
+            AccountLocked:
+              summary: Conta Bloqueada
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 401
+                errorCode: "ACCOUNT_LOCKED"
+                developerMessage: "Sua conta está bloqueada. Por favor, contate o suporte."
+                path: "/api/security/endpoint"
+            AccountDisabled:
+              summary: Conta Desativada
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 401
+                errorCode: "ACCOUNT_DISABLED"
+                developerMessage:
+                  "Sua conta está desativada e será deletada em breve. 
+                  Entre em contato com o suporte para reativá-la."
+                path: "/api/security/endpoint"
+            AccountPendingVerification:
+              summary: Conta Pendente
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 401
+                errorCode: "ACCOUNT_PENDING_VERIFICATION"
+                developerMessage: "Você precisa ativar sua conta. Conclua o processo de cadastro."
+                path: "/api/security/endpoint"
+    
+    AccountStatusForbidden:
+      description: Erro lançado quando a conta do usuário não está ativa (bloqueada, desativada ou pendente).
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ForgotPasswordRequestDto'
-
-    PasswordResetTokenResponseDto:
-      description: Token temporário para redefinição de senha.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PasswordResetTokenResponseDto'
-
-    ResetPasswordRequestDto:
-      description: Enviar o token de redefinição e a nova senha para efetivar a alteração.
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            AccountLocked:
+              summary: Conta Bloqueada
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 403
+                errorCode: "ACCOUNT_LOCKED"
+                developerMessage: "Sua conta está bloqueada. Por favor, contate o suporte."
+                path: "/api/some/endpoint"
+            AccountDisabled:
+              summary: Conta Desativada
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 403
+                errorCode: "ACCOUNT_DISABLED"
+                developerMessage:
+                  "Sua conta está desativada e será deletada em breve. 
+                  Entre em contato com o suporte para reativá-la."
+                path: "/api/some/endpoint"
+            AccountPendingVerification:
+              summary: Conta Pendente
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 403
+                errorCode: "ACCOUNT_PENDING_VERIFICATION"
+                developerMessage: "Você precisa ativar sua conta. Conclua o processo de cadastro."
+                path: "/api/some/endpoint"
+    
+    AuthResponseDto:
+      description: Resposta contendo os dados do usuário autenticado e o token de acesso.
       content:
         application/json:
         schema:
-          $ref: '#/components/schemas/ResetPasswordRequestDto'
+          $ref: '#/components/schemas/AuthResponseDto'
 
-    UserProfileResponseDTO:
-      description: Dados do perfil do usuário autenticado.
+    ForgotPasswordResponseDto:
+      description: Resposta após iniciar o processo de redefinição de senha.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UserProfileResponseDTO'
+            $ref: '#/components/schemas/ForgotPasswordResponseDto'
+
 
 # Mapeamento dos endpoints da API
 paths:
-  # ---- Endpoints de autenticação ----
   /api/auth/login:
     post:
-      operationId: "login"
-      tags:
-        - "Autenticação"
-      summary: "Autenticar um usuário"
-      description: "Autentica um usuário com nome de usuário e senha. Se as credenciais forem válidas, retorna um token de acesso (JWT) e um token de atualização (refresh token) em um cookie HttpOnly seguro."
+      operationId: loginUser
+      tags: [ Autenticação ]
+      summary: Realiza o login do usuário e retorna um token de acesso.
+      description: |
+        Este endpoint autentica um usuário com base no nome de usuário e senha fornecidos.
+        Se as credenciais estiverem corretas, retorna um token JWT (JSON Web Token)
+        que deve ser usado para autorizar requisições subsequentes aos endpoints protegidos.
+        Além disso, um `refreshToken` é enviado como um cookie seguro para renovação da sessão.
       requestBody:
+        description: Corpo da requisição contendo as credenciais do usuário.
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoginRequestDto"
+              $ref: '#/components/schemas/LoginRequestDto'
       responses:
-        "200":
-          description: "Autenticação bem-sucedida. Retorna os dados do usuário e o token de acesso."
+        200:
+          description: |
+            Usuário autenticado com sucesso. Retorna os dados do usuário e o token de acesso.
+            Também define um cookie seguro contendo o `refreshToken` para renovação da sessão.
           headers:
-            Cookie:
-              $ref: "#/components/headers/Cookie"
+            Set-Cookie:
+              $ref: '#/components/headers/Set-Cookie'
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TokenResponseDto"
-        "400":
-          description: "Requisição inválida. Ocorre se os dados fornecidos não passarem na validação, como campos em branco ou com formato incorreto."
+                $ref: '#/components/schemas/AuthResponseDto'
+        400:
+          description: Erro lançado quando a validação dos dados de entrada falha.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T14:21:00Z"
-                status: 400
-                message: "Erro de validação. Verifique os campos informados."
-                path: "/api/auth/login"
-                fieldErrors:
-                  - fieldName: "username"
-                    message: "O campo usuário deve ter entre 4 e 50 caracteres"
-        "401":
-          description: "Não autorizado. Retornado quando as credenciais (usuário/senha) são inválidas."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 401
-                message: "Credenciais inválidas. Por favor, verifique seu usuário e senha."
-                path: "/api/auth/login"
-        "409":
-          description: "Conflito de estado. Ocorre quando o estado atual da conta impede o login (ex: pendente de verificação, bloqueada ou desativada)."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
-                PendingVerification:
-                  summary: "Conta pendente de verificação"
+                InvalidUsername:
+                  summary: Nome de usuário com formato inválido
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro."
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
                     path: "/api/auth/login"
-                Locked:
-                  summary: "Conta bloqueada"
+                    fieldErrors:
+                      - fieldName: "username"
+                        errorCode: "USERNAME_REQUIRED"
+                        developerMessage: "O nome de usuário é obrigatório."
+                      - fieldName: "username"
+                        errorCode: "USERNAME_INVALID_FORMAT"
+                        developerMessage: "O nome de usuário pode conter apenas letras, números e underscore (_)."
+                      - fieldName: "username"
+                        errorCode: "USERNAME_INVALID_LENGTH"
+                        developerMessage: "O nome de usuário deve ter entre 3 e 50 caracteres."
+                InvalidPassword:
+                  summary: Senha com formato inválido
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Sua conta está bloqueada. Por favor, contate o suporte."
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
                     path: "/api/auth/login"
-                Disabled:
-                  summary: "Conta desativada"
+                    fieldErrors:
+                      - fieldName: "password"
+                        errorCode: "PASSWORD_REQUIRED"
+                        developerMessage: "A senha é obrigatória."
+                      - fieldName: "password"
+                        errorCode: "PASSWORD_INVALID_LENGTH"
+                        developerMessage: "A senha deve ter entre 6 e 20 caracteres."
+                      - fieldName: "password"
+                        errorCode: "PASSWORD_NO_WHITESPACE"
+                        developerMessage: "A senha não pode conter espaços em branco."
+        401:
+          description: Erro lançado quando as credenciais fornecidas são inválidas ou a conta do usuário não está ativa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidCredentials:
+                  summary: Credenciais Inválidas
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte."
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 401
+                    errorCode: "INVALID_CREDENTIALS"
+                    developerMessage: "Credenciais inválidas. Por favor, verifique seu usuário e senha."
                     path: "/api/auth/login"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
+                AccountLocked:
+                  summary: Conta Bloqueada
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 401
+                    errorCode: "ACCOUNT_LOCKED"
+                    developerMessage: "Sua conta está bloqueada. Por favor, contate o suporte."
+                    path: "/api/auth/login"
+                AccountDisabled:
+                  summary: Conta Desativada
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 401
+                    errorCode: "ACCOUNT_DISABLED"
+                    developerMessage:
+                      "Sua conta está desativada e será deletada em breve. 
+                      Entre em contato com o suporte para reativá-la."
+                    path: "/api/auth/login"
+                AccountPendingVerification:
+                  summary: Conta Pendente
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 401
+                    errorCode: "ACCOUNT_PENDING_VERIFICATION"
+                    developerMessage: "Você precisa ativar sua conta. Conclua o processo de cadastro."
+                    path: "/api/auth/login"
+        500:
+          $ref: '#/components/responses/InternalServerError'
 
   /api/auth/logout:
     post:
-      operationId: "logout"
-      tags:
-        - "Autenticação"
-      summary: "Realizar o logout do usuário"
-      description: "Encerra a sessão do usuário. Invalida o refresh token no servidor e envia um cabeçalho para instruir o navegador a remover o cookie 'refreshToken'. Requer um token de acesso válido para ser executado."
+      operationId: logoutUser
+      tags: [ Autenticação ]
       security:
         - bearerAuth: [ ]
+      summary: Realiza o logout do usuário, invalidando o refreshToken.
+      description: |
+        Realiza o logout do usuário invalidando o `refreshToken` armazenado no cookie, efetivamente
+        encerrando a sessão do usuário. Após o logout, o usuário precisará fazer login
+        novamente para obter um novo token de acesso e refreshToken.
       parameters:
-        - in: "cookie"
-          name: "refreshToken"
-          required: false
-          description: "O refresh token a ser invalidado. Normalmente, o navegador anexa este cookie automaticamente."
-          schema:
-            type: string
-            example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+        - $ref: '#/components/parameters/RefreshTokenCookie'
       responses:
-        "204":
-          description: "Logout realizado com sucesso. O refresh token foi invalidado e o cookie do navegador foi expirado."
+        204:
+          description: |
+            Logout realizado com sucesso. 
+            A resposta inclui um cabeçalho `Set-Cookie` para remover o cookie `refreshToken` do navegador.
           headers:
-            ExpiredToken:
-              $ref: "#/components/headers/ExpiredCookie"
-        "400":
-          description: "Requisição inválida. Ocorre se o formato do 'refreshToken' for inválido (não é um UUID válido)."
+            Set-Cookie:
+              description: |
+                Define um cookie `refreshToken` com tempo de vida expirado (`Max-Age=0`), 
+                instruindo o navegador a removê-lo imediatamente. Os atributos de segurança 
+                (HttpOnly, Secure, SameSite) são mantidos para consistência.
+              schema:
+                type: string
+                example: "refreshToken=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Strict"
+        400:
+          description: Erro lançado quando o cookie de refreshToken está ausente ou inválido.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 400
-                message: "Formato inválido para o refresh token."
-                path: "/api/auth/logout"
-        "401":
-          $ref: "#/components/responses/AuthenticationExceptionResponse"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                MissingRefreshToken:
+                  summary: RefreshToken Ausente
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "REFRESH_TOKEN_REQUIRED"
+                    developerMessage: "O token de atualização é obrigatório."
+                    path: "/api/auth/logout"
+                InvalidRefreshToken:
+                  summary: RefreshToken com formato inválido
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "REFRESH_TOKEN_INVALID_FORMAT"
+                    developerMessage: "O formato do token de atualização é inválido."
+                    path: "/api/auth/logout"
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
 
   /api/auth/refresh-token:
     post:
-      operationId: "refreshToken"
-      tags:
-        - "Autenticação"
-      summary: "Renovar o token de acesso"
-      description: "Gera um novo token de acesso (JWT) a partir de um refresh token válido. O refresh token deve ser enviado em um cookie HttpOnly chamado 'refreshToken'."
+      operationId: refreshToken
+      tags: [ Autenticação ]
+      summary: Renova o token de acesso utilizando o refreshToken.
+      description: |
+        Renova o token de acesso (accessToken) utilizando o `refreshToken` 
+        armazenado no cookie. Se o `refreshToken` for válido, um novo `accessToken` é retornado
+        na resposta e um novo `refreshToken` é definido no cookie.
       parameters:
-        - in: "cookie"
-          name: "refreshToken"
-          required: true
-          description: "O refresh token recebido durante o login. O navegador anexa este cookie automaticamente."
-          schema:
-            type: string
-            example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+        - $ref: '#/components/parameters/RefreshTokenCookie'
       responses:
-        "200":
-          description: "Token de acesso renovado com sucesso. Um novo access token é retornado no corpo da resposta e um novo refresh token é enviado no cabeçalho 'Set-Cookie'."
+        200:
+          description: |
+            Token renovado com sucesso. Retorna um novo token de acesso e define um novo 
+            cookie seguro contendo o `refreshToken`.
           headers:
-            Cookie:
-              $ref: "#/components/headers/Cookie"
+            Set-Cookie:
+              $ref: '#/components/headers/Set-Cookie'
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TokenResponseDto"
-        "400":
-          description: "Requisição inválida. Ocorre se o formato do 'refreshToken' for inválido (não é um UUID válido)."
+                $ref: '#/components/schemas/AuthResponseDto'
+        400:
+          description: Erro lançado quando o cookie de refreshToken está ausente ou inválido.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T14:21:00Z"
-                status: 400
-                message: "Formato inválido para o refresh token."
-                path: "/api/auth/refresh-token"
-        "401":
-          description: "Não autorizado. Ocorre se o 'refreshToken' estiver ausente, expirado ou não for encontrado no sistema."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
-                MissingToken:
-                  summary: "Refresh token ausente"
+                MissingRefreshToken:
+                  summary: RefreshToken Ausente
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "REFRESH_TOKEN_REQUIRED"
+                    developerMessage: "O token de atualização é obrigatório."
+                    path: "/api/auth/refresh-token"
+                InvalidRefreshToken:
+                  summary: RefreshToken com formato inválido
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "REFRESH_TOKEN_INVALID_FORMAT"
+                    developerMessage: "O formato do token de atualização é inválido."
+                    path: "/api/auth/refresh-token"
+        401:
+          description: Error lançado quando o refreshToken não for encontrado ou estiver expirado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                RefreshTokenNotFound:
+                  summary: RefreshToken Não Encontrado
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 401
-                    message: "Sua sessão expirou. Por favor, faça login novamente."
+                    errorCode: "REFRESH_TOKEN_NOT_FOUND"
+                    developerMessage: "Sua sessão expirou. Por favor, faça login novamente."
                     path: "/api/auth/refresh-token"
-                TokenNotFound:
-                  summary: "Refresh token não encontrado"
+                RefreshTokenExpired:
+                  summary: RefreshToken Expirado
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 401
-                    message: "Refresh token não encontrado."
+                    errorCode: "REFRESH_TOKEN_INVALID_OR_EXPIRED"
+                    developerMessage: "Sua sessão expirou. Por favor, faça login novamente."
                     path: "/api/auth/refresh-token"
-        "409":
-          description: "Conflito de estado. Ocorre se a conta não estiver ativada"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              examples:
-                PendingVerification:
-                  summary: "Conta pendente de verificação"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro."
-                    path: "/api/auth/refresh-token"
-                Locked:
-                  summary: "Conta bloqueada"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Sua conta está bloqueada. Por favor, contate o suporte."
-                    path: "/api/auth/refresh-token"
-                Disabled:
-                  summary: "Conta desativada"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Sua conta está desativada e será deletada em breve. Para reativá-la, por favor, entre em contato com o suporte."
-                    path: "/api/auth/refresh-token"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
-
-  /api/auth/signup:
-    post:
-      operationId: "signup"
-      tags:
-        - "Autenticação"
-      summary: "Cadastrar um novo usuário"
-      description: "Registrar um novo usuário no sistema. A conta é criada com o status 'PENDING_VERIFICATION', e um código de verificação (OTP) é enviado para o telefone informado para posterior ativação."
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SignupRequestDto"
-      responses:
-        "201":
-          description: "Usuário cadastrado com sucesso e aguardando verificação."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SignupResponseDto"
-        "400":
-          description: "Requisição inválida. Ocorre se os dados de entrada forem inválidos (ex: senhas não coincidem, formato de telefone inválido ou violações de regras de campo)."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              examples:
-                PasswordsNotMatch:
-                  summary: "Senhas não coincidem"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 400
-                    message: "Erro de validação. Verifique os campos informados."
-                    path: "/api/auth/signup"
-                    fieldErrors:
-                      - fieldName: "confirmPassword"
-                        message: "A senha de confirmação não corresponde à senha."
-                InvalidPhone:
-                  summary: "Número de telefone inválido"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 400
-                    message: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
-                    path: "/api/auth/signup"
-        "409":
-          description: "Conflito de estado. Ocorre se o nome de usuário ou o telefone já estiverem cadastrados no sistema."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              examples:
-                UsernameExists:
-                  summary: "Nome de usuário já em uso"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Esse nome de usuário já está em uso."
-                    path: "/api/auth/signup"
-                PhoneExists:
-                  summary: "Número de telefone já em uso"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Esse número de telefone já está em uso."
-                    path: "/api/auth/signup"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
-
-  /api/auth/verify-account:
-    post:
-      operationId: "verifyAccount"
-      tags:
-        - "Autenticação"
-      summary: "Verificar e ativar uma nova conta"
-      description: "Valida o código de verificação (OTP) enviado por SMS para uma conta com status 'PENDING_VERIFICATION'. Se o código for válido, a conta é ativada (status 'ACTIVE'), e o usuário é autenticado, recebendo um token de acesso e um cookie 'refreshToken'."
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ValidateOtpRequestDto"
-      responses:
-        "200":
-          description: "Conta ativada e usuário autenticado com sucesso."
-          headers:
-            Cookie:
-              $ref: "#/components/headers/Cookie"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/responses/TokenResponseDto"
-        "400":
-          description: "Requisição inválida. Ocorre se os dados forem inválidos (ex: telefone, código em branco) ou se o código OTP for incorreto ou expirado."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              examples:
-                MissingCode:
-                  summary: "Código de verificação ausente"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 400
-                    message: "Erro de validação. Verifique os campos informados."
-                    path: "/api/auth/verify-account"
-                    fieldErrors:
-                      - fieldName: "otpCode"
-                        message: "O código de verificação é obrigatório."
-                InvalidPhone:
-                  summary: "Número de telefone inválido"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 400
-                    message: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
-                    path: "/api/auth/verify-account"
-                InvalidCode:
-                  summary: "Código OTP inválido ou expirado"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 400
-                    message: "Código de verificação inválido ou expirado."
-                    path: "/api/auth/verify-account"
-        "404":
-          description: "Não encontrado. Ocorre se não houver um usuário com o telefone fornecido e status pendente."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 404
-                message: "Usuário não encontrado. Retorne ao início do cadastro para criar uma nova conta."
-                path: "/api/auth/verify-account"
-        "409":
-          description: "Conflito de estado. Ocorre ao tentar verificar uma conta que já se encontra em um estado 'ACTIVE"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 409
-                message: "Não é possível ativar uma conta que não está pendente de verificação."
-                path: "/api/auth/verify-account"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
-
-  /api/auth/resend-code:
-    post:
-      operationId: "resendVerificationCode"
-      tags:
-        - "Autenticação"
-      summary: "Reenviar código de verificação"
-      description: "Gera e reenvia um novo código de verificação (OTP) para o telefone de um 
-      usuário com conta em estado 'PENDING_VERIFICATION'. Por segurança, este endpoint sempre 
-      retorna sucesso, mesmo que o telefone não esteja cadastrado, para evitar a enumeração de usuários."
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ResendCodeRequestDto"
-        responses:
-          "204":
-            description: "Sucesso. A solicitação foi validada e um novo código de verificação 
-            foi enviado para o número de telefone associado à conta. O cliente deve agora permitir 
-            que o usuário insira o novo código."
-          "400":
-            description: "Requisição inválida. Ocorre se o formato do telefone for inválido."
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/ErrorResponseDto"
-                examples:
-                  MissingPhone:
-                    summary: "Número de telefone não informado"
-                    value:
-                      timestamp: "2025-08-15T13:55:00Z"
-                      status: 400
-                      message: "Erro de validação. Verifique os campos informados."
-                      path: "/api/auth/resend-otpCode"
-                      fieldErros:
-                        fieldName: "phone"
-                        message: "Por favor, informe seu telefone."
-                  InvalidPhone:
-                    summary: "Número de telefone inválido"
-                    value:
-                      timestamp: "2025-08-15T13:55:00Z"
-                      status: 400
-                      message: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
-                      path: "/api/auth/resend-otpCode"
-          "409":
-            description: "Conflito de estado. Ocorre ao tentar reenviar um código para uma conta 
-            que não está com status 'PENDING_VERIFICATION'."
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/ErrorResponseDto"
-                example:
-                  timestamp: "2025-08-15T13:55:00Z"
-                  status: 409
-                  message: "Atenção: Só é possível reenviar o código para contas pendentes de verificação."
-                  path: "/api/auth/resend-otpCode"
-          "500":
-            $ref: "#/components/responses/ErrorResponseInternalServerError"
+        403:
+          $ref: '#/components/responses/AccountStatusForbidden'
+        500:
+          $ref: '#/components/responses/InternalServerError'
 
   /api/auth/forgot-password:
     post:
-      operationId: "forgotPassword"
-      tags:
-        - "Autenticação"
-      summary: "Iniciar redefinição de senha"
-      description: "Inicia o fluxo de redefinição de senha. Se o usuário existir e estiver ativo,
-       um código OTP é enviado para o seu telefone. Por segurança, a resposta é sempre a mesma para 
-       evitar a enumeração de contas."
+      operationId: initiatePasswordReset
+      tags: [ Autenticação ]
+      summary: Inicia o processo de redefinição de senha enviando um código OTP por SMS.
+      description: |
+        Inicia o processo de redefinição de senha para o usuário associado ao número de telefone fornecido.
+        Um código OTP (One-Time Password) de 6 dígitos será enviado via SMS para o número, se ele estiver cadastrado.
+        O código OTP é válido por 10 minutos. Use o `otpSessionId` retornado para validar o código na próxima etapa.
       requestBody:
+        description: Corpo da requisição contendo o número de telefone do usuário.
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ForgotPasswordRequestDto"
+              $ref: '#/components/schemas/ForgotPasswordRequestDto'
       responses:
-        "202":
-          description: "Solicitação processada. A mensagem não indica se o telefone foi encontrado, 
-          para proteger a privacidade do usuário."
+        202:
+          description: |
+            Processo iniciado com sucesso. Retorna o `otpSessionId` para validação do código OTP.
+            É retornado um `otpSessionId` inválido caso o número não esteja cadastrado, para evitar 
+            vazamento de informações. Sendo assim o `otpSessionId` será validado na próxima etapa.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SimpleMessageResponseDto"
-              example:
-                message: "Se o telefone informado for válido, enviaremos um código para verificação da conta."
-        "400":
-          description: "Requisição inválida. Ocorre se o formato do telefone for inválido."
+                $ref: '#/components/schemas/ForgotPasswordResponseDto'
+        400:
+          description: Erro lançado quando os dados de entrada forem inválidos.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
-                MissingPhone:
-                  summary: "Número de telefone não informado"
+                InvalidFormatPhone:
+                  summary: Número de Telefone com Formato Inválido
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 400
-                    message: "Erro de validação. Verifique os campos informados."
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
                     path: "/api/auth/forgot-password"
                     fieldErrors:
                       - fieldName: "phone"
-                        message: "Por favor, informe seu telefone."
+                        errorCode: "PHONE_REQUIRED"
+                        developerMessage: "O número de telefone é obrigatório."
+                      - fieldName: "phone"
+                        errorCode: "PHONE_INVALID_FORMAT"
+                        developerMessage: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
                 InvalidPhone:
-                  summary: "Número de telefone inválido"
+                  summary: Telefone com código de país inválido ou número inválido
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 400
-                    message: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
+                    errorCode: "PHONE_INVALID_FORMAT"
+                    developerMessage: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
                     path: "/api/auth/forgot-password"
-        "409":
-          description: "Conflito de estado. Ocorre se a conta não estiver ativada"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              examples:
-                PendingVerification:
-                  summary: "Conta pendente de verificação"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro."
-                    path: "/api/auth/forgot-password"
-                Locked:
-                  summary: "Conta bloqueada"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Sua conta está bloqueada. Por favor, contate o suporte."
-                    path: "/api/auth/forgot-password"
-                Disabled:
-                  summary: "Conta desativada"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Sua conta está desativada e será deletada em breve. 
-                    Para reativá-la, por favor, entre em contato com o suporte."
-                    path: "/api/auth/forgot-password"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
 
-  /api/auth/reset-password-token:
+  /auth/reset-password-token:
     post:
-      operationId: "passwordResetToken"
-      tags:
-        - "Autenticação"
-      summary: "Validar código e gerar token de redefinição de senha"
-      description: "Segunda etapa do fluxo de redefinição de senha. Valida o código OTP recebido 
-        pelo usuário. Se o código for válido, gera e retorna um token temporário de uso único para a 
-        redefinição de senha."
+      operationId: resetPasswordToken
+      tags: [ Autenticação ]
+      summary: Valida o código OTP e retorna um token de redefinição de senha.
+      description: |
+        Valida o código OTP (One-Time Password) enviado ao usuário. Se o código for válido e 
+        corresponder ao `otpSessionId`, retorna um `passwordResetToken` que deve ser usado para 
+        alterar a senha na próxima etapa. O código OTP é válido por 10 minutos.
       requestBody:
+        description: Corpo da requisição contendo o `otpSessionId` e o código OTP.
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ValidateOtpRequestDto"
+              $ref: '#/components/schemas/ValidateOtpRequestDto'
       responses:
-        "200":
-          description: "Código OTP validado com sucesso. Retorna o token temporário para redefinição de senha."
+        200:
+          description: |
+            Código OTP validado com sucesso. Retorna o token de redefinição de senha. Esse token será
+            utilizado na próxima etapa para alterar a senha do usuário.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PasswordResetTokenResponseDto"
-        "400":
-          description: "Requisição inválida. Ocorre se houver erros de validação (código em branco) 
-            ou se o código OTP for inválido/expirado."
+                $ref: '#/components/schemas/PasswordResetTokenResponseDto'
+        400:
+          description: Erro lançado quando os dados de entrada forem inválidos.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
-                MissingCode:
-                  summary: "Código de verificação ausente"
+                InvalidFormatOtpSessionId:
+                  summary: OtpSessionId com formato Inválido
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 400
-                    message: "Erro de validação. Verifique os campos informados."
-                    path: "/api/auth/password-reset-token"
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                    path: "/api/auth/reset-password-token"
+                    fieldErrors:
+                      - fieldName: "otpSessionId"
+                        errorCode: "OTP_SESSION_ID_REQUIRED"
+                        developerMessage: "O ID da sessão OTP é obrigatório."
+                      - fieldName: "otpSessionId"
+                        errorCode: "OTP_SESSION_ID_INVALID_FORMAT"
+                        developerMessage: "O formato do ID da sessão OTP é inválido."
+                InvalidFormatOtpCode:
+                  summary: Código OTP com formato Inválido
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                    path: "/api/auth/reset-password-token"
                     fieldErrors:
                       - fieldName: "otpCode"
-                        message: "O código de verificação é obrigatório."
-                InvalidPhone:
-                  summary: "Número de telefone inválido"
+                        errorCode: "OTP_CODE_REQUIRED"
+                        developerMessage: "O código de verificação é obrigatório."
+                      - fieldName: "otpCode"
+                        errorCode: "OTP_CODE_INVALID_FORMAT"
+                        developerMessage: "O código de verificação deve ser composto por 6 dígitos numéricos."
+                InvalidOrExpiredOtpSessionId:
+                  summary: OtpSessionId Inválido ou Expirado
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 400
-                    message: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
-                    path: "/api/auth/password-reset-token"
-                InvalidCode:
-                  summary: "Código OTP inválido ou expirado"
+                    errorCode: "OTP_SESSION_INVALID_OR_EXPIRED"
+                    developerMessage: "Sessão para a validação do código OTP expirada ou inválida."
+                    path: "/api/auth/reset-password-token"
+                InvalidOrExpiredOtpCode:
+                  summary: Código OTP Inválido ou Expirado
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 400
-                    message: "Código de verificação inválido ou expirado."
-                    path: "/api/auth/password-reset-token"
-        "404":
-          description: "Não encontrado. Ocorre se não houver um usuário associado ao telefone fornecido."
+                    errorCode: "OTP_CODE_INVALID_OR_EXPIRED"
+                    developerMessage: "Código de verificação inválido ou expirado."
+                    path: "/api/auth/reset-password-token"
+        403:
+          $ref: '#/components/responses/AccountStatusForbidden'
+        404:
+          description: |
+            Error lançado quando não foi encontrado um usuário associado ao otpSessionId. Pode 
+            ocorrer se o usuário tiver sido deletado após iniciar o processo de redefinição de senha
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
+                $ref: '#/components/schemas/ErrorResponse'
               example:
-                timestamp: "2025-08-15T13:55:00Z"
+                timestamp: "2024-06-15T14:30:00Z"
                 status: 404
-                message: "Usuário não encontrado. Verifique o número de telefone informado e tente novamente."
-                path: "/api/auth/password-reset-token"
-        "409":
-          description: "Conflito de estado. Ocorre se a conta não estiver ativada"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-            examples:
-              PendingVerification:
-                summary: "Conta pendente de verificação"
-                value:
-                  timestamp: "2025-08-15T13:55:00Z"
-                  status: 409
-                  message: "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro."
-                  path: "/api/auth/password-reset-token"
-              Locked:
-                summary: "Conta pendente de verificação"
-                value:
-                  timestamp: "2025-08-15T13:55:00Z"
-                  status: 409
-                  message: "Atenção: Sua conta está bloqueada. Por favor, contate o suporte."
-                  path: "/api/auth/password-reset-token"
-              Disabled:
-                summary: "Conta desativada"
-                value:
-                  timestamp: "2025-08-15T13:55:00Z"
-                  status: 409
-                  message: "Atenção: Sua conta está desativada e será deletada em breve. 
-                    Para reativá-la, por favor, entre em contato com o suporte."
-                  path: "/api/auth/password-reset-token"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
+                errorCode: "USER_NOT_FOUND"
+                developerMessage: "Usuário não encontrado."
+                path: "/api/auth/reset-password-token"
+        500:
+          $ref: '#/components/responses/InternalServerError'
 
-  /api/auth/reset-password:
+  /auth/reset-password:
     post:
-      operationId: "resetPassword"
-      tags:
-        - "Autenticação"
-      summary: "Redefinir a senha do usuário"
-      description: "Etapa final do fluxo de redefinição de senha. Recebe o token temporário gerado 
-      na etapa anterior e a nova senha para efetivar a alteração no sistema."
+      operationId: resetPassword
+      tags: [ Autenticação ]
+      summary: Redefine a senha do usuário utilizando o token de redefinição.
+      description: |
+        Redefine a senha do usuário utilizando o `passwordResetToken` obtido na etapa anterior.
+        A nova senha deve ser fornecida juntamente com a confirmação da senha, que deve ser idêntica.
+        Após a redefinição, o token não pode ser reutilizado e o usuário precisa fazer login novamente.
       requestBody:
+        description: Corpo da requisição contendo o token de redefinição e a nova senha.
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ResetPasswordRequestDto"
+              $ref: '#/components/schemas/ResetPasswordRequestDto'
       responses:
-        "200":
-          description: "Senha redefinida com sucesso."
+        204:
+          description: Senha redefinida com sucesso. Não há conteúdo na resposta.
+          headers:
+            Set-Cookie:
+              description: |
+                Define um cookie `refreshToken` com tempo de vida expirado (`Max-Age=0`), 
+                instruindo o navegador a removê-lo imediatamente. Os atributos de segurança 
+                (HttpOnly, Secure, SameSite) são mantidos para consistência.
+              schema:
+                type: string
+                example: "refreshToken=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Strict"
+        400:
+          description: Erro lançado quando os dados de entrada forem inválidos.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SimpleMessageResponseDto"
-              example:
-                message: "Senha redefinida com sucesso. Você já pode fazer o login com sua nova senha."
-        "400":
-          description: "Requisição inválida. Ocorre se o token de redefinição for inválido/expirado,
-          as senhas não coincidirem ou houver erros de validação."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
-                MissingToken:
-                  summary: "Token de redefinição ausente"
+                ResetTokenInvalidOrExpired:
+                  summary: Token de redefinição inválido ou expirado
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 400
-                    message: "Erro de validação. Verifique os campos informados."
+                    errorCode: "RESET_TOKEN_INVALID_OR_EXPIRED"
+                    developerMessage: "O token de redefinição de senha é inválido ou expirou."
                     path: "/api/auth/reset-password"
-                    fieldErros:
+                InvalidFormatPasswordResetToken:
+                  summary: PasswordResetToken com formato Inválido
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                    path: "/api/auth/reset-password"
+                    fieldErrors:
                       - fieldName: "passwordResetToken"
-                        message: "O token de redefinição de senha é obrigatório."
-                PasswordsNotMatch:
-                  summary: "Senhas não coincidem"
+                        errorCode: "RESET_TOKEN_REQUIRED"
+                        developerMessage: "O token de redefinição de senha é obrigatório."
+                      - fieldName: "passwordResetToken"
+                        errorCode: "RESET_TOKEN_INVALID_FORMAT"
+                        developerMessage: "O formato do token de redefinição de senha é inválido."
+                InvalidFormatNewPassword:
+                  summary: Nova senha com formato Inválido
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 400
-                    message: "Erro de validação. Verifique os campos informados."
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
                     path: "/api/auth/reset-password"
-                    fieldErros:
-                      - fieldName: "confirmedPassword"
-                        message: "A senha de confirmação não corresponde à nova senha."
-
-                InvalidToken:
-                  summary: "Token de redefinição inválido ou expirado"
+                    fieldErrors:
+                      - fieldName: "newPassword"
+                        errorCode: "PASSWORD_REQUIRED"
+                        developerMessage: "A senha é obrigatória."
+                      - fieldName: "newPassword"
+                        errorCode: "PASSWORD_INVALID_LENGTH"
+                        developerMessage: "A senha deve ter entre 6 e 20 caracteres."
+                      - fieldName: "newPassword"
+                        errorCode: "PASSWORD_NO_WHITESPACE"
+                        developerMessage: "A senha não pode conter espaços em branco."
+                InvalidFormatConfirmPassword:
+                  summary: Confirmação de senha com formato Inválido
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 400
-                    message: "Token inválido ou expirado."
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
                     path: "/api/auth/reset-password"
-        "404":
-          description: "Não encontrado. Ocorre se o token de redefinição não estiver associado a nenhum usuário válido."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 400
-                message: "Ocorreu um erro ao redefinir sua senha. Por favor, inicie o processo novamente."
-                path: "/api/auth/reset-password"
-        "409":
-          description: "Conflito de estado. Ocorre se a conta não estiver ativada"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              examples:
-                PendingVerification:
-                  summary: "Conta pendente de verificação"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro."
-                    path: "/api/auth/reset-password"
-                Locked:
-                  summary: "Conta pendente de verificação"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Sua conta está bloqueada. Por favor, contate o suporte."
-                    path: "/api/auth/reset-password"
-                Disabled:
-                  summary: "Conta desativada"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 409
-                    message: "Atenção: Sua conta está desativada e será deletada em breve. 
-                    Para reativá-la, por favor, entre em contato com o suporte."
-                    path: "/api/auth/password-reset-token"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
-
-  # ---- Endpoints atualização da conta e perfil ----
-  /api/users/me/profile:
-    patch:
-      operationId: updateUserProfile
-      tags: [ "Usuário" ]
-      summary: "Atualizar dados do perfil do usuário"
-      description: "Atualiza os dados do perfil do usuário atualmente autenticado. Atualmente só pode atualizar o nome completo."
-      security:
-        - bearerAuth: [ ]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateProfileRequestDTO"
-      responses:
-        "200":
-          description: "Perfil atualizado com sucesso. Retorna os dados atualizados do usuário."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserProfileResponseDTO"
-        "400":
-          description: "Requisição inválida. Ocorre se os dados fornecidos não passarem na validação, como campos em branco ou com formato incorreto."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T14:21:00Z"
-                status: 400
-                message: "Erro de validação. Verifique os campos informados."
-                path: "/api/users/me/profile"
-                fieldErrors:
-                  - fieldName: "fullName"
-                    message: "O nome completo deve ter entre 3 e 100 caracteres."
-        "401":
-          $ref: "#/components/responses/AuthenticationExceptionResponse"
-        "404":
-          description: "Não encontrado. Ocorre se o usuário autenticado não for encontrado para ser atualizado."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 404
-                message: "Usuário não encontrado."
-                path: "/api/users/me/profile"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
-
-  /api/users/me/username:
-    patch:
-      operationId: changeUsername
-      tags: [ "Usuário" ]
-      summary: "Atualizar o username do usuário"
-      description: "Atualiza o username do usuário verificando se o username novo não está sendo utilizado."
-      security:
-        - bearerAuth: [ ]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ChangeUsernameRequestDTO"
-      responses:
-        "200":
-          description: "Username atualizado com sucesso. Retorna os dados atualizados do usuário."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserProfileResponseDTO"
-        "400":
-          description: "Requisição inválida. Ocorre se os dados fornecidos não passarem na validação, como campos em branco ou com formato incorreto."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T14:21:00Z"
-                status: 400
-                message: "Erro de validação. Verifique os campos informados."
-                path: "/api/users/me/username"
-                fieldErrors:
-                  - fieldName: "username"
-                    message: "Por favor, informe um novo nome de usuário."
-        "401":
-          $ref: "#/components/responses/AuthenticationExceptionResponse"
-        "404":
-          description: "Não encontrado. Ocorre se o usuário autenticado não for encontrado para ser atualizado."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 404
-                message: "Usuário não encontrado."
-                path: "/api/users/me/username"
-        "409":
-          description: "Conflito de estado. Ocorre se o username já estiver em uso por outro usuário."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 409
-                message: "Esse nome de usuário já está em uso."
-                path: "/api/users/me/username"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
-
-  /api/users/me/password:
-    post:
-      operationId: changePassword
-      tags: [ "Usuário" ]
-      summary: "Atualizar a senha do usuário"
-      description: "Atualiza a senha do usuário autenticado. Requer a senha atual para validação e a nova senha com confirmação."
-      security:
-        - bearerAuth: [ ]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ChangePasswordRequestDto"
-      responses:
-        "204":
-          description: "Senha atualizada com sucesso."
-        "400":
-          description: "Requisição inválida. Ocorre se os dados fornecidos não passarem na validação, como campos em branco ou as senhas não se coincidirem."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              examples:
-                MissingConfirmPassword:
-                  summary: "Senha de confirmação não informada"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 400
-                    message: "Erro de validação. Verifique os campos informados."
-                    path: "/api/users/me/password"
                     fieldErrors:
                       - fieldName: "confirmPassword"
-                        message: "Por favor, confirme sua nova senha."
-                PasswordsNotMatch:
-                  summary: "Senhas não coincidem"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 400
-                    path: "/api/users/me/password"
-                    message: "Erro de validação. Verifique os campos informados."
-                    fieldErrors:
-                      - fieldName: "confirmedPassword"
-                        message: "A senha de confirmação não corresponde à senha."
-                InvalidCurrentPassword:
-                  summary: "Senha atual inválida"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 400
-                    path: "/api/users/me/password"
-                    message: "A Senha atual está incorreta"
-        "401":
-          $ref: "#/components/responses/AuthenticationExceptionResponse"
-        "404":
-          description: "Não encontrado. Ocorre se o usuário autenticado não for encontrado para ser atualizado."
+                        errorCode: "CONFIRM_PASSWORD_REQUIRED"
+                        developerMessage: "A confirmação de senha é obrigatória."
+                      - fieldName: "confirmPassword"
+                        errorCode: "PASSWORD_INVALID_LENGTH"
+                        developerMessage: "A senha deve ter entre 6 e 20 caracteres."
+                      - fieldName: "confirmPassword"
+                        errorCode: "PASSWORD_NO_WHITESPACE"
+                        developerMessage: "A senha não pode conter espaços em branco."
+                      - fieldName: "confirmPassword"
+                        errorCode: "PASSWORDS_DO_NOT_MATCH"
+                        developerMessage: "A senha de confirmação não corresponde à senha."
+        403:
+          $ref: '#/components/responses/AccountStatusForbidden'
+        404:
+          description: |
+            Error lançado quando não foi encontrado um usuário associado ao passwordResetToken. Pode 
+            ocorrer se o usuário for deletado após iniciar o processo de redefinição de senha
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
+                $ref: '#/components/schemas/ErrorResponse'
               example:
-                timestamp: "2025-08-15T13:55:00Z"
+                timestamp: "2024-06-15T14:30:00Z"
                 status: 404
-                message: "Usuário não encontrado."
-                path: "/api/users/me/username"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
+                errorCode: "USER_NOT_FOUND"
+                developerMessage: "Usuário não encontrado."
+                path: "/api/auth/reset-password"
+        500:
+          $ref: '#/components/responses/InternalServerError'
 
-  /api/users/me/phone/verification:
+  /api/auth/signup:
     post:
-      operationId: initiateChangePhone
-      tags: [ "Usuário" ]
-      summary: "Iniciar alteração do número de telefone"
-      description: "Inicia o processo de alteração do número de telefone do usuário autenticado. Envia um código OTP para o novo número de telefone fornecido para verificação."
-      security:
-        - bearerAuth: [ ]
+      operationId: registerUser
+      tags: [ Autenticação ]
+      summary: Realiza o cadastro de um novo usuário e inicia o processo de verificação por OTP.
+      description: |
+        Este endpoint cria uma nova conta de usuário com o status `PENDENTE` e com os dados fornecidos.
+        Após o cadastro, um código OTP (One-Time Password) de 6 dígitos será enviado via SMS 
+        para o número de telefone fornecido, para verificar a propriedade do número.
       requestBody:
+        description: Corpo da requisição contendo os dados do novo usuário.
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ChangePhoneRequestDTO"
+              $ref: '#/components/schemas/SignupRequestDto'
       responses:
-        "202":
-          description: "Solicitação processada. Um código OTP foi enviado para o novo número de telefone fornecido."
-        "400":
-          description: "Requisição Inválida. Ocorre se os dados fornecidos não passarem na validação, como campos em branco ou formato de telefone inválido."
+        202:
+          description: |
+            Usuário cadastrado com sucesso. Retorna o um `otpSessionId` que será utilizado na
+            próxima etapa para validar e ativar a conta do usuário. Um código OTP foi enviado para 
+            o número de telefone fornecido, se ele não estiver cadastrado. Caso o número já 
+            esteja em uso, uma mensagem informativa será retornada.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
+                $ref: '#/components/schemas/SignupResponseDto'
+        400:
+          description: Erro lançado quando ocorrer um erro durante a validação dos dados de entrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
-                MissingNewPhone:
-                  summary: "Novo telefone não informado"
+                InvalidFormatUsername:
+                  summary: Nome de usuário com formato inválido
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 400
-                    message: "Erro de validação. Verifique os campos informados."
-                    path: "/api/users/me/phone/verification"
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                    path: "/api/auth/signup"
                     fieldErrors:
-                      - fieldName: "newPhone"
-                        message: "Por favor, informe seu telefone."
+                      - fieldName: "username"
+                        errorCode: "USERNAME_REQUIRED"
+                        developerMessage: "O nome de usuário é obrigatório."
+                      - fieldName: "username"
+                        errorCode: "USERNAME_INVALID_FORMAT"
+                        developerMessage: "O nome de usuário pode conter apenas letras, números e underscore (_)."
+                      - fieldName: "username"
+                        errorCode: "USERNAME_INVALID_LENGTH"
+                        developerMessage: "O nome de usuário deve ter entre 3 e 50 caracteres."
+                InvalidFormatFullName:
+                  summary: Nome completo do usuário com formato inválido
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                    path: "/api/auth/signup"
+                    fieldErrors:
+                      - fieldName: "fullName"
+                        errorCode: "FULL_NAME_REQUIRED"
+                        developerMessage: "O nome completo é obrigatório."
+                      - fieldName: "fullName"
+                        errorCode: "FULL_NAME_INVALID_LENGTH"
+                        developerMessage: "O nome completo deve ter entre 3 e 100 caracteres."
+                InvalidFormatPhone:
+                  summary: Telefone com formato inválido
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                    path: "/api/auth/signup"
+                    fieldErrors:
+                      - fieldName: "phone"
+                        errorCode: "PHONE_REQUIRED"
+                        developerMessage: "O número de telefone é obrigatório."
+                      - fieldName: "phone"
+                        errorCode: "PHONE_INVALID_FORMAT"
+                        developerMessage: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
+                InvalidFormatPassword:
+                  summary: Senha com formato inválida
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                    path: "/api/auth/signup"
+                    fieldErrors:
+                      - fieldName: "password"
+                        errorCode: "PASSWORD_REQUIRED"
+                        developerMessage: "A senha é obrigatória."
+                      - fieldName: "password"
+                        errorCode: "PASSWORD_INVALID_LENGTH"
+                        developerMessage: "A senha deve ter entre 6 e 20 caracteres."
+                      - fieldName: "password"
+                        errorCode: "PASSWORD_NO_WHITESPACE"
+                        developerMessage: "A senha não pode conter espaços em branco."
+                InvalidFormatConfirmPassword:
+                  summary: Senha de confirmação com formato inválido
+                  value:
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 400
+                    errorCode: "VALIDATION_FAILED"
+                    developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                    path: "/api/auth/signup"
+                    fieldErrors:
+                      - fieldName: "confirmPassword"
+                        errorCode: "CONFIRM_PASSWORD_REQUIRED"
+                        developerMessage: "A confirmação de senha é obrigatória."
+                      - fieldName: "confirmPassword"
+                        errorCode: "PASSWORD_INVALID_LENGTH"
+                        developerMessage: "A senha deve ter entre 6 e 20 caracteres."
+                      - fieldName: "confirmPassword"
+                        errorCode: "PASSWORD_NO_WHITESPACE"
+                        developerMessage: "A senha não pode conter espaços em branco."
+                      - fieldName: "confirmPassword"
+                        errorCode: "PASSWORDS_DO_NOT_MATCH"
+                        developerMessage: "A senha de confirmação não corresponde à senha."
                 InvalidPhone:
-                  summary: "Número de telefone inválido"
+                  summary: Telefone com código de país inválido ou número inválido
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
+                    timestamp: "2024-06-15T14:30:00Z"
                     status: 400
-                    path: "/api/users/me/phone/verification"
-                    message: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
-        "401":
-          $ref: "#/components/responses/AuthenticationExceptionResponse"
-        "404":
-          description: "Não encontrado. Retornado quando o usuário autenticado não for encontrado para atualizar o telefone"
+                    errorCode: "PHONE_INVALID_FORMAT"
+                    developerMessage: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
+                    path: "/api/auth/signup"
+        409:
+          description: Erro lançado quando o nome de usuário ou telefone já estão em uso.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 404
-                message: "Usuário não encontrado."
-                path: "/api/users/me/phone/verification"
-        "409":
-          description: "Conflito. Retornado quando o novo número de telefone já está em uso por outro usuário."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 400
-                message: "Esse número de telefone já está em uso."
-                path: "/api/users/me/phone/verification"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
-
-  /api/users/me/phone/verification/confirm:
-    patch:
-      operationId: CompleteChangePhone
-      tags: [ "Usuário" ]
-      summary: "Confirmar alteração do número de telefone"
-      description: "Confirma a alteração do número de telefone do usuário autenticado. Valida o código OTP para que o novo número de telefone seja alterado"
-      security:
-        - bearerAuth: [ ]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CompletePhoneChangeRequestDTO"
-      responses:
-        "200":
-          description: "Sucesso. Retorna os dados do usuário atualizado."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserProfileResponseDTO"
-        "400":
-          description: "Requisição Inválida. Ocorre se os dados fornecidos não passarem na validação, como campos em branco ou código OTP inválido/expirado"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
-                MissingCode:
-                  summary: "Código de verificação ausente"
+                UsernameAlreadyExists:
+                  summary: Nome de usuário já está em uso
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 400
-                    message: "Erro de validação. Verifique os campos informados."
-                    path: "/api/users/me/phone/verification"
-                    fieldErrors:
-                      - fieldName: "otpCode"
-                        message: "O código de verificação é obrigatório."
-                InvalidCode:
-                  summary: "Código de validação inválido ou expirado"
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 409
+                    errorCode: "USERNAME_ALREADY_EXISTS"
+                    developerMessage: "Esse nome de usuário já está em uso."
+                    path: "/api/auth/signup"
+                PhoneAlreadyExists:
+                  summary: Telefone já está em uso
                   value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 400
-                    message: "Código de verificação inválido ou expirado."
-                    path: "/api/users/me/phone/verification"
-                ChangePhoneRequestExpired:
-                  summary: "Solicitação de alteração de telefone expirada"
-                  value:
-                    timestamp: "2025-08-15T13:55:00Z"
-                    status: 400
-                    message: "Sua solicitação de alteração de telefone já expirou. Tente novamente."
-                    path: "/api/users/me/phone/verification"
-        "401":
-          $ref: "#/components/responses/AuthenticationExceptionResponse"
-        "404":
-          description: "Não encontrado. Retornado quando o usuário autenticado não for encontrado para atualizar o telefone"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 404
-                message: "Usuário não encontrado."
-                path: "/api/users/me/phone/verification"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
-
-  /api/users/me/disable:
-    post:
-      operationId: disableUserAccount
-      tags: [ "Usuário" ]
-      summary: "Desativar conta do usuário"
-      description: "Desativa a conta do usuário atualmente autenticado. A desativação é uma ação 
-      permanente que impede o acesso futuro à conta, mas os dados do usuário são mantidos no 
-      sistema durante 7 dias, período durante o qual o usuário pode reativar a conta entrando em 
-      contato com o suporte. Após esse período, os dados são excluídos permanentemente."
-      security:
-        - bearerAuth: [ ]
-      responses:
-        "204":
-          description: "Não há conteúdo a ser retornado. Conta desativada com sucesso."
-        "401":
-          $ref: "#/components/responses/AuthenticationExceptionResponse"
-        "404":
-          description: "Não encontrado. Ocorre se o usuário autenticado não for encontrado."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 404
-                message: "Usuário não encontrado."
-                path: "/api/users/me/disable"
-        "409":
-          description: "Conflito de estado. Ocorre se a conta do usuário não estiver ativada no momento."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponseDto"
-              example:
-                timestamp: "2025-08-15T13:55:00Z"
-                status: 409
-                message: "Sua conta precisa estar ativa para ser desativada."
-                path: "/api/users/me/disable"
-        "500":
-          $ref: "#/components/responses/ErrorResponseInternalServerError"
+                    timestamp: "2024-06-15T14:30:00Z"
+                    status: 409
+                    errorCode: "PHONE_ALREADY_EXISTS"
+                    developerMessage: "Esse número de telefone já está em uso."
+                    path: "/api/auth/signup"
+        500:
+          $ref: '#/components/responses/InternalServerError'

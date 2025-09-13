@@ -1,0 +1,42 @@
+description: |
+  Erro lançado quando o token de autenticação está ausente, inválido ou expirado. Também é 
+  lançado quando a conta do usuário não está mais ativa.
+content:
+  application/json:
+    schema:
+      $ref: '../schemas/error/ErrorResponseDto.yml'
+    examples:
+      SessionExpired:
+        summary: Sessão Expirada
+        value:
+          timestamp: "2024-06-15T14:30:00Z"
+          status: 401
+          errorCode: "SESSION_EXPIRED"
+          developerMessage: "Sua sessão expirou. Por favor, faça login novamente."
+          path: "/api/security/endpoint"
+      AccountLocked:
+        summary: Conta Bloqueada
+        value:
+          timestamp: "2024-06-15T14:30:00Z"
+          status: 401
+          errorCode: "ACCOUNT_LOCKED"
+          developerMessage: "Sua conta está bloqueada. Por favor, contate o suporte."
+          path: "/api/security/endpoint"
+      AccountDisabled:
+        summary: Conta Desativada
+        value:
+          timestamp: "2024-06-15T14:30:00Z"
+          status: 401
+          errorCode: "ACCOUNT_DISABLED"
+          developerMessage:
+            "Sua conta está desativada e será deletada em breve. 
+                  Entre em contato com o suporte para reativá-la."
+          path: "/api/security/endpoint"
+      AccountPendingVerification:
+        summary: Conta Pendente
+        value:
+          timestamp: "2024-06-15T14:30:00Z"
+          status: 401
+          errorCode: "ACCOUNT_PENDING_VERIFICATION"
+          developerMessage: "Você precisa ativar sua conta. Conclua o processo de cadastro."
+          path: "/api/security/endpoint"

@@ -45,4 +45,4 @@ springdoc:
   api-docs:
     enabled: true
   swagger-ui:
-    url: /openapi.yml
+    url: /docs/openapi.yml

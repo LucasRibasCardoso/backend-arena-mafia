@@ -1,0 +1,11 @@
+description: Erro lançado quando ocorre um erro inesperado no servidor.
+content:
+  application/json:
+    schema:
+      $ref: '../schemas/error/ErrorResponseDto.yml'
+    example:
+      timestamp: "2024-06-15T14:30:00Z"
+      status: 500
+      errorCode: "UNEXPECTED_ERROR"
+      developerMessage: "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde."
+      path: "/api/some/endpoint"

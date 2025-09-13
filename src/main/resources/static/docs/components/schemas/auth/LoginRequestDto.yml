@@ -1,0 +1,19 @@
+type: object
+description: Corpo da requisição para realizar o login.
+required: [ username, password ]
+properties:
+  username:
+    type: string
+    description: Nome de usuário para login.
+    pattern: '^[a-zA-Z0-9_]+$'
+    minLength: 3
+    maxLength: 50
+    example: "test_user"
+  password:
+    type: string
+    format: password
+    description: Senha do usuário.
+    pattern: '^\S+$'
+    minLength: 6
+    maxLength: 20
+    example: "password123"

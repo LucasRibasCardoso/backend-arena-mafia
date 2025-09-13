@@ -1,0 +1,104 @@
+openapi: 3.0.3
+info:
+  title: API Rest - Backend - Arena Mafia
+  version: v1
+  description: |
+    Backend do projeto para a Arena Mafia, desenvolvido como parte do curso de
+    Análise e Desenvolvimento de Sistemas do Instituto Federal de Santa Catarina.
+    
+    A seguir estão os códigos de erro mais comuns que podem ser retornados por qualquer endpoint. 
+    Erros específicos de cada operação estão documentados nos exemplos de resposta de cada endpoint.
+    
+    | Código (`errorCode`) | Mensagem (`developerMessage`) |
+    |---|---|
+    | `UNEXPECTED_ERROR` | Ocorreu um erro inesperado. Tente novamente. |
+    | `VALIDATION_FAILED` | A validação falhou. Verifique os campos. |
+    | `ACCESS_DENIED` | Acesso negado. Você não tem permissão. |
+    | `SESSION_EXPIRED` | Sua sessão expirou. Faça login novamente. |
+    | `MALFORMED_JSON_REQUEST` | Requisição JSON malformada. |
+
+tags:
+  - name: 'Autenticação - Core'
+    description: 'Endpoints principais para autenticação, incluindo login, logout e renovação de tokens.'
+
+  - name: 'Autenticação - Recuperação de Senha'
+    description: 'Fluxo completo para redefinir a senha de um usuário que a esqueceu.'
+
+  - name: 'Autenticação - Cadastro de Usuário'
+    description: 'Fluxo completo para o cadastro de um novo usuário e ativação da conta'
+
+components:
+  schemas:
+    ErrorResponseDto:
+      $ref: './components/schemas/error/ErrorResponseDto.yml'
+    FieldErrorDto:
+      $ref: './components/schemas/error/FieldErrorDto.yml'
+
+    AuthResponseDto:
+      $ref: './components/schemas/auth/AuthResponseDto.yml'
+    LoginRequestDto:
+      $ref: './components/schemas/auth/LoginRequestDto.yml'
+    ValidateOtpRequestDto:
+      $ref: './components/schemas/auth/ValidateOtpRequestDto.yml'
+    ResendOtpRequestDto:
+      $ref: './components/schemas/auth/ResendOtpRequestDto.yml'
+
+    ForgotPasswordRequestDto:
+      $ref: './components/schemas/password/ForgotPasswordRequestDto.yml'
+    ForgotPasswordResponseDto:
+      $ref: './components/schemas/password/ForgotPasswordResponseDto.yml'
+    ResetPasswordRequestDto:
+      $ref: './components/schemas/password/ResetPasswordRequestDto.yml'
+    PasswordResetTokenResponseDto:
+      $ref: './components/schemas/password/PasswordResetTokenResponseDto.yml'
+
+    SignupRequestDto:
+      $ref: './components/schemas/auth/SignupRequestDto.yml'
+    SignupResponseDto:
+      $ref: './components/schemas/auth/SignupResponseDto.yml'
+
+  responses:
+    InternalServerError:
+      $ref: './components/responses/InternalServerError.yml'
+    UnauthorizedError:
+      $ref: './components/responses/UnauthorizedError.yml'
+    AccountStatusForbidden:
+      $ref: './components/responses/AccountStatusForbidden.yml'
+
+  parameters:
+    RefreshTokenCookie:
+      $ref: './components/parameters/RefreshTokenCookie.yml'
+
+  headers:
+    Set-Cookie:
+      $ref: './components/headers/SetCookie.yml'
+
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token de autenticação JWT obtido no login."
+
+paths:
+  /api/auth/login:
+    $ref: './paths/auth/Login.yml'
+  /api/auth/logout:
+    $ref: './paths/auth/Logout.yml'
+  /api/auth/refresh-token:
+    $ref: './paths/auth/RefreshToken.yml'
+  /api/auth/resend-otp:
+    $ref: './paths/auth/ResendOtp.yml'
+
+  /api/auth/forgot-password:
+    $ref: './paths/auth/ForgotPassword.yml'
+  /auth/reset-password-token:
+    $ref: './paths/auth/ResetPasswordToken.yml'
+  /auth/reset-password:
+    $ref: './paths/auth/ResetPassword.yml'
+
+  /api/auth/signup:
+    $ref: './paths/auth/Signup.yml'
+  /api/auth/verify-account:
+    $ref: './paths/auth/VerifyAccount.yml'

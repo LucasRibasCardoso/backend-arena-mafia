@@ -1,0 +1,12 @@
+type: object
+required: [ fieldName, errorCode, developerMessage ]
+properties:
+  fieldName:
+    type: string
+    example: "username"
+  errorCode:
+    type: string
+    example: "USERNAME_REQUIRED"
+  developerMessage:
+    type: string
+    example: "O nome de usuário é obrigatório."

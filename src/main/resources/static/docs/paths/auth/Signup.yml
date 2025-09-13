@@ -1,0 +1,153 @@
+post:
+  operationId: registerUser
+  tags: [ 'Autenticação - Cadastro de Usuário' ]
+  summary: Realiza o cadastro de um novo usuário e inicia o processo de verificação por OTP.
+  description: |
+    Este endpoint cria uma nova conta de usuário com o status `PENDENTE` e com os dados fornecidos.
+    Após o cadastro, um código OTP (One-Time Password) de 6 dígitos será enviado via SMS 
+    para o número de telefone fornecido, para verificar a propriedade do número.
+  requestBody:
+    description: Corpo da requisição contendo os dados do novo usuário.
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../../components/schemas/auth/SignupRequestDto.yml'
+  responses:
+    202:
+      description: |
+        Usuário cadastrado com sucesso. Retorna o um `otpSessionId` que será utilizado na
+        próxima etapa para validar e ativar a conta do usuário. Um código OTP foi enviado para 
+        o número de telefone fornecido, se ele não estiver cadastrado. Caso o número já 
+        esteja em uso, uma mensagem informativa será retornada.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/auth/SignupResponseDto.yml'
+    400:
+      description: Erro lançado quando ocorrer um erro durante a validação dos dados de entrada.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            InvalidFormatUsername:
+              summary: Nome de usuário com formato inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "VALIDATION_FAILED"
+                developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                path: "/api/auth/signup"
+                fieldErrors:
+                  - fieldName: "username"
+                    errorCode: "USERNAME_REQUIRED"
+                    developerMessage: "O nome de usuário é obrigatório."
+                  - fieldName: "username"
+                    errorCode: "USERNAME_INVALID_FORMAT"
+                    developerMessage: "O nome de usuário pode conter apenas letras, números e underscore (_)."
+                  - fieldName: "username"
+                    errorCode: "USERNAME_INVALID_LENGTH"
+                    developerMessage: "O nome de usuário deve ter entre 3 e 50 caracteres."
+            InvalidFormatFullName:
+              summary: Nome completo do usuário com formato inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "VALIDATION_FAILED"
+                developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                path: "/api/auth/signup"
+                fieldErrors:
+                  - fieldName: "fullName"
+                    errorCode: "FULL_NAME_REQUIRED"
+                    developerMessage: "O nome completo é obrigatório."
+                  - fieldName: "fullName"
+                    errorCode: "FULL_NAME_INVALID_LENGTH"
+                    developerMessage: "O nome completo deve ter entre 3 e 100 caracteres."
+            InvalidFormatPhone:
+              summary: Telefone com formato inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "VALIDATION_FAILED"
+                developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                path: "/api/auth/signup"
+                fieldErrors:
+                  - fieldName: "phone"
+                    errorCode: "PHONE_REQUIRED"
+                    developerMessage: "O número de telefone é obrigatório."
+                  - fieldName: "phone"
+                    errorCode: "PHONE_INVALID_FORMAT"
+                    developerMessage: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
+            InvalidFormatPassword:
+              summary: Senha com formato inválida
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "VALIDATION_FAILED"
+                developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                path: "/api/auth/signup"
+                fieldErrors:
+                  - fieldName: "password"
+                    errorCode: "PASSWORD_REQUIRED"
+                    developerMessage: "A senha é obrigatória."
+                  - fieldName: "password"
+                    errorCode: "PASSWORD_INVALID_LENGTH"
+                    developerMessage: "A senha deve ter entre 6 e 20 caracteres."
+                  - fieldName: "password"
+                    errorCode: "PASSWORD_NO_WHITESPACE"
+                    developerMessage: "A senha não pode conter espaços em branco."
+            InvalidFormatConfirmPassword:
+              summary: Senha de confirmação com formato inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "VALIDATION_FAILED"
+                developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                path: "/api/auth/signup"
+                fieldErrors:
+                  - fieldName: "confirmPassword"
+                    errorCode: "CONFIRM_PASSWORD_REQUIRED"
+                    developerMessage: "A confirmação de senha é obrigatória."
+                  - fieldName: "confirmPassword"
+                    errorCode: "PASSWORD_INVALID_LENGTH"
+                    developerMessage: "A senha deve ter entre 6 e 20 caracteres."
+                  - fieldName: "confirmPassword"
+                    errorCode: "PASSWORD_NO_WHITESPACE"
+                    developerMessage: "A senha não pode conter espaços em branco."
+                  - fieldName: "confirmPassword"
+                    errorCode: "PASSWORDS_DO_NOT_MATCH"
+                    developerMessage: "A senha de confirmação não corresponde à senha."
+            InvalidPhone:
+              summary: Telefone com código de país inválido ou número inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "PHONE_INVALID_FORMAT"
+                developerMessage: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
+                path: "/api/auth/signup"
+    409:
+      description: Erro lançado quando o nome de usuário ou telefone já estão em uso.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            UsernameAlreadyExists:
+              summary: Nome de usuário já está em uso
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 409
+                errorCode: "USERNAME_ALREADY_EXISTS"
+                developerMessage: "Esse nome de usuário já está em uso."
+                path: "/api/auth/signup"
+            PhoneAlreadyExists:
+              summary: Telefone já está em uso
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 409
+                errorCode: "PHONE_ALREADY_EXISTS"
+                developerMessage: "Esse número de telefone já está em uso."
+                path: "/api/auth/signup"
+    500:
+      $ref: '../../components/responses/InternalServerError.yml'

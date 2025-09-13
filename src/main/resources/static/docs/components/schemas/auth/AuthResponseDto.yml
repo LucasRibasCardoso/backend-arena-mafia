@@ -1,0 +1,29 @@
+type: object
+description: Resposta contendo os dados do usuário autenticado e o token de acesso.
+required: [ userId, phone, username, fullName, role, accessToken ]
+properties:
+  userId:
+    type: string
+    format: uuid
+    description: ID único do usuário autenticado.
+    example: "c1a2b3d4-e5f6-7890-1234-567890abcdef"
+  phone:
+    type: string
+    description: Número de telefone do usuário.
+    example: "+5547991234567"
+  username:
+    type: string
+    description: Nome de usuário.
+    example: "test_user"
+  fullName:
+    type: string
+    description: Nome completo do usuário.
+    example: "Usuário de Teste"
+  role:
+    type: string
+    description: Nível de permissão do usuário no sistema.
+    example: "ROLE_USER"
+  accessToken:
+    type: string
+    description: Token JWT (JSON Web Token) utilizado para autorizar requisições nos endpoints protegidos.
+    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"

@@ -1,0 +1,43 @@
+type: object
+description: Corpo da requisição para o cadastro de um novo usuário. A senha e a confirmação de senha devem ser idênticas.
+required:
+  - username
+  - fullName
+  - phone
+  - password
+  - confirmPassword
+properties:
+  username:
+    type: string
+    description: "Nome de usuário único para login."
+    pattern: '^[a-zA-Z0-9_]+$'
+    minLength: 3
+    maxLength: 50
+    example: "novo_usuario123"
+  fullName:
+    type: string
+    description: "Nome completo do usuário."
+    minLength: 3
+    maxLength: 100
+    example: "Nome Completo de Exemplo"
+  phone:
+    type: string
+    description: "Número de telefone do usuário no formato internacional E.164."
+    pattern: '^\\+[1-9]\\d{1,14}$'
+    example: "+5547991234567"
+  password:
+    type: string
+    format: password
+    description: "Senha de acesso do usuário."
+    pattern: '^\\S+$'
+    minLength: 6
+    maxLength: 20
+    example: "senhaForte@123"
+  confirmPassword:
+    type: string
+    format: password
+    description: "Confirmação da senha. Deve ser idêntica ao campo 'password'."
+    pattern: '^\\S+$'
+    minLength: 6
+    maxLength: 20
+    example: "senhaForte@123"

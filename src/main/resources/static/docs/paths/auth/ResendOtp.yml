@@ -1,0 +1,90 @@
+post:
+  operationId: resendOtp
+  tags: [ 'Autenticação - Core' ]
+  summary: Reenviar código OTP para verificação de telefone.
+  description: |
+    Reenvia um código OTP para o número de telefone do usuário para fins de verificação. Utilizado
+    quando o usuário não recebeu o código inicial ou se o código expirou. Este endpoint é parte do fluxo
+    de ativação da conta após o cadastro ou durante a recuperação de senha.
+  requestBody:
+    description: Corpo da requisição contendo o ID da sessão OTP para a qual o código deve ser reenviado.
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../../components/schemas/auth/ResendOtpRequestDto.yml'
+  responses:
+    204:
+      description: Código OTP reenviado com sucesso. O usuário receberá o código no número de
+        telefone associado à sua conta.
+    400:
+      description: Erro lançado quando os dados de entrada forem inválidos.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            InvalidFormatOtpSessionId:
+              summary: OtpSessionId com formato Inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "VALIDATION_FAILED"
+                developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                path: "/api/auth/resend-otp"
+                fieldErrors:
+                  - fieldName: "otpSessionId"
+                    errorCode: "OTP_SESSION_ID_REQUIRED"
+                    developerMessage: "O ID da sessão OTP é obrigatório."
+                  - fieldName: "otpSessionId"
+                    errorCode: "OTP_SESSION_ID_INVALID_FORMAT"
+                    developerMessage: "O formato do ID da sessão OTP é inválido."
+            InvalidOrExpiredOtpSessionId:
+              summary: OtpSessionId Inválido ou Expirado
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "OTP_SESSION_INVALID_OR_EXPIRED"
+                developerMessage: "Sessão para a validação do código OTP expirada ou inválida."
+                path: "/api/auth/resend-otp"
+    403:
+      description: |
+        Erro lançado quando o status da conta do usuário não permite o reenvio do código OTP. Para
+        o fluxo de ativação de conta, a conta deve estar em status `ACCOUNT_PENDING_VERIFICATION`. 
+        Para o fluxo de recuperação de senha, a conta deve estar em status `ACTIVE`.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            LockedAccount:
+              summary: Conta bloqueada
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 403
+                errorCode: "ACCOUNT_LOCKED"
+                developerMessage: "Sua conta está bloqueada. Por favor, contate o suporte."
+                path: "/api/auth/resend-otp"
+            DisabledAccount:
+              summary: Conta desativada
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 403
+                errorCode: "ACCOUNT_DISABLED"
+                developerMessage: "Sua conta está desativada e será deletada em breve. Entre em contato com o suporte para reativá-la."
+                path: "/api/auth/resend-otp"
+    404:
+      description: Erro lançado quando o usuário associado ao otpSessionId não for encontrado. Pode
+        ocorrer se o usuário foi excluído após a criação da sessão OTP.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error/ErrorResponseDto.yml'
+          example:
+            timestamp: "2024-06-15T14:30:00Z"
+            status: 404
+            errorCode: "USER_NOT_FOUND"
+            developerMessage: "Usuário não encontrado."
+            path: "/api/auth/resend-otp"
+    500:
+      $ref: '../../components/responses/InternalServerError.yml'

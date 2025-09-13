@@ -1122,7 +1122,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
     }
 
     @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido")
+    @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido ou expirado")
     void verifyAccount_shouldReturn400_whenOtpIsInvalid() {
       // Arrange
       User mockUser = mockPersistUser();

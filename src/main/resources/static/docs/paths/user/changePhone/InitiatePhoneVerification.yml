@@ -2,6 +2,8 @@ post:
   operationId: initiatePhoneChange
   tags: [ 'Usuário - Minha Conta - Alteração de Telefone' ]
   summary: Iniciar o fluxo para alteração do número de telefone
+  security:
+    - BearerAuth: [ ]
   description: Recebe um novo número de telefone e envia um código OTP para esse número para verificação na próxima etapa.
   requestBody:
     required: true

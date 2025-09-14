@@ -1,6 +1,8 @@
 post:
   operationId: resendPhoneChangeOtp
   tags: [ 'Usuário - Minha Conta - Alteração de Telefone' ]
+  security:
+    - BearerAuth: [ ]
   summary: Reenviar o código OTP para o novo número de telefone
   description: Reenvia o código OTP para o novo número de telefone fornecido na etapa anterior.
   responses:

@@ -2,6 +2,8 @@ patch:
   operationId: completePhoneChange
   tags: [ 'Usuário - Minha Conta - Alteração de Telefone' ]
   summary: Completar a alteração do número de telefone
+  security:
+    - BearerAuth: [ ]
   description: Verifica o código OTP enviado para o novo número de telefone e, se válido, atualiza o número de telefone do usuário.
   requestBody:
     required: true

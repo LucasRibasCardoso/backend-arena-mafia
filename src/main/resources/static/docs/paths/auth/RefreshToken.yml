@@ -58,12 +58,12 @@ post:
                 errorCode: "REFRESH_TOKEN_NOT_FOUND"
                 developerMessage: "Sua sessão expirou. Por favor, faça login novamente."
                 path: "/api/auth/refresh-token"
-            RefreshTokenExpired:
-              summary: RefreshToken Expirado
+            RefreshTokenExpiredOrIncorrect:
+              summary: RefreshToken incorreto ou expirado
               value:
                 timestamp: "2024-06-15T14:30:00Z"
                 status: 401
-                errorCode: "REFRESH_TOKEN_INVALID_OR_EXPIRED"
+                errorCode: "REFRESH_TOKEN_INCORRECT_OR_EXPIRED"
                 developerMessage: "Sua sessão expirou. Por favor, faça login novamente."
                 path: "/api/auth/refresh-token"
     403:

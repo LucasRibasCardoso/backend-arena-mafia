@@ -96,7 +96,7 @@ public class VerifyAccountUseCaseTest {
             ex -> {
               InvalidOtpSessionException exception = (InvalidOtpSessionException) ex;
               assertThat(exception.getErrorCode())
-                  .isEqualTo(ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED);
+                  .isEqualTo(ErrorCode.OTP_SESSION_ID_INCORRECT_OR_EXPIRED);
             });
 
     verify(userRepository, never()).save(any(User.class));
@@ -139,7 +139,7 @@ public class VerifyAccountUseCaseTest {
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-    ErrorCode errorCode = ErrorCode.OTP_CODE_INVALID_OR_EXPIRED;
+    ErrorCode errorCode = ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED;
     doThrow(new InvalidOtpException(errorCode)).when(otpPort).validateOtp(user.getId(), invalidOtp);
 
     // Act & Assert
@@ -148,7 +148,7 @@ public class VerifyAccountUseCaseTest {
         .satisfies(
             ex -> {
               InvalidOtpException exception = (InvalidOtpException) ex;
-              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED);
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED);
             });
 
     verify(otpPort, times(1)).validateOtp(user.getId(), invalidOtp);

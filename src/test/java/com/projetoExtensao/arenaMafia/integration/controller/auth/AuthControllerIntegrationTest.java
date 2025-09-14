@@ -540,7 +540,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      ErrorCode errorCode = ErrorCode.REFRESH_TOKEN_INVALID_OR_EXPIRED;
+      ErrorCode errorCode = ErrorCode.REFRESH_TOKEN_INCORRECT_OR_EXPIRED;
 
       assertThat(response.status()).isEqualTo(401);
       assertThat(response.path()).isEqualTo("/api/auth/refresh-token");
@@ -883,7 +883,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      ErrorCode errorCode = ErrorCode.PHONE_INVALID_FORMAT;
+      ErrorCode errorCode = ErrorCode.PHONE_INVALID;
 
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.path()).isEqualTo("/api/auth/signup");
@@ -1113,7 +1113,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      ErrorCode errorCode = ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED;
+      ErrorCode errorCode = ErrorCode.OTP_SESSION_ID_INCORRECT_OR_EXPIRED;
 
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.path()).isEqualTo("/api/auth/verify-account");
@@ -1144,7 +1144,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      ErrorCode errorCode = ErrorCode.OTP_CODE_INVALID_OR_EXPIRED;
+      ErrorCode errorCode = ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED;
 
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.path()).isEqualTo("/api/auth/verify-account");
@@ -1299,7 +1299,7 @@ public class AuthControllerIntegrationTest extends WebIntegrationTestConfig {
               .as(ErrorResponseDto.class);
 
       // Assert
-      ErrorCode errorCode = ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED;
+      ErrorCode errorCode = ErrorCode.OTP_SESSION_ID_INCORRECT_OR_EXPIRED;
 
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.path()).isEqualTo("/api/auth/resend-otp");

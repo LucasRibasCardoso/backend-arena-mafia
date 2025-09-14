@@ -25,11 +25,11 @@ public class PhoneValidatorAdapter implements PhoneValidatorPort {
     try {
       Phonenumber.PhoneNumber parsedPhone = phoneUtil.parse(phoneNumber, null);
       if (!phoneUtil.isValidNumber(parsedPhone)) {
-        throw new InvalidFormatPhoneException(ErrorCode.PHONE_INVALID_FORMAT);
+        throw new InvalidFormatPhoneException(ErrorCode.PHONE_INVALID);
       }
       return phoneUtil.format(parsedPhone, PhoneNumberUtil.PhoneNumberFormat.E164);
     } catch (NumberParseException e) {
-      throw new InvalidFormatPhoneException(ErrorCode.PHONE_INVALID_FORMAT);
+      throw new InvalidFormatPhoneException(ErrorCode.PHONE_INVALID);
     }
   }
 }

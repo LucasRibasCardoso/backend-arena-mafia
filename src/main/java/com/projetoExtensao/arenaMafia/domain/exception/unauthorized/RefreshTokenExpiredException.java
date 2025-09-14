@@ -4,6 +4,6 @@ import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 
 public class RefreshTokenExpiredException extends UnauthorizedException {
   public RefreshTokenExpiredException() {
-    super(ErrorCode.REFRESH_TOKEN_INVALID_OR_EXPIRED);
+    super(ErrorCode.REFRESH_TOKEN_INCORRECT_OR_EXPIRED);
   }
 }

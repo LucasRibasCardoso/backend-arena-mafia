@@ -89,7 +89,7 @@ public class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("Deve capturar RefreshTokenExpiredException")
     void shouldHandleRefreshTokenExpiredException() throws Exception {
-      ErrorCode expectedError = ErrorCode.REFRESH_TOKEN_INVALID_OR_EXPIRED;
+      ErrorCode expectedError = ErrorCode.REFRESH_TOKEN_INCORRECT_OR_EXPIRED;
       String expectedPath = BASE_URL + "/unauthorized/refresh-token-expired";
 
       mockMvc

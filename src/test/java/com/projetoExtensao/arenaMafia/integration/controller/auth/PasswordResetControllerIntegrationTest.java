@@ -172,7 +172,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .as(ErrorResponseDto.class);
 
       // Assert
-      ErrorCode errorCode = ErrorCode.PHONE_INVALID_FORMAT;
+      ErrorCode errorCode = ErrorCode.PHONE_INVALID;
 
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.path()).isEqualTo("/api/auth/forgot-password");
@@ -315,7 +315,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .as(ErrorResponseDto.class);
 
       // Assert
-      ErrorCode errorCode = ErrorCode.OTP_CODE_INVALID_OR_EXPIRED;
+      ErrorCode errorCode = ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED;
 
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.path()).isEqualTo("/api/auth/reset-password-token");
@@ -344,7 +344,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .as(ErrorResponseDto.class);
 
       // Assert
-      ErrorCode errorCode = ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED;
+      ErrorCode errorCode = ErrorCode.OTP_SESSION_ID_INCORRECT_OR_EXPIRED;
 
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.path()).isEqualTo("/api/auth/reset-password-token");
@@ -685,7 +685,7 @@ public class PasswordResetControllerIntegrationTest extends WebIntegrationTestCo
               .as(ErrorResponseDto.class);
 
       // Assert
-      ErrorCode errorCode = ErrorCode.RESET_TOKEN_INVALID_OR_EXPIRED;
+      ErrorCode errorCode = ErrorCode.RESET_TOKEN_INCORRECT_OR_EXPIRED;
 
       assertThat(response.status()).isEqualTo(400);
       assertThat(response.path()).isEqualTo("/api/auth/reset-password");

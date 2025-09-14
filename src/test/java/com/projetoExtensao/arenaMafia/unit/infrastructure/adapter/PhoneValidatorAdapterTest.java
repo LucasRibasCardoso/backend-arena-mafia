@@ -61,7 +61,7 @@ public class PhoneValidatorAdapterTest {
         .satisfies(
             ex -> {
               InvalidFormatPhoneException exception = (InvalidFormatPhoneException) ex;
-              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PHONE_INVALID_FORMAT);
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PHONE_INVALID);
             });
   }
 
@@ -76,7 +76,7 @@ public class PhoneValidatorAdapterTest {
         .satisfies(
             ex -> {
               InvalidFormatPhoneException exception = (InvalidFormatPhoneException) ex;
-              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PHONE_INVALID_FORMAT);
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PHONE_INVALID);
             });
   }
 

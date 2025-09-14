@@ -30,8 +30,8 @@ patch:
               value:
                 timestamp: "2024-06-15T14:30:00Z"
                 status: 400
-                errorCode: "OTP_CODE_INVALID_OR_EXPIRED"
-                developerMessage: "Código de verificação inválido ou expirado."
+                errorCode: "OTP_CODE_INCORRECT_OR_EXPIRED"
+                developerMessage: "Código de verificação incorreto ou expirado."
                 path: "/api/users/me/phone/verification/confirm"
             InvalidFormatOtpCode:
               summary: Código OTP com formato inválido

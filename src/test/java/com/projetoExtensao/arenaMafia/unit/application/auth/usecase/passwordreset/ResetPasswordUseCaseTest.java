@@ -87,7 +87,7 @@ public class ResetPasswordUseCaseTest {
               InvalidPasswordResetTokenException exception =
                   (InvalidPasswordResetTokenException) ex;
               assertThat(exception.getErrorCode())
-                  .isEqualTo(ErrorCode.RESET_TOKEN_INVALID_OR_EXPIRED);
+                  .isEqualTo(ErrorCode.RESET_TOKEN_INCORRECT_OR_EXPIRED);
             });
 
     verify(userRepository, never()).save(any(User.class));

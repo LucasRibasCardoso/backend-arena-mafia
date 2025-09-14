@@ -39,13 +39,13 @@ post:
                   - fieldName: "otpSessionId"
                     errorCode: "OTP_SESSION_ID_INVALID_FORMAT"
                     developerMessage: "O formato do ID da sessão OTP é inválido."
-            InvalidOrExpiredOtpSessionId:
-              summary: OtpSessionId Inválido ou Expirado
+            IncorrectOrExpiredOtpSessionId:
+              summary: OtpSessionId incorreto ou expirado
               value:
                 timestamp: "2024-06-15T14:30:00Z"
                 status: 400
-                errorCode: "OTP_SESSION_INVALID_OR_EXPIRED"
-                developerMessage: "Sessão para a validação do código OTP expirada ou inválida."
+                errorCode: "OTP_SESSION_ID_INCORRECT_OR_EXPIRED"
+                developerMessage: "ID da sessão OTP incorreto ou expirado."
                 path: "/api/auth/resend-otp"
     403:
       description: |

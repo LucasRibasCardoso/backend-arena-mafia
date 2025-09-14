@@ -118,7 +118,7 @@ public class CompleteChangePhoneUseCaseTest {
     var request = new CompletePhoneChangeRequestDto(otpCode);
 
     when(pendingPhoneChangePort.findPhoneByUserId(idCurrentUser)).thenReturn(Optional.of(newPhone));
-    doThrow(new InvalidOtpException(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED))
+    doThrow(new InvalidOtpException(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED))
         .when(otpPort)
         .validateOtp(idCurrentUser, otpCode);
 
@@ -128,7 +128,7 @@ public class CompleteChangePhoneUseCaseTest {
         .satisfies(
             ex -> {
               InvalidOtpException exception = (InvalidOtpException) ex;
-              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED);
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED);
             });
 
     verify(userRepository, never()).save(user);

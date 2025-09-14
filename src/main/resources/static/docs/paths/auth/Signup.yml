@@ -78,7 +78,7 @@ post:
                     developerMessage: "O número de telefone é obrigatório."
                   - fieldName: "phone"
                     errorCode: "PHONE_INVALID_FORMAT"
-                    developerMessage: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
+                    developerMessage: "O número de telefone não está em um formato válido. Use o padrão internacional E.164 (ex: +5511987654321)."
             InvalidFormatPassword:
               summary: Senha com formato inválida
               value:
@@ -123,8 +123,8 @@ post:
               value:
                 timestamp: "2024-06-15T14:30:00Z"
                 status: 400
-                errorCode: "PHONE_INVALID_FORMAT"
-                developerMessage: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
+                errorCode: "PHONE_INVALID"
+                developerMessage: "O número de telefone é inválido. Verifique o código do país e o número."
                 path: "/api/auth/signup"
     409:
       description: Erro lançado quando o nome de usuário ou telefone já estão em uso.

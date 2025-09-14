@@ -77,7 +77,7 @@ public class ResendOtpUseCaseTest {
             ex -> {
               InvalidOtpSessionException exception = (InvalidOtpSessionException) ex;
               assertThat(exception.getErrorCode())
-                  .isEqualTo(ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED);
+                  .isEqualTo(ErrorCode.OTP_SESSION_ID_INCORRECT_OR_EXPIRED);
             });
 
     verify(userRepositoryPort, never()).findById(any());

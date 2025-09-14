@@ -113,7 +113,7 @@ public class RefreshTokenUseCaseTest {
             ex -> {
               RefreshTokenExpiredException exception = (RefreshTokenExpiredException) ex;
               assertThat(exception.getErrorCode())
-                  .isEqualTo(ErrorCode.REFRESH_TOKEN_INVALID_OR_EXPIRED);
+                  .isEqualTo(ErrorCode.REFRESH_TOKEN_INCORRECT_OR_EXPIRED);
             });
 
     verify(authPort, never()).generateTokens(any(User.class));

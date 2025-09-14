@@ -4,6 +4,6 @@ import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 
 public class InvalidPasswordResetTokenException extends BadRequestException {
   public InvalidPasswordResetTokenException() {
-    super(ErrorCode.RESET_TOKEN_INVALID_OR_EXPIRED);
+    super(ErrorCode.RESET_TOKEN_INCORRECT_OR_EXPIRED);
   }
 }

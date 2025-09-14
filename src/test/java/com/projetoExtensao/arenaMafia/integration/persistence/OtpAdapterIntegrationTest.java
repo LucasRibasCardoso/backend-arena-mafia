@@ -76,7 +76,7 @@ public class OtpAdapterIntegrationTest extends BaseTestContainersConfig {
         .satisfies(
             ex -> {
               InvalidOtpException exception = (InvalidOtpException) ex;
-              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED);
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED);
             });
 
     Boolean keyExists = redisTemplate.hasKey(redisKey);
@@ -98,7 +98,7 @@ public class OtpAdapterIntegrationTest extends BaseTestContainersConfig {
         .satisfies(
             ex -> {
               InvalidOtpException exception = (InvalidOtpException) ex;
-              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED);
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED);
             });
   }
 }

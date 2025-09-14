@@ -87,7 +87,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
             ex -> {
               InvalidOtpSessionException exception = (InvalidOtpSessionException) ex;
               assertThat(exception.getErrorCode())
-                  .isEqualTo(ErrorCode.OTP_SESSION_INVALID_OR_EXPIRED);
+                  .isEqualTo(ErrorCode.OTP_SESSION_ID_INCORRECT_OR_EXPIRED);
             });
 
     verify(passwordResetTokenPort, never()).generateToken(any(UUID.class));
@@ -127,7 +127,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
     when(otpSessionPort.findUserIdByOtpSessionId(otpSessionId)).thenReturn(Optional.of(userId));
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-    doThrow(new InvalidOtpException(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED))
+    doThrow(new InvalidOtpException(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED))
         .when(otpPort)
         .validateOtp(user.getId(), otpCode);
 
@@ -137,7 +137,7 @@ public class ValidatePasswordResetOtpUseCaseTest {
         .satisfies(
             ex -> {
               InvalidOtpException exception = (InvalidOtpException) ex;
-              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED);
+              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED);
             });
 
     verify(passwordResetTokenPort, never()).generateToken(any(UUID.class));

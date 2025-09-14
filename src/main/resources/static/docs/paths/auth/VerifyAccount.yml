@@ -63,21 +63,21 @@ post:
                   - fieldName: "otpCode"
                     errorCode: "OTP_CODE_INVALID_FORMAT"
                     developerMessage: "O código de verificação deve ser composto por 6 dígitos numéricos."
-            InvalidOrExpiredOtpSessionId:
-              summary: OtpSessionId Inválido ou Expirado
+            IncorrectOrExpiredOtpSessionId:
+              summary: OtpSessionId incorreto ou expirado
               value:
                 timestamp: "2024-06-15T14:30:00Z"
                 status: 400
-                errorCode: "OTP_SESSION_INVALID_OR_EXPIRED"
-                developerMessage: "Sessão para a validação do código OTP expirada ou inválida."
+                errorCode: "OTP_SESSION_ID_INCORRECT_OR_EXPIRED"
+                developerMessage: "ID da sessão OTP incorreto ou expirado."
                 path: "/api/auth/verify-account"
-            InvalidOrExpiredOtpCode:
-              summary: Código OTP Inválido ou Expirado
+            IncorrectOrExpiredOtpCode:
+              summary: Código OTP Incorreto ou Expirado
               value:
                 timestamp: "2024-06-15T14:30:00Z"
                 status: 400
-                errorCode: "OTP_CODE_INVALID_OR_EXPIRED"
-                developerMessage: "Código de verificação inválido ou expirado."
+                errorCode: "OTP_CODE_INCORRECT_OR_EXPIRED"
+                developerMessage: "Código de verificação incorreto ou expirado."
                 path: "/api/auth/verify-account"
     403:
       description: Erro lançado quando o status da conta do usuário não está como pendente de verificação.

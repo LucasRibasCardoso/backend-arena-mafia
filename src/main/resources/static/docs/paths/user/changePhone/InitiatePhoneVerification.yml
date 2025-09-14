@@ -26,8 +26,8 @@ post:
               value:
                 timestamp: "2024-06-15T14:30:00Z"
                 status: 400
-                errorCode: "PHONE_INVALID_FORMAT"
-                developerMessage: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
+                errorCode: "PHONE_INVALID"
+                developerMessage: "O número de telefone é inválido. Verifique o código do país e o número."
                 path: "/api/users/me/phone/verification"
             InvalidFormatPhone:
               summary: Telefone com formato inválido
@@ -43,7 +43,7 @@ post:
                     developerMessage: "O número de telefone é obrigatório."
                   - fieldName: "newPhone"
                     errorCode: "PHONE_INVALID_FORMAT"
-                    developerMessage: "Número de telefone inválido. Verifique o DDD e a quantidade de dígitos."
+                    developerMessage: "O número de telefone não está em um formato válido. Use o padrão internacional E.164 (ex: +5511987654321)."
     401:
       $ref: '../../../components/responses/UnauthorizedError.yml'
     409:

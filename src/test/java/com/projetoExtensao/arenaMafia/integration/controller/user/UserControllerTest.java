@@ -562,7 +562,7 @@ public class UserControllerTest extends WebIntegrationTestConfig {
                 .extract()
                 .as(ErrorResponseDto.class);
 
-        ErrorCode errorCode = ErrorCode.PHONE_INVALID_FORMAT;
+        ErrorCode errorCode = ErrorCode.PHONE_INVALID;
 
         assertThat(response.status()).isEqualTo(400);
         assertThat(response.path()).isEqualTo("/api/users/me/phone/verification");
@@ -708,7 +708,7 @@ public class UserControllerTest extends WebIntegrationTestConfig {
                 .extract()
                 .as(ErrorResponseDto.class);
 
-        ErrorCode errorCode = ErrorCode.OTP_CODE_INVALID_OR_EXPIRED;
+        ErrorCode errorCode = ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED;
 
         assertThat(response.status()).isEqualTo(400);
         assertThat(response.path()).isEqualTo("/api/users/me/phone/verification/confirm");

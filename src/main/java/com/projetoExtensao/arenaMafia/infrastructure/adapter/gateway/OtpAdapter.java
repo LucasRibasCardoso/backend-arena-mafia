@@ -32,7 +32,7 @@ public class OtpAdapter implements OtpPort {
   public void validateOtp(UUID userId, OtpCode otpCode) {
     String stored = redisTemplate.opsForValue().get(key(userId));
     if (stored == null || !stored.equals(otpCode.value())) {
-      throw new InvalidOtpException(ErrorCode.OTP_CODE_INVALID_OR_EXPIRED);
+      throw new InvalidOtpException(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED);
     }
     redisTemplate.delete(key(userId));
   }

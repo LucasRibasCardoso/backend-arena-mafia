@@ -1,0 +1,18 @@
+get:
+  operationId: getMyProfile
+  tags: [ 'Usuário - Minha Conta - Perfil' ]
+  summary: Obter os dados do perfil do usuário
+  description: Retorna todos os dados do perfil do usuário.
+  security:
+    - BearerAuth: [ ]
+  responses:
+    200:
+      description: Dados do perfil do usuário autenticado
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/user/UserProfileResponseDto.yml'
+    401:
+      $ref: '../../components/responses/UnauthorizedError.yml'
+    500:
+      $ref: '../../components/responses/InternalServerError.yml'

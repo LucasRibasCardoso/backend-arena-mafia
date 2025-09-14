@@ -1,23 +1,34 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth;
 
 import com.projetoExtensao.arenaMafia.application.auth.model.AuthResult;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.accountverification.VerifyAccountUseCase;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.LoginUseCase;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.LogoutUseCase;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.RefreshTokenUseCase;
 import com.projetoExtensao.arenaMafia.application.auth.usecase.authentication.SignUpUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.otp.ResendOtpUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.ForgotPasswordUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.ResetPasswordUseCase;
+import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.ValidatePasswordResetOtpUseCase;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.*;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ForgotPasswordRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.LoginRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendOtpRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResetPasswordRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.SignupRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ValidateOtpRequestDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.AuthResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.ForgotPasswordResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.PasswordResetTokenResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.SignupResponseDto;
-import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.response.TokenResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.util.CookieUtils;
 import jakarta.validation.Valid;
-import java.net.URI;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -27,66 +38,105 @@ public class AuthController {
   private final LoginUseCase loginUseCase;
   private final LogoutUseCase logoutUseCase;
   private final SignUpUseCase signUpUseCase;
+  private final ResendOtpUseCase resendOtpUseCase;
   private final RefreshTokenUseCase refreshTokenUseCase;
+  private final VerifyAccountUseCase verifyAccountUseCase;
+  private final ResetPasswordUseCase resetPasswordUseCase;
+  private final ForgotPasswordUseCase forgotPasswordUseCase;
+  private final ValidatePasswordResetOtpUseCase ValidatePasswordResetOtpUseCase;
 
   public AuthController(
       CookieUtils cookieUtils,
       LoginUseCase loginUseCase,
       LogoutUseCase logoutUseCase,
       SignUpUseCase signUpUseCase,
-      RefreshTokenUseCase refreshTokenUseCase) {
+      ResendOtpUseCase resendOtpUseCase,
+      RefreshTokenUseCase refreshTokenUseCase,
+      VerifyAccountUseCase verifyAccountUseCase,
+      ResetPasswordUseCase resetPasswordUseCase,
+      ForgotPasswordUseCase forgotPasswordUseCase,
+      ValidatePasswordResetOtpUseCase validatePasswordResetOtpUseCase) {
     this.cookieUtils = cookieUtils;
     this.loginUseCase = loginUseCase;
     this.logoutUseCase = logoutUseCase;
     this.signUpUseCase = signUpUseCase;
+    this.resendOtpUseCase = resendOtpUseCase;
     this.refreshTokenUseCase = refreshTokenUseCase;
+    this.verifyAccountUseCase = verifyAccountUseCase;
+    this.resetPasswordUseCase = resetPasswordUseCase;
+    this.forgotPasswordUseCase = forgotPasswordUseCase;
+    this.ValidatePasswordResetOtpUseCase = validatePasswordResetOtpUseCase;
   }
 
   @PostMapping("/signup")
-  public ResponseEntity<SignupResponseDto> signup(@Valid @RequestBody SignupRequestDto requestDto) {
-    String userIdentifier = signUpUseCase.execute(requestDto);
-
-    URI location =
-        ServletUriComponentsBuilder.fromCurrentRequestUri()
-            .replacePath("/api/users/{identifier}")
-            .buildAndExpand(userIdentifier)
-            .toUri();
+  public ResponseEntity<SignupResponseDto> signup(@Valid @RequestBody SignupRequestDto request) {
+    OtpSessionId otpSessionId = signUpUseCase.execute(request);
 
     SignupResponseDto signupResponseDto =
         new SignupResponseDto(
-            AccountStatus.PENDING_VERIFICATION.getValue(),
-            "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone.",
-            userIdentifier);
+            otpSessionId,
+            "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone.");
 
-    return ResponseEntity.created(location).body(signupResponseDto);
+    return ResponseEntity.accepted().body(signupResponseDto);
+  }
+
+  @PostMapping("/verify-account")
+  public ResponseEntity<AuthResponseDto> verifyAccount(
+      @Valid @RequestBody ValidateOtpRequestDto request) {
+    AuthResult authResult = verifyAccountUseCase.execute(request);
+    return buildAuthResponse(authResult);
+  }
+
+  @PostMapping("/resend-otp")
+  public ResponseEntity<Void> resendOtp(@Valid @RequestBody ResendOtpRequestDto request) {
+    resendOtpUseCase.execute(request.otpSessionId());
+    return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/login")
-  public ResponseEntity<TokenResponseDto> login(@RequestBody @Valid LoginRequestDto requestDto) {
-    AuthResult authResult = loginUseCase.execute(requestDto);
-
-    ResponseCookie refreshTokenCookie =
-        cookieUtils.createRefreshTokenCookie(authResult.refreshToken());
-
-    User user = authResult.user();
-    TokenResponseDto tokenResponseDto =
-        new TokenResponseDto(
-            user.getPhone(),
-            user.getUsername(),
-            user.getFullName(),
-            user.getRole().name(),
-            authResult.accessToken());
-
-    return ResponseEntity.ok()
-        .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-        .body(tokenResponseDto);
+  public ResponseEntity<AuthResponseDto> login(@RequestBody @Valid LoginRequestDto request) {
+    AuthResult authResult = loginUseCase.execute(request);
+    return buildAuthResponse(authResult);
   }
 
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(
-      @CookieValue(value = "refreshToken", required = false) String requestDto) {
+      @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
-    logoutUseCase.execute(requestDto);
+    RefreshTokenVO refreshTokenVo = RefreshTokenVO.fromString(refreshToken);
+    logoutUseCase.execute(refreshTokenVo);
+    ResponseCookie expiredCookie = cookieUtils.createRefreshTokenExpiredCookie();
+    return ResponseEntity.noContent()
+        .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
+        .build();
+  }
+
+  @PostMapping("/refresh-token")
+  public ResponseEntity<AuthResponseDto> refreshToken(
+      @CookieValue(name = "refreshToken", required = false) String refreshToken) {
+
+    RefreshTokenVO refreshTokenVo = RefreshTokenVO.fromString(refreshToken);
+    AuthResult authResult = refreshTokenUseCase.execute(refreshTokenVo);
+    return buildAuthResponse(authResult);
+  }
+
+  @PostMapping("/forgot-password")
+  public ResponseEntity<ForgotPasswordResponseDto> forgotPassword(
+      @Valid @RequestBody ForgotPasswordRequestDto request) {
+    ForgotPasswordResponseDto response = forgotPasswordUseCase.execute(request);
+    return ResponseEntity.accepted().body(response);
+  }
+
+  @PostMapping("/reset-password-token")
+  public ResponseEntity<PasswordResetTokenResponseDto> forgotPasswordVerify(
+      @Valid @RequestBody ValidateOtpRequestDto request) {
+    PasswordResetTokenResponseDto response = ValidatePasswordResetOtpUseCase.execute(request);
+    return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/reset-password")
+  public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequestDto request) {
+    resetPasswordUseCase.execute(request);
     ResponseCookie expiredCookie = cookieUtils.createRefreshTokenExpiredCookie();
 
     return ResponseEntity.noContent()
@@ -94,33 +144,22 @@ public class AuthController {
         .build();
   }
 
-  @PostMapping("/refresh-token")
-  public ResponseEntity<TokenResponseDto> refreshToken(
-      @CookieValue(name = "refreshToken", required = false) String oldRefreshToken) {
-
-    // Cria o DTO de solicitação contendo o refresh token antigo
-    RefreshTokenRequestDto refreshTokenRequest = new RefreshTokenRequestDto(oldRefreshToken);
-
-    // Cria o novo conjunto de tokens
-    AuthResult authResult = refreshTokenUseCase.execute(refreshTokenRequest);
-
-    // Criamos o cookie contendo o novo refresh token
+  private ResponseEntity<AuthResponseDto> buildAuthResponse(AuthResult authResult) {
     ResponseCookie refreshTokenCookie =
         cookieUtils.createRefreshTokenCookie(authResult.refreshToken());
 
-    // Crie o DTO de resposta contendo o accessToken e o refreshToken
     User user = authResult.user();
-    TokenResponseDto tokenResponseDto =
-        new TokenResponseDto(
+    AuthResponseDto authResponseDto =
+        new AuthResponseDto(
+            user.getId().toString(),
             user.getPhone(),
             user.getUsername(),
             user.getFullName(),
             user.getRole().name(),
             authResult.accessToken());
 
-    // Retorna o cookie contendo o novo refresh token e o accessToken via DTO
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-        .body(tokenResponseDto);
+        .body(authResponseDto);
   }
 }

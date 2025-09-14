@@ -21,6 +21,7 @@ public interface UserMapper {
         entity.getPasswordHash(),
         entity.getStatus(),
         entity.getRole(),
-        entity.getCreatedAt());
+        entity.getCreatedAt(),
+        entity.getUpdatedAt());
   }
 }

@@ -1,11 +1,14 @@
 package com.projetoExtensao.arenaMafia.unit.domain.model;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
-import com.projetoExtensao.arenaMafia.domain.exception.conflict.AccountStateConflictException;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountStatusForbiddenException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class AccountStatusTest {
 
@@ -14,25 +17,19 @@ public class AccountStatusTest {
     assertThatCode(AccountStatus.ACTIVE::validateEnabled).doesNotThrowAnyException();
   }
 
-  @Test
-  void validateEnabled_shouldThrow_whenLocked() {
-    assertThatThrownBy(AccountStatus.LOCKED::validateEnabled)
-        .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Atenção: Sua conta está bloqueada. Por favor, contate o suporte.");
-  }
-
-  @Test
-  void validateEnabled_shouldThrow_whenPendingVerification() {
-    assertThatThrownBy(AccountStatus.PENDING_VERIFICATION::validateEnabled)
-        .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage(
-            "Atenção: Você precisa ativar sua conta. Por favor, termine o processo de cadastro.");
-  }
-
-  @Test
-  void validateEnabled_shouldThrow_whenDisabled() {
-    assertThatThrownBy(AccountStatus.DISABLED::validateEnabled)
-        .isInstanceOf(AccountStateConflictException.class)
-        .hasMessage("Atenção: Sua conta está desativada.");
+  @ParameterizedTest
+  @MethodSource(
+      "com.projetoExtensao.arenaMafia.unit.config.TestDataProvider#accountStatusNonActiveProvider")
+  @DisplayName("Deve lançar AccountStatusForbiddenException quando o status não for ACTIVE")
+  void validateEnabled_shouldThrow_forInvalidStatuses(
+      AccountStatus status, ErrorCode expectedErrorCode) {
+    // Act & Assert
+    assertThatThrownBy(status::validateEnabled)
+        .isInstanceOf(AccountStatusForbiddenException.class)
+        .satisfies(
+            ex -> {
+              AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(expectedErrorCode);
+            });
   }
 }

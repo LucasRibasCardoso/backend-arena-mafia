@@ -1,0 +1,69 @@
+patch:
+  operationId: completePhoneChange
+  tags: [ 'Usuário - Minha Conta - Alteração de Telefone' ]
+  summary: Completar a alteração do número de telefone
+  security:
+    - BearerAuth: [ ]
+  description: Verifica o código OTP enviado para o novo número de telefone e, se válido, atualiza o número de telefone do usuário.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../../../components/schemas/user/CompletePhoneChangeRequestDto.yml'
+  responses:
+    200:
+      description: Número de telefone alterado com sucesso.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../components/schemas/user/UserProfileResponseDto.yml'
+    400:
+      description: Erro lançado quando o código OTP é inválido ou expirou.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            IncorrectOrExpiredOtpCode:
+              summary: Código OTP incorreto ou expirado
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "OTP_CODE_INCORRECT_OR_EXPIRED"
+                developerMessage: "Código de verificação incorreto ou expirado."
+                path: "/api/users/me/phone/verification/confirm"
+            InvalidFormatOtpCode:
+              summary: Código OTP com formato inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "VALIDATION_FAILED"
+                developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                path: "/api/users/me/phone/verification/confirm"
+                fieldErrors:
+                  - fieldName: "otpCode"
+                    errorCode: "OTP_CODE_REQUIRED"
+                    developerMessage: "O código de verificação é obrigatório."
+                  - fieldName: "otpCode"
+                    errorCode: "OTP_CODE_INVALID_FORMAT"
+                    developerMessage: "O código de verificação deve ser composto por 6 dígitos numéricos."
+    404:
+      description: Erro lançado quando não há uma solicitação de alteração de telefone pendente para o usuário.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            PhoneChangeNotInitiated:
+              summary: Solicitação de alteração de telefone não encontrada
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 404
+                errorCode: "PHONE_CHANGE_NOT_INITIATED"
+                developerMessage: "Sua solicitação de alteração de telefone não foi encontrada ou já expirou. Por favor, inicie o processo novamente."
+                path: "/api/users/me/phone/verification/confirm"
+    401:
+      $ref: '../../../components/responses/UnauthorizedError.yml'
+    500:
+      $ref: '../../../components/responses/InternalServerError.yml'

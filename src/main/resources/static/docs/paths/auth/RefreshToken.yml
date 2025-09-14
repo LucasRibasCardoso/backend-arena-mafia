@@ -1,0 +1,72 @@
+post:
+  operationId: refreshToken
+  tags: [ 'Autenticação - Core' ]
+  summary: Renova o token de acesso utilizando o refreshToken.
+  description: |
+    Renova o token de acesso (accessToken) utilizando o `refreshToken` 
+    armazenado no cookie. Se o `refreshToken` for válido, um novo `accessToken` é retornado
+    na resposta e um novo `refreshToken` é definido no cookie.
+  parameters:
+    - $ref: '../../components/parameters/RefreshTokenCookie.yml'
+  responses:
+    200:
+      description: |
+        Token renovado com sucesso. Retorna um novo token de acesso e define um novo 
+        cookie seguro contendo o `refreshToken`.
+      headers:
+        Set-Cookie:
+          $ref: '../../components/headers/SetCookie.yml'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/auth/AuthResponseDto.yml'
+    400:
+      description: Erro lançado quando o cookie de refreshToken está ausente ou inválido.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            MissingRefreshToken:
+              summary: RefreshToken Ausente
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "REFRESH_TOKEN_REQUIRED"
+                developerMessage: "O token de atualização é obrigatório."
+                path: "/api/auth/refresh-token"
+            InvalidRefreshToken:
+              summary: RefreshToken com formato inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "REFRESH_TOKEN_INVALID_FORMAT"
+                developerMessage: "O formato do token de atualização é inválido."
+                path: "/api/auth/refresh-token"
+    401:
+      description: Error lançado quando o refreshToken não for encontrado ou estiver expirado.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            RefreshTokenNotFound:
+              summary: RefreshToken Não Encontrado
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 401
+                errorCode: "REFRESH_TOKEN_NOT_FOUND"
+                developerMessage: "Sua sessão expirou. Por favor, faça login novamente."
+                path: "/api/auth/refresh-token"
+            RefreshTokenExpiredOrIncorrect:
+              summary: RefreshToken incorreto ou expirado
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 401
+                errorCode: "REFRESH_TOKEN_INCORRECT_OR_EXPIRED"
+                developerMessage: "Sua sessão expirou. Por favor, faça login novamente."
+                path: "/api/auth/refresh-token"
+    403:
+      $ref: '../../components/responses/AccountStatusForbidden.yml'
+    500:
+      $ref: '../../components/responses/InternalServerError.yml'

@@ -6,27 +6,26 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-@PasswordsMatch(message = "A senha de confirmação não corresponde à senha.")
+@PasswordsMatch(message = "PASSWORDS_DO_NOT_MATCH")
 public record SignupRequestDto(
-    @NotBlank(message = "Por favor, informe um nome de usuário.")
-        @Pattern(
-            regexp = "^[a-zA-Z0-9_]{3,20}$",
-            message = "O nome de usuário deve conter apenas letras, números e underscore (_).")
-        @Size(min = 3, max = 20, message = "O nome de usuário deve ter entre 3 e 20 caracteres.")
+    @NotBlank(message = "USERNAME_REQUIRED")
+        @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "USERNAME_INVALID_FORMAT")
+        @Size(min = 3, max = 50, message = "USERNAME_INVALID_LENGTH")
         String username,
-    @NotBlank(message = "Por favor, informe seu nome completo.")
-        @Size(min = 3, max = 100, message = "O nome completo deve ter entre 3 e 100 caracteres.")
+    @NotBlank(message = "FULL_NAME_REQUIRED")
+        @Size(min = 3, max = 100, message = "FULL_NAME_INVALID_LENGTH")
         String fullName,
-    @NotBlank(message = "Por favor, informe seu telefone.")
-        @Pattern(
-            regexp = "^\\+\\d{10,15}$",
-            message = "O telefone deve estar no formato internacional (ex: +5547999999999).")
+    @NotBlank(message = "PHONE_REQUIRED")
+        @Pattern(regexp = "^\\+[1-9]\\d{1,14}$", message = "PHONE_INVALID_FORMAT")
         String phone,
-    @NotBlank(message = "Por favor, insira uma senha.")
-        @Size(min = 6, max = 20, message = "A senha deve ter entre 6 e 20 caracteres.")
-        @Pattern(regexp = "^\\S+$", message = "A senha não pode conter espaços em branco.")
+    @NotBlank(message = "PASSWORD_REQUIRED")
+        @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
+        @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
         String password,
-    String confirmPassword)
+    @NotBlank(message = "CONFIRM_PASSWORD_REQUIRED")
+        @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
+        @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
+        String confirmPassword)
     implements PasswordConfirmationProvider {
 
   @Override

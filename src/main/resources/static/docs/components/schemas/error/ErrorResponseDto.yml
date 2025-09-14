@@ -1,0 +1,24 @@
+type: object
+required: [ timestamp, status, errorCode, developerMessage, path ]
+properties:
+  timestamp:
+    type: string
+    format: date-time
+    example: "2024-06-15T14:30:00Z"
+  status:
+    type: integer
+    example: 400
+  errorCode:
+    type: string
+    example: "VALIDATION_FAILED"
+  developerMessage:
+    type: string
+    example: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+  path:
+    type: string
+    example: "/api/auth/login"
+  fieldErrors:
+    type: array
+    nullable: true
+    items:
+      $ref: './FieldErrorDto.yml'

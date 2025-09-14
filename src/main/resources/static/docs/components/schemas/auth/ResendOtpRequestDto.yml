@@ -1,0 +1,9 @@
+type: object
+required:
+  - otpSessionId
+properties:
+  otpSessionId:
+    type: string
+    format: uuid
+    description: "O ID da sessão OTP para a qual o código deve ser reenviado."
+    example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"

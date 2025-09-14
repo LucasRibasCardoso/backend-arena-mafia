@@ -63,6 +63,7 @@ public class SecurityConfig {
                     // Endpoints públicos para desenvolvimento
                     .requestMatchers(
                         "/h2-console/**",
+                        "/docs/**",
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html",

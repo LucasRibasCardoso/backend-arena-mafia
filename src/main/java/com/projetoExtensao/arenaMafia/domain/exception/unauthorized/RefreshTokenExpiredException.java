@@ -1,7 +1,9 @@
 package com.projetoExtensao.arenaMafia.domain.exception.unauthorized;
 
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
+
 public class RefreshTokenExpiredException extends UnauthorizedException {
-  public RefreshTokenExpiredException(String message) {
-    super(message);
+  public RefreshTokenExpiredException() {
+    super(ErrorCode.REFRESH_TOKEN_INCORRECT_OR_EXPIRED);
   }
 }

@@ -1,30 +1,36 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 
-/**
- * DTO padrão para respostas de erro da API. A anotação @JsonInclude(JsonInclude.Include.NON_NULL)
- * garante que campos nulos (como a lista de erros de campo) não sejam incluídos no JSON final.
- */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ErrorResponseDto(
     Instant timestamp,
     int status,
-    String message,
+    String errorCode,
+    String developerMessage,
     String path,
     List<FieldErrorResponseDto> fieldErrors) {
-  // Metodo de fábrica para erros gerais (sem detalhes de campos)
-  public static ErrorResponseDto forGeneralError(int status, String message, String path) {
-    return new ErrorResponseDto(Instant.now(), status, message, path, null);
+
+  public static ErrorResponseDto forGeneralError(int status, ErrorCode errorCode, String path) {
+    Instant timestamp = Instant.now();
+    return new ErrorResponseDto(
+        timestamp, status, errorCode.name(), errorCode.getMessage(), path, null);
   }
 
-  // Metodo de fábrica para erros de validação (com detalhes de campos)
   public static ErrorResponseDto forValidationErrors(
-      String message, String path, List<FieldErrorResponseDto> fieldErrors) {
+      String path, List<FieldErrorResponseDto> fieldErrors) {
+
+    ErrorCode errorCode = ErrorCode.VALIDATION_FAILED;
     return new ErrorResponseDto(
-        Instant.now(), HttpStatus.BAD_REQUEST.value(), message, path, fieldErrors);
+        Instant.now(),
+        HttpStatus.BAD_REQUEST.value(),
+        errorCode.name(),
+        errorCode.getMessage(),
+        path,
+        fieldErrors);
   }
 }

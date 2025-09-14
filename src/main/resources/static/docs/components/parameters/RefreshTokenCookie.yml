@@ -1,0 +1,7 @@
+in: cookie
+name: refreshToken
+schema:
+  type: string
+  format: uuid
+required: false
+description: "Cookie contendo o refreshToken para atualização da sessão."

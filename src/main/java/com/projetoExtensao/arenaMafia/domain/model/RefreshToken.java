@@ -53,8 +53,7 @@ public class RefreshToken {
 
   public void verifyIfNotExpired() {
     if (Instant.now().isAfter(expiryDate)) {
-      throw new RefreshTokenExpiredException(
-          "Sua sessão expirou. Por favor, faça login novamente.");
+      throw new RefreshTokenExpiredException();
     }
   }
 

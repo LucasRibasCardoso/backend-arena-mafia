@@ -41,7 +41,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Verifica o code style
+      - name: Verifica o otpCode style
         run: mvn spotless:check
 
   # Job 4: Realiza o build da aplicação e publica a imagem Docker no GitHub Container Registry

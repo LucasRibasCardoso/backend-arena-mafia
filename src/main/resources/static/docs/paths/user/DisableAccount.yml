@@ -1,0 +1,17 @@
+post:
+  operationId: disableAccount
+  tags: [ 'Usuário - Minha Conta - Segurança' ]
+  summary: Desativar a conta do usuário autenticado
+  security:
+    - BearerAuth: [ ]
+  description: |
+    O usuário autenticado pode desativar sua conta. Isso definirá o status da conta como `DISABLED`,
+    impedindo o login futuro. A desativação é uma ação permanente e não pode ser desfeita pelo usuário.
+    Para reativar a conta, o usuário deve entrar em contato com o suporte em até 7 dias após a desativação.
+  responses:
+    204:
+      description: Conta desativada com sucesso. O usuário não poderá mais fazer login.
+    401:
+      $ref: '../../components/responses/UnauthorizedError.yml'
+    500:
+      $ref: '../../components/responses/InternalServerError.yml'

@@ -1,0 +1,62 @@
+post:
+  operationId: initiatePhoneChange
+  tags: [ 'Usuário - Minha Conta - Alteração de Telefone' ]
+  summary: Iniciar o fluxo para alteração do número de telefone
+  security:
+    - BearerAuth: [ ]
+  description: Recebe um novo número de telefone e envia um código OTP para esse número para verificação na próxima etapa.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../../../components/schemas/user/InitiateChangePhoneRequestDto.yml'
+  responses:
+    202:
+      description: Solicitação aceita. Um código OTP foi enviado para o novo número de telefone.
+    400:
+      description: Erro lançado quando o número de telefone é inválido
+      content:
+        application/json:
+          schema:
+            $ref: '../../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            InvalidPhone:
+              summary: Telefone com código de país inválido ou número inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "PHONE_INVALID"
+                developerMessage: "O número de telefone é inválido. Verifique o código do país e o número."
+                path: "/api/users/me/phone/verification"
+            InvalidFormatPhone:
+              summary: Telefone com formato inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "VALIDATION_FAILED"
+                developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                path: "/api/users/me/phone/verification"
+                fieldErrors:
+                  - fieldName: "newPhone"
+                    errorCode: "PHONE_REQUIRED"
+                    developerMessage: "O número de telefone é obrigatório."
+                  - fieldName: "newPhone"
+                    errorCode: "PHONE_INVALID_FORMAT"
+                    developerMessage: "O número de telefone não está em um formato válido. Use o padrão internacional E.164 (ex: +5511987654321)."
+    401:
+      $ref: '../../../components/responses/UnauthorizedError.yml'
+    409:
+      description: Error lançado quando o novo número de telefone já está em uso por outro usuário.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../components/schemas/error/ErrorResponseDto.yml'
+          example:
+            timestamp: "2024-06-15T14:30:00Z"
+            status: 409
+            errorCode: "PHONE_ALREADY_EXISTS"
+            developerMessage: "Esse número de telefone já está em uso."
+            path: "/api/users/me/phone/verification"
+    500:
+      $ref: '../../../components/responses/InternalServerError.yml'

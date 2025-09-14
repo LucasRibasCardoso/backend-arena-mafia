@@ -1,4 +1,5 @@
-INSERT INTO tb_users (id, user_name, full_name, phone, password_hash, status, role, created_at)
+INSERT INTO tb_users (id, user_name, full_name, phone, password_hash, status, role, created_at,
+                      updated_at)
 VALUES ('f6cec468-15ae-4d0c-8d9f-891de83d9b1a',
         'testuser',
         'Usuário de Teste',
@@ -6,6 +7,7 @@ VALUES ('f6cec468-15ae-4d0c-8d9f-891de83d9b1a',
         '$2a$10$wep/d2Oy6ODRl6Ya7S1rtOEp6PTBbXzBHgTM0UL0fwdpoc2EgrRFq',
         'ACTIVE',
         'ROLE_USER',
+        CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP),
 
        ('960289b9-d32d-4f00-8df7-02f4c04a017c',
@@ -15,6 +17,7 @@ VALUES ('f6cec468-15ae-4d0c-8d9f-891de83d9b1a',
         '$2a$10$wep/d2Oy6ODRl6Ya7S1rtOEp6PTBbXzBHgTM0UL0fwdpoc2EgrRFq',
         'ACTIVE',
         'ROLE_ADMIN',
+        CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP),
 
        ('468f3e5f-7ff3-4232-888d-720e9615a6a9',
@@ -24,4 +27,5 @@ VALUES ('f6cec468-15ae-4d0c-8d9f-891de83d9b1a',
         '$2a$10$wep/d2Oy6ODRl6Ya7S1rtOEp6PTBbXzBHgTM0UL0fwdpoc2EgrRFq',
         'ACTIVE',
         'ROLE_MANAGER',
+        CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP);

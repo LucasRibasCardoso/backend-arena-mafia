@@ -1,19 +1,25 @@
 package com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request;
 
+import com.projetoExtensao.arenaMafia.domain.valueobjects.ResetToken;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.annotation.PasswordConfirmationProvider;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.annotation.PasswordsMatch;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-@PasswordsMatch(message = "A senha de confirmação não corresponde à nova senha.")
+@PasswordsMatch(message = "PASSWORDS_DO_NOT_MATCH")
 public record ResetPasswordRequestDto(
-    @NotBlank(message = "O token de redefinição de senha é obrigatório.") String passwordResetToken,
-    @NotBlank(message = "Por favor, insira uma nova senha.")
-        @Size(min = 6, max = 20, message = "A senha deve ter entre 6 e 20 caracteres.")
-        @Pattern(regexp = "^\\S+$", message = "A senha não pode conter espaços em branco.")
+    @NotNull(message = "RESET_TOKEN_REQUIRED") @Valid ResetToken passwordResetToken,
+    @NotBlank(message = "PASSWORD_REQUIRED")
+        @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
+        @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
         String newPassword,
-    @NotBlank(message = "Por favor, confirme sua nova senha.") String confirmPassword)
+    @NotBlank(message = "CONFIRM_PASSWORD_REQUIRED")
+        @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
+        @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
+        String confirmPassword)
     implements PasswordConfirmationProvider {
 
   @Override

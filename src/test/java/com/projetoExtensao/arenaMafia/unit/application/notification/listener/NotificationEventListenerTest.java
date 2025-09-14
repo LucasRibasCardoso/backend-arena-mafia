@@ -8,9 +8,8 @@ import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.notification.gateway.SmsPort;
 import com.projetoExtensao.arenaMafia.application.notification.listener.NotificationEventListener;
 import com.projetoExtensao.arenaMafia.domain.model.User;
-import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
-import com.projetoExtensao.arenaMafia.domain.model.enums.RoleEnum;
-import java.time.Instant;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
+import com.projetoExtensao.arenaMafia.unit.config.TestDataProvider;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,68 +25,74 @@ public class NotificationEventListenerTest {
 
   @Mock private SmsPort smsPort;
   @Mock private OtpPort otpPort;
-
   @InjectMocks private NotificationEventListener eventListener;
 
+  private final OtpCode otpCode = OtpCode.generate();
+
   @Test
-  @DisplayName("Deve gerar OTP e enviar SMS quando um UserRegisteredEvent é recebido")
-  void osUserRegistration_shouldGenerateOtpAndSendSms_onEvent() {
+  @DisplayName("Deve gerar OTP e enviar SMS para o número atual do usuário")
+  void onUserRegistration_shouldGenerateOtpAndSendSms_onEvent() {
     // Arrange
-    UUID userId = UUID.randomUUID();
-    User user =
-        User.reconstitute(
-            userId,
-            "testuser",
-            "Test User",
-            "+5511987654321",
-            "hashedPassword",
-            AccountStatus.ACTIVE,
-            RoleEnum.ROLE_USER,
-            Instant.now());
+    User user = TestDataProvider.createActiveUser();
+    UUID userId = user.getId();
     OnVerificationRequiredEvent event = new OnVerificationRequiredEvent(user);
 
-    String generatedOtp = "123456";
-
-    when(otpPort.generateCodeOTP(userId)).thenReturn(generatedOtp);
+    when(otpPort.generateOtpCode(userId)).thenReturn(otpCode);
 
     // Act
-    eventListener.osUserRegistration(event);
+    eventListener.onUserRegistration(event);
 
     // Assert
-    verify(otpPort, times(1)).generateCodeOTP(userId);
+    verify(otpPort, times(1)).generateOtpCode(userId);
 
     ArgumentCaptor<String> phoneCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
     verify(smsPort, times(1)).send(phoneCaptor.capture(), messageCaptor.capture());
 
     assertEquals(user.getPhone(), phoneCaptor.getValue());
-    assertTrue(messageCaptor.getValue().contains(generatedOtp));
+    assertTrue(messageCaptor.getValue().contains(otpCode.toString()));
+    assertTrue(
+        messageCaptor.getValue().contains("Seu código de verificação para a Arena Máfia é:"));
+  }
+
+  @Test
+  @DisplayName("Deve gerar o OTP e enviar SMS para o novo número de telefone do usuário")
+  void onUserRegistration_shouldGenerateOtpAndSendSmsOnEvent() {
+    // Arrange
+    User user = TestDataProvider.createActiveUser();
+    UUID userId = user.getId();
+    String newPhone = "+5511999999999";
+    OnVerificationRequiredEvent event = new OnVerificationRequiredEvent(user, newPhone);
+
+    when(otpPort.generateOtpCode(userId)).thenReturn(otpCode);
+
+    // Act
+    eventListener.onUserRegistration(event);
+
+    verify(otpPort, times(1)).generateOtpCode(userId);
+
+    ArgumentCaptor<String> phoneCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
+    verify(smsPort, times(1)).send(phoneCaptor.capture(), messageCaptor.capture());
+    assertEquals(newPhone, phoneCaptor.getValue());
+
+    assertTrue(messageCaptor.getValue().contains(otpCode.toString()));
     assertTrue(
         messageCaptor.getValue().contains("Seu código de verificação para a Arena Máfia é:"));
   }
 
   @Test
   @DisplayName("Não deve enviar SMS se a geração de OTP falhar")
-  void osUserRegistration_shouldNotSendSms_whenOtpGenerationFails() {
+  void onUserRegistration_shouldNotSendSms_whenOtpGenerationFails() {
     // Arrange
-    UUID userId = UUID.randomUUID();
-    User user =
-        User.reconstitute(
-            userId,
-            "testuser",
-            "Test User",
-            "+5511987654321",
-            "hashedPassword",
-            AccountStatus.ACTIVE,
-            RoleEnum.ROLE_USER,
-            Instant.now());
+    User user = TestDataProvider.createActiveUser();
     OnVerificationRequiredEvent event = new OnVerificationRequiredEvent(user);
 
-    when(otpPort.generateCodeOTP(user.getId()))
+    when(otpPort.generateOtpCode(user.getId()))
         .thenThrow(new RuntimeException("Falha ao conectar com o Redis"));
 
     // Act & Assert
-    assertDoesNotThrow(() -> eventListener.osUserRegistration(event));
+    assertDoesNotThrow(() -> eventListener.onUserRegistration(event));
 
     verify(smsPort, never()).send(anyString(), anyString());
   }

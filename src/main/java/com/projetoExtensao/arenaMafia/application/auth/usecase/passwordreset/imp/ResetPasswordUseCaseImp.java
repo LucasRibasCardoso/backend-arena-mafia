@@ -7,6 +7,7 @@ import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepos
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidPasswordResetTokenException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.ResetToken;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResetPasswordRequestDto;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -30,26 +31,26 @@ public class ResetPasswordUseCaseImp implements ResetPasswordUseCase {
   }
 
   @Override
-  public void execute(ResetPasswordRequestDto requestDto) {
-    User user = findUserByResetToken(requestDto.passwordResetToken());
+  public void execute(ResetPasswordRequestDto request) {
+    ResetToken resetToken = request.passwordResetToken();
+    UUID userId = getUserIdFromToken(resetToken);
+    User user = getUserById(userId);
     user.ensureAccountEnabled();
-    String newPasswordHash = passwordEncoder.encode(requestDto.newPassword());
+
+    String newPasswordHash = passwordEncoder.encode(request.newPassword());
     user.updatePasswordHash(newPasswordHash);
     userRepositoryPort.save(user);
+
+    passwordResetTokenPort.delete(resetToken);
   }
 
-  private User findUserByResetToken(String token) {
-    UUID userId =
-        passwordResetTokenPort
-            .findUserIdByResetToken(token)
-            .orElseThrow(
-                () -> new InvalidPasswordResetTokenException("Token inválido ou expirado."));
+  private UUID getUserIdFromToken(ResetToken token) {
+    return passwordResetTokenPort
+        .findUserIdByResetToken(token)
+        .orElseThrow(InvalidPasswordResetTokenException::new);
+  }
 
-    return userRepositoryPort
-        .findById(userId)
-        .orElseThrow(
-            () ->
-                new UserNotFoundException(
-                    "Ocorreu um erro ao redefinir sua senha. Por favor, inicie o processo novamente."));
+  private User getUserById(UUID userId) {
+    return userRepositoryPort.findById(userId).orElseThrow(UserNotFoundException::new);
   }
 }

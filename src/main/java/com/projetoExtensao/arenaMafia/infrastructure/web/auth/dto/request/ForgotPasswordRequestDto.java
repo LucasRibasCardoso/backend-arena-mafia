@@ -4,8 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
 public record ForgotPasswordRequestDto(
-    @NotBlank(message = "Por favor, informe seu telefone.")
-        @Pattern(
-            regexp = "^\\+\\d{10,15}$",
-            message = "O telefone deve estar no formato internacional (ex: +5547999999999).")
+    @NotBlank(message = "PHONE_REQUIRED")
+        @Pattern(regexp = "^\\+[1-9]\\d{1,14}$", message = "PHONE_INVALID_FORMAT")
         String phone) {}

@@ -1,0 +1,10 @@
+description: |
+  Contém o `refreshToken` utilizado para renovar a sessão. 
+  Este é um cookie seguro com os seguintes atributos:
+  - **HttpOnly**: Não pode ser acessado por JavaScript no navegador, protegendo contra ataques XSS.
+  - **Secure**: Só é enviado em requisições HTTPS.
+  - **SameSite=Strict**: Ajuda a proteger contra ataques CSRF.
+  - **Max-Age**: Define o tempo de vida do cookie (ex: 7 dias).
+schema:
+  type: string
+  example: "refreshToken=73e597d3-21f0...; Max-Age=604800; Path=/; Secure; HttpOnly; SameSite=Strict"

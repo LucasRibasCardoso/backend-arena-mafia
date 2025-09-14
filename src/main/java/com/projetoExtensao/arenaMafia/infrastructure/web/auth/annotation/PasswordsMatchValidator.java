@@ -8,7 +8,6 @@ public class PasswordsMatchValidator
 
   @Override
   public boolean isValid(PasswordConfirmationProvider dto, ConstraintValidatorContext context) {
-    // Delega a validação de senha nula para outras anotações, como @NotNull ou @NotBlank
     if (dto.getPassword() == null || dto.getConfirmPassword() == null) {
       return true;
     }

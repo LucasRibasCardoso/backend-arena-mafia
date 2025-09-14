@@ -1,0 +1,150 @@
+openapi: 3.0.3
+info:
+  title: API Rest - Backend - Arena Mafia
+  version: v1
+  description: |
+    Backend do projeto para a Arena Mafia, desenvolvido como parte do curso de
+    Análise e Desenvolvimento de Sistemas do Instituto Federal de Santa Catarina.
+    
+    A seguir estão os códigos de erro mais comuns que podem ser retornados por qualquer endpoint. 
+    Erros específicos de cada operação estão documentados nos exemplos de resposta de cada endpoint.
+    
+    | Código (`errorCode`) | Mensagem (`developerMessage`) | Descrição |
+    |---|---|---|
+    | `UNEXPECTED_ERROR` | Ocorreu um erro inesperado. Tente novamente. | Erro lançado para falhas não previstas.
+    | `ACCESS_DENIED` | Acesso negado. Você não tem permissão. | Erro lançado quando o usuário autenticado não tem permissão para acessar o recurso.
+    | `SESSION_EXPIRED` | Sua sessão expirou. Faça login novamente. | Erro lançado quando o token de autenticação expirou.
+    | `VALIDATION_FAILED` | A validação falhou. Verifique os campos. | A resposta incluí detalhes adicionais no campo `fieldErrors`.
+    | `MALFORMED_JSON_REQUEST` | Requisição JSON malformada. | A resposta incluí detalhes adicionais no campo `fieldErrors`.
+    | `INVALID_REQUEST_PARAMETER`| Um parâmetro da requisição é inválido ou está malformado. | A resposta incluí detalhes adicionais no campo `fieldErrors`. 
+
+
+tags:
+  - name: 'Autenticação - Core'
+    description: Endpoints relacionados a autenticação, como login, logout e renovação de tokens.
+
+  - name: 'Autenticação - Cadastro de Usuário'
+    description: Endpoints relacionado ao cadastro de um novo usuário e ativação da conta
+
+  - name: 'Autenticação - Recuperação de Senha'
+    description: Endpoints relacionados a redefinição da senha de um usuário que a esqueceu.
+
+  - name: 'Usuário - Minha Conta - Perfil'
+    description: Endpoints relacionados ao perfil do usuário autenticado.
+
+  - name: 'Usuário - Minha Conta - Segurança'
+    description: |
+      Endpoints relacionados à segurança da conta do usuário autenticado, como alteração de senha, 
+      nome de usuário. e desativação da conta.
+
+  - name: 'Usuário - Minha Conta - Alteração de Telefone'
+    description: Endpoints relacionados à alteração do número de telefone do usuário autenticado.
+
+components:
+  schemas:
+    ErrorResponseDto:
+      $ref: './components/schemas/error/ErrorResponseDto.yml'
+    FieldErrorDto:
+      $ref: './components/schemas/error/FieldErrorDto.yml'
+
+    AuthResponseDto:
+      $ref: './components/schemas/auth/AuthResponseDto.yml'
+    LoginRequestDto:
+      $ref: './components/schemas/auth/LoginRequestDto.yml'
+    ValidateOtpRequestDto:
+      $ref: './components/schemas/auth/ValidateOtpRequestDto.yml'
+    ResendOtpRequestDto:
+      $ref: './components/schemas/auth/ResendOtpRequestDto.yml'
+
+    ForgotPasswordRequestDto:
+      $ref: './components/schemas/password/ForgotPasswordRequestDto.yml'
+    ForgotPasswordResponseDto:
+      $ref: './components/schemas/password/ForgotPasswordResponseDto.yml'
+    ResetPasswordRequestDto:
+      $ref: './components/schemas/password/ResetPasswordRequestDto.yml'
+    PasswordResetTokenResponseDto:
+      $ref: './components/schemas/password/PasswordResetTokenResponseDto.yml'
+
+    SignupRequestDto:
+      $ref: './components/schemas/auth/SignupRequestDto.yml'
+    SignupResponseDto:
+      $ref: './components/schemas/auth/SignupResponseDto.yml'
+
+    UserProfileResponseDto:
+      $ref: './components/schemas/user/UserProfileResponseDto.yml'
+    UpdateProfileRequestDto:
+      $ref: './components/schemas/user/UpdateProfileRequestDto.yml'
+    ChangeUsernameRequestDto:
+      $ref: './components/schemas/user/ChangeUsernameRequestDto.yml'
+    ChangePasswordRequestDto:
+      $ref: './components/schemas/user/ChangePasswordRequestDto.yml'
+
+    InitiateChangePhoneRequestDto:
+      $ref: './components/schemas/user/InitiateChangePhoneRequestDto.yml'
+    CompletePhoneChangeRequestDto:
+      $ref: './components/schemas/user/CompletePhoneChangeRequestDto.yml'
+
+  responses:
+    InternalServerError:
+      $ref: './components/responses/InternalServerError.yml'
+    UnauthorizedError:
+      $ref: './components/responses/UnauthorizedError.yml'
+    AccountStatusForbidden:
+      $ref: './components/responses/AccountStatusForbidden.yml'
+
+  parameters:
+    RefreshTokenCookie:
+      $ref: './components/parameters/RefreshTokenCookie.yml'
+
+  headers:
+    Set-Cookie:
+      $ref: './components/headers/SetCookie.yml'
+
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token de autenticação JWT obtido no login."
+
+paths:
+  /api/auth/login:
+    $ref: './paths/auth/Login.yml'
+  /api/auth/logout:
+    $ref: './paths/auth/Logout.yml'
+  /api/auth/refresh-token:
+    $ref: './paths/auth/RefreshToken.yml'
+  /api/auth/resend-otp:
+    $ref: './paths/auth/ResendOtp.yml'
+
+  /api/auth/forgot-password:
+    $ref: './paths/auth/ForgotPassword.yml'
+  /api/auth/reset-password-token:
+    $ref: './paths/auth/ResetPasswordToken.yml'
+  /api/auth/reset-password:
+    $ref: './paths/auth/ResetPassword.yml'
+
+  /api/auth/signup:
+    $ref: './paths/auth/Signup.yml'
+  /api/auth/verify-account:
+    $ref: './paths/auth/VerifyAccount.yml'
+
+  /api/users/me:
+    $ref: './paths/user/MyProfile.yml'
+  /api/users/me/profile:
+    $ref: './paths/user/UpdateProfile.yml'
+  /api/users/me/username:
+    $ref: './paths/user/ChangeUsername.yml'
+  /api/users/me/password:
+    $ref: './paths/user/ChangePassword.yml'
+
+  /api/users/me/phone/verification:
+    $ref: './paths/user/changePhone/InitiatePhoneVerification.yml'
+  /api/users/me/phone/verification/confirm:
+    $ref: './paths/user/changePhone/CompletePhoneChange.yml'
+  /api/users/me/phone/verification/resend-otp:
+    $ref: './paths/user/changePhone/ResendOtp.yml'
+
+  /api/users/me/disable:
+    $ref: './paths/user/DisableAccount.yml'

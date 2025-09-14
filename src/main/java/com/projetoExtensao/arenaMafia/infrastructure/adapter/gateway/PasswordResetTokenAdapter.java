@@ -1,6 +1,7 @@
 package com.projetoExtensao.arenaMafia.infrastructure.adapter.gateway;
 
 import com.projetoExtensao.arenaMafia.application.auth.port.gateway.PasswordResetTokenPort;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.ResetToken;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,21 +21,24 @@ public class PasswordResetTokenAdapter implements PasswordResetTokenPort {
   }
 
   @Override
-  public String save(UUID userId) {
-    String token = UUID.randomUUID().toString();
-    String key = TOKEN_PREFIX + token;
-    redisTemplate.opsForValue().set(key, userId.toString(), TOKEN_EXPIRATION);
+  public ResetToken generateToken(UUID userId) {
+    ResetToken token = ResetToken.generate();
+    redisTemplate.opsForValue().set(key(token), userId.toString(), TOKEN_EXPIRATION);
     return token;
   }
 
   @Override
-  public Optional<UUID> findUserIdByResetToken(String token) {
-    String userId = redisTemplate.opsForValue().get(TOKEN_PREFIX + token);
+  public Optional<UUID> findUserIdByResetToken(ResetToken token) {
+    String userId = redisTemplate.opsForValue().get(key(token));
     return Optional.ofNullable(userId).map(UUID::fromString);
   }
 
   @Override
-  public void delete(String token) {
-    redisTemplate.delete(TOKEN_PREFIX + token);
+  public void delete(ResetToken token) {
+    redisTemplate.delete(key(token));
+  }
+
+  private String key(ResetToken token) {
+    return TOKEN_PREFIX + token;
   }
 }

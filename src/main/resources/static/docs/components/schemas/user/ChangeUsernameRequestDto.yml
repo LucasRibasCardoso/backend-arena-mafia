@@ -1,0 +1,12 @@
+type: object
+description: Corpo da requisição para alterar o nome de usuário. O novo nome de usuário deve ser único.
+required:
+  - username
+properties:
+  username:
+    type: string
+    description: "Nome de usuário único para login."
+    pattern: '^[a-zA-Z0-9_]+$'
+    minLength: 3
+    maxLength: 50
+    example: "novo_usuario123"

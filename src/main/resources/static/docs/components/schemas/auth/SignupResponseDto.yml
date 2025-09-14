@@ -1,0 +1,15 @@
+type: object
+description: Resposta da API após um cadastro bem-sucedido, indicando a necessidade de verificação por OTP.
+required:
+  - otpSessionId
+  - message
+properties:
+  otpSessionId:
+    type: string
+    format: uuid
+    description: "O ID da sessão de verificação OTP que deve ser usado na próxima etapa para validar o código."
+    example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+  message:
+    type: string
+    description: "Uma mensagem informativa para o usuário sobre o próximo passo."
+    example: "Conta criada com sucesso. Um código de verificação foi enviado para o seu telefone."

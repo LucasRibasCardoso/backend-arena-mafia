@@ -1,5 +1,7 @@
 package com.projetoExtensao.arenaMafia.unit.infrastructure.adapter;
 
+import static com.projetoExtensao.arenaMafia.unit.config.TestDataProvider.defaultPhone;
+import static com.projetoExtensao.arenaMafia.unit.config.TestDataProvider.defaultUsername;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -8,6 +10,7 @@ import com.projetoExtensao.arenaMafia.infrastructure.adapter.repository.UserRepo
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEntity;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper.UserMapper;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.UserJpaRepository;
+import com.projetoExtensao.arenaMafia.unit.config.TestDataProvider;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -25,43 +28,30 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class UserRepositoryAdapterTest {
 
   @Mock private UserJpaRepository userJpaRepository;
-
   @Mock private UserMapper userMapper;
-
   @InjectMocks private UserRepositoryAdapter userRepositoryAdapter;
 
-  @Nested
-  @DisplayName("Testes para o método save")
-  class SaveTests {
+  @Test
+  @DisplayName("Deve mapear corretamente um User para userEntity, salvar e retornar um User")
+  void save_shouldMapperUserAndSave() {
+    // Arrange
+    User user = TestDataProvider.createActiveUser();
+    UserEntity userEntity = new UserEntity();
 
-    @Test
-    @DisplayName("Deve mapear corretamente um User para userEntity, salvar e retornar um User")
-    void save_shouldMapperUserAndSave() {
-      // Arrange
-      User userToSave = User.create("usernameTest", "User Test", "+55912345678", "password_hash");
-      UserEntity userEntityMapped = new UserEntity();
-      UserEntity userEntitySaved = new UserEntity();
-      User userReturned = userToSave;
+    when(userMapper.toEntity(user)).thenReturn(userEntity);
+    when(userJpaRepository.save(userEntity)).thenReturn(userEntity);
+    when(userMapper.toDomain(userEntity)).thenReturn(user);
 
-      when(userMapper.toEntity(userToSave)).thenReturn(userEntityMapped);
-      when(userJpaRepository.save(userEntityMapped)).thenReturn(userEntitySaved);
-      when(userMapper.toDomain(userEntitySaved)).thenReturn(userReturned);
+    // Act
+    User result = userRepositoryAdapter.save(user);
 
-      // Act
-      User result = userRepositoryAdapter.save(userToSave);
-
-      // Assert
-      assertThat(result).isNotNull();
-      assertThat(result.getId()).isEqualTo(userToSave.getId());
-      assertThat(result.getUsername()).isEqualTo(userToSave.getUsername());
-      assertThat(result.getFullName()).isEqualTo(userToSave.getFullName());
-      assertThat(result.getPhone()).isEqualTo(userToSave.getPhone());
-      assertThat(result.getPasswordHash()).isEqualTo(userToSave.getPasswordHash());
-
-      verify(userMapper, times(1)).toEntity(userToSave);
-      verify(userJpaRepository, times(1)).save(userEntityMapped);
-      verify(userMapper, times(1)).toDomain(userEntitySaved);
-    }
+    // Assert
+    assertThat(result).isNotNull();
+    assertThat(result.getId()).isEqualTo(user.getId());
+    assertThat(result.getUsername()).isEqualTo(user.getUsername());
+    assertThat(result.getFullName()).isEqualTo(user.getFullName());
+    assertThat(result.getPhone()).isEqualTo(user.getPhone());
+    assertThat(result.getPasswordHash()).isEqualTo(user.getPasswordHash());
   }
 
   @Nested
@@ -72,22 +62,21 @@ public class UserRepositoryAdapterTest {
     @DisplayName("Deve encontrar um userEntity pelo username e retornar um User mapeado")
     void findByUsername_shouldReturnMappedUser() {
       // Arrange
-      String username = "usernameTest";
+      User user = TestDataProvider.createActiveUser();
       UserEntity userEntity = new UserEntity();
-      User userMapped = User.create("usernameTest", "User Test", "+55912345678", "password_hash");
 
-      when(userJpaRepository.findByUsername(username)).thenReturn(Optional.of(userEntity));
-      when(userMapper.toDomain(userEntity)).thenReturn(userMapped);
+      when(userJpaRepository.findByUsername(defaultUsername)).thenReturn(Optional.of(userEntity));
+      when(userMapper.toDomain(userEntity)).thenReturn(user);
 
       // Act
-      Optional<User> result = userRepositoryAdapter.findByUsername(username);
+      Optional<User> result = userRepositoryAdapter.findByUsername(defaultUsername);
 
       // Assert
       assertThat(result).isNotNull();
       assertThat(result).isPresent();
-      assertThat(result.get().getUsername()).isEqualTo(username);
+      assertThat(result.get().getUsername()).isEqualTo(defaultUsername);
 
-      verify(userJpaRepository, times(1)).findByUsername(username);
+      verify(userJpaRepository, times(1)).findByUsername(defaultUsername);
       verify(userMapper, times(1)).toDomain(userEntity);
     }
 
@@ -95,18 +84,15 @@ public class UserRepositoryAdapterTest {
     @DisplayName("Deve retornar um optional vazio quando não encontrar um User pelo username")
     void findByUsername_shouldReturnEmptyOptionalWhenNotFound() {
       // Arrange
-      String username = "nonExistentUser";
-
-      when(userJpaRepository.findByUsername(username)).thenReturn(Optional.empty());
+      when(userJpaRepository.findByUsername(defaultUsername)).thenReturn(Optional.empty());
 
       // Act
-      var result = userRepositoryAdapter.findByUsername(username);
+      Optional<User> result = userRepositoryAdapter.findByUsername(defaultUsername);
 
       // Assert
       assertThat(result).isNotNull();
       assertThat(result).isEmpty();
 
-      verify(userJpaRepository, times(1)).findByUsername(username);
       verify(userMapper, never()).toDomain(any());
     }
   }
@@ -119,22 +105,20 @@ public class UserRepositoryAdapterTest {
     @DisplayName("Deve encontrar um userEntity pelo telefone e retornar um User mapeado")
     void findByPhone_shouldReturnMappedUser() {
       // Arrange
-      String phone = "+55912345678";
       UserEntity userEntity = new UserEntity();
-      User userMapped = User.create("usernameTest", "User Test", "+55912345678", "password_hash");
+      User userMapped = TestDataProvider.createActiveUser();
 
-      when(userJpaRepository.findByPhone(phone)).thenReturn(Optional.of(userEntity));
+      when(userJpaRepository.findByPhone(defaultPhone)).thenReturn(Optional.of(userEntity));
       when(userMapper.toDomain(userEntity)).thenReturn(userMapped);
 
       // Act
-      Optional<User> result = userRepositoryAdapter.findByPhone(phone);
+      Optional<User> result = userRepositoryAdapter.findByPhone(defaultPhone);
 
       // Assert
       assertThat(result).isNotNull();
       assertThat(result).isPresent();
-      assertThat(result.get().getPhone()).isEqualTo(phone);
+      assertThat(result.get().getPhone()).isEqualTo(defaultPhone);
 
-      verify(userJpaRepository, times(1)).findByPhone(phone);
       verify(userMapper, times(1)).toDomain(userEntity);
     }
 
@@ -142,18 +126,15 @@ public class UserRepositoryAdapterTest {
     @DisplayName("Deve retornar um optional vazio quando não encontrar um User pelo telefone")
     void findByPhone_shouldReturnEmptyOptionalWhenNotFound() {
       // Arrange
-      String phone = "+55900000000";
-
-      when(userJpaRepository.findByPhone(phone)).thenReturn(Optional.empty());
+      when(userJpaRepository.findByPhone(defaultPhone)).thenReturn(Optional.empty());
 
       // Act
-      var result = userRepositoryAdapter.findByPhone(phone);
+      Optional<User> result = userRepositoryAdapter.findByPhone(defaultPhone);
 
       // Assert
       assertThat(result).isNotNull();
       assertThat(result).isEmpty();
 
-      verify(userJpaRepository, times(1)).findByPhone(phone);
       verify(userMapper, never()).toDomain(any());
     }
   }
@@ -166,12 +147,12 @@ public class UserRepositoryAdapterTest {
     @DisplayName("Deve encontrar um userEntity pelo ID e retornar um optional de User mapeado")
     void findById_shouldReturnOptionalUser() {
       // Arrange
-      User userMapped = User.create("usernameTest", "User Test", "+55912345678", "password_hash");
-      UUID userId = userMapped.getId();
+      User user = TestDataProvider.createActiveUser();
+      UUID userId = user.getId();
       UserEntity userEntity = new UserEntity();
 
       when(userJpaRepository.findById(userId)).thenReturn(Optional.of(userEntity));
-      when(userMapper.toDomain(userEntity)).thenReturn(userMapped);
+      when(userMapper.toDomain(userEntity)).thenReturn(user);
 
       // Act
       Optional<User> result = userRepositoryAdapter.findById(userId);
@@ -180,7 +161,6 @@ public class UserRepositoryAdapterTest {
       assertThat(result).isNotNull();
       assertThat(result).isPresent();
       assertThat(result.get().getId()).isEqualTo(userId);
-      assertThat(result.get().getUsername()).isEqualTo(userMapped.getUsername());
 
       verify(userJpaRepository, times(1)).findById(userId);
       verify(userMapper, times(1)).toDomain(userEntity);
@@ -195,7 +175,7 @@ public class UserRepositoryAdapterTest {
       when(userJpaRepository.findById(userId)).thenReturn(Optional.empty());
 
       // Act
-      var result = userRepositoryAdapter.findById(userId);
+      Optional<User> result = userRepositoryAdapter.findById(userId);
 
       // Assert
       assertThat(result).isNotNull();
@@ -206,45 +186,34 @@ public class UserRepositoryAdapterTest {
     }
   }
 
-  @Nested
-  @DisplayName("Testes para o método existsByUsername")
-  class ExistByUsernameTests {
+  @ParameterizedTest(name = "Quando o username existe = {0}, deve retornar {0}")
+  @ValueSource(booleans = {true, false})
+  @DisplayName("Deve retornar o resultado esperado para a existência do username")
+  void existsByUsername_shouldReturnExpectedBoolean(boolean usernameExists) {
+    // Arrange
+    when(userJpaRepository.existsByUsername(defaultUsername)).thenReturn(usernameExists);
 
-    @ParameterizedTest(name = "Quando o username existe = {0}, deve retornar {0}")
-    @ValueSource(booleans = {true, false})
-    @DisplayName("Deve retornar o resultado esperado para a existência do username")
-    void existsByUsername_shouldReturnExpectedBoolean(boolean usernameExists) {
-      // Arrange
-      String username = "testuser";
-      when(userJpaRepository.existsByUsername(username)).thenReturn(usernameExists);
+    // Act
+    boolean actualResult = userRepositoryAdapter.existsByUsername(defaultUsername);
 
-      // Act
-      boolean actualResult = userRepositoryAdapter.existsByUsername(username);
-
-      // Assert
-      assertThat(actualResult).isEqualTo(usernameExists);
-      verify(userJpaRepository, times(1)).existsByUsername(username);
-    }
+    // Assert
+    assertThat(actualResult).isEqualTo(usernameExists);
+    verify(userJpaRepository, times(1)).existsByUsername(defaultUsername);
   }
 
-  @Nested
-  @DisplayName("Testes para o método existsByPhone")
-  class ExistsByPhoneTests {
+  @ParameterizedTest(name = "Quando o telefone existe = {0}, deve retornar {0}")
+  @ValueSource(booleans = {true, false})
+  @DisplayName("Deve retornar o resultado esperado para a existência do telefone")
+  void existsByPhone_shouldReturnExpectedBoolean(boolean phoneExists) {
+    // Arrange
+    String phone = "+5547988887777";
+    when(userJpaRepository.existsByPhone(phone)).thenReturn(phoneExists);
 
-    @ParameterizedTest(name = "Quando o telefone existe = {0}, deve retornar {0}")
-    @ValueSource(booleans = {true, false})
-    @DisplayName("Deve retornar o resultado esperado para a existência do telefone")
-    void existsByPhone_shouldReturnExpectedBoolean(boolean phoneExists) {
-      // Arrange
-      String phone = "+5547988887777";
-      when(userJpaRepository.existsByPhone(phone)).thenReturn(phoneExists);
+    // Act
+    boolean actualResult = userRepositoryAdapter.existsByPhone(phone);
 
-      // Act
-      boolean actualResult = userRepositoryAdapter.existsByPhone(phone);
-
-      // Assert
-      assertThat(actualResult).isEqualTo(phoneExists);
-      verify(userJpaRepository, times(1)).existsByPhone(phone);
-    }
+    // Assert
+    assertThat(actualResult).isEqualTo(phoneExists);
+    verify(userJpaRepository, times(1)).existsByPhone(phone);
   }
 }

@@ -1,0 +1,18 @@
+type: object
+description: Corpo da requisição para validar um código OTP (One-Time Password).
+required:
+  - otpSessionId
+  - otpCode
+properties:
+  otpSessionId:
+    type: string
+    format: uuid
+    description: O ID da sessão de verificação OTP, recebido ao solicitar o código.
+    example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+  otpCode:
+    type: string
+    description: O código de 6 dígitos enviado ao usuário.
+    pattern: '\d{6}'
+    minLength: 6
+    maxLength: 6
+    example: "123456"

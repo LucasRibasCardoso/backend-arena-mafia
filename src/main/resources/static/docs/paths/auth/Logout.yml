@@ -1,0 +1,53 @@
+post:
+  operationId: logoutUser
+  tags: [ 'Autenticação - Core' ]
+  security:
+    - BearerAuth: [ ]
+  summary: Realiza o logout do usuário, invalidando o refreshToken.
+  description: |
+    Realiza o logout do usuário invalidando o `refreshToken` armazenado no cookie, efetivamente
+    encerrando a sessão do usuário. Após o logout, o usuário precisará fazer login
+    novamente para obter um novo token de acesso e refreshToken.
+  parameters:
+    - $ref: '../../components/parameters/RefreshTokenCookie.yml'
+  responses:
+    204:
+      description: |
+        Logout realizado com sucesso. 
+        A resposta inclui um cabeçalho `Set-Cookie` para remover o cookie `refreshToken` do navegador.
+      headers:
+        Set-Cookie:
+          description: |
+            Define um cookie `refreshToken` com tempo de vida expirado (`Max-Age=0`), 
+            instruindo o navegador a removê-lo imediatamente. Os atributos de segurança 
+            (HttpOnly, Secure, SameSite) são mantidos para consistência.
+          schema:
+            type: string
+            example: "refreshToken=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Strict"
+    400:
+      description: Erro lançado quando o cookie de refreshToken está ausente ou inválido.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            MissingRefreshToken:
+              summary: RefreshToken Ausente
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "REFRESH_TOKEN_REQUIRED"
+                developerMessage: "O token de atualização é obrigatório."
+                path: "/api/auth/logout"
+            InvalidRefreshToken:
+              summary: RefreshToken com formato inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "REFRESH_TOKEN_INVALID_FORMAT"
+                developerMessage: "O formato do token de atualização é inválido."
+                path: "/api/auth/logout"
+    401:
+      $ref: '../../components/responses/UnauthorizedError.yml'
+    500:
+      $ref: '../../components/responses/InternalServerError.yml'

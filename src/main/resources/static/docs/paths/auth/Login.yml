@@ -1,0 +1,114 @@
+post:
+  operationId: loginUser
+  tags: [ "Autenticação - Core" ]
+  summary: Realiza o login do usuário e retorna um token de acesso.
+  description: |
+    Este endpoint autentica um usuário com base no nome de usuário e senha fornecidos.
+    Se as credenciais estiverem corretas, retorna um token JWT (JSON Web Token)
+    que deve ser usado para autorizar requisições subsequentes aos endpoints protegidos.
+    Além disso, um `refreshToken` é enviado como um cookie seguro para renovação da sessão.
+  requestBody:
+    description: Corpo da requisição contendo as credenciais do usuário.
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../../components/schemas/auth/LoginRequestDto.yml'
+  responses:
+    200:
+      description: |
+        Usuário autenticado com sucesso. Retorna os dados do usuário e o token de acesso.
+        Também define um cookie seguro contendo o `refreshToken` para renovação da sessão.
+      headers:
+        Set-Cookie:
+          $ref: '../../components/headers/SetCookie.yml'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/auth/AuthResponseDto.yml'
+    400:
+      description: Erro lançado quando a validação dos dados de entrada falha.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            InvalidUsername:
+              summary: Nome de usuário com formato inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "VALIDATION_FAILED"
+                developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                path: "/api/auth/login"
+                fieldErrors:
+                  - fieldName: "username"
+                    errorCode: "USERNAME_REQUIRED"
+                    developerMessage: "O nome de usuário é obrigatório."
+                  - fieldName: "username"
+                    errorCode: "USERNAME_INVALID_FORMAT"
+                    developerMessage: "O nome de usuário pode conter apenas letras, números e underscore (_)."
+                  - fieldName: "username"
+                    errorCode: "USERNAME_INVALID_LENGTH"
+                    developerMessage: "O nome de usuário deve ter entre 3 e 50 caracteres."
+            InvalidPassword:
+              summary: Senha com formato inválido
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 400
+                errorCode: "VALIDATION_FAILED"
+                developerMessage: "A validação falhou. Verifique os detalhes dos campos para mais informações."
+                path: "/api/auth/login"
+                fieldErrors:
+                  - fieldName: "password"
+                    errorCode: "PASSWORD_REQUIRED"
+                    developerMessage: "A senha é obrigatória."
+                  - fieldName: "password"
+                    errorCode: "PASSWORD_INVALID_LENGTH"
+                    developerMessage: "A senha deve ter entre 6 e 20 caracteres."
+                  - fieldName: "password"
+                    errorCode: "PASSWORD_NO_WHITESPACE"
+                    developerMessage: "A senha não pode conter espaços em branco."
+    401:
+      description: Erro lançado quando as credenciais fornecidas são inválidas ou a conta do usuário não está ativa.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            InvalidCredentials:
+              summary: Credenciais Inválidas
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 401
+                errorCode: "INVALID_CREDENTIALS"
+                developerMessage: "Credenciais inválidas. Por favor, verifique seu usuário e senha."
+                path: "/api/auth/login"
+            AccountLocked:
+              summary: Conta Bloqueada
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 401
+                errorCode: "ACCOUNT_LOCKED"
+                developerMessage: "Sua conta está bloqueada. Por favor, contate o suporte."
+                path: "/api/auth/login"
+            AccountDisabled:
+              summary: Conta Desativada
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 401
+                errorCode: "ACCOUNT_DISABLED"
+                developerMessage:
+                  "Sua conta está desativada e será deletada em breve. 
+                      Entre em contato com o suporte para reativá-la."
+                path: "/api/auth/login"
+            AccountPendingVerification:
+              summary: Conta Pendente
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 401
+                errorCode: "ACCOUNT_PENDING_VERIFICATION"
+                developerMessage: "Você precisa ativar sua conta. Conclua o processo de cadastro."
+                path: "/api/auth/login"
+    500:
+      $ref: '../../components/responses/InternalServerError.yml'

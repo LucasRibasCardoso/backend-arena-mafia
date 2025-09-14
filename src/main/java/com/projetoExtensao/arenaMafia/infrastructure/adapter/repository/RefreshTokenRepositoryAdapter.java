@@ -9,6 +9,7 @@ import com.projetoExtensao.arenaMafia.infrastructure.persistence.entity.UserEnti
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper.RefreshTokenMapper;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.mapper.UserMapper;
 import com.projetoExtensao.arenaMafia.infrastructure.persistence.repository.RefreshTokenJpaRepository;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,5 +56,11 @@ public class RefreshTokenRepositoryAdapter implements RefreshTokenRepositoryPort
   public void delete(RefreshToken refreshToken) {
     RefreshTokenEntity refreshTokenEntity = tokenMapper.toEntity(refreshToken);
     tokenJpaRepository.delete(refreshTokenEntity);
+  }
+
+  @Override
+  public void deleteAllByUser(List<User> users) {
+    tokenJpaRepository.deleteAllByUserIn(users.stream().map(userMapper::toEntity).toList());
+    tokenJpaRepository.flush();
   }
 }

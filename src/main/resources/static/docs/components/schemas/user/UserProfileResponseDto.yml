@@ -1,0 +1,28 @@
+type: object
+description: Resposta da API contendo os detalhes do perfil do usuário autenticado.
+properties:
+  username:
+    type: string
+    description: "Nome de usuário (login) do usuário."
+    example: "joao.silva"
+  fullName:
+    type: string
+    description: "Nome completo do usuário."
+    example: "João da Silva"
+  phone:
+    type: string
+    description: "Número de telefone do usuário (formato E.164 recomendado)."
+    example: "+5511987654321"
+  role:
+    type: string
+    description: "Perfil de permissão do usuário no sistema."
+    example: "ROLE_USER"
+    enum:
+      - ROLE_ADMIN
+      - ROLE_USER
+      - ROLE_MANAGER
+  required:
+    - username
+    - fullName
+    - phone
+    - role

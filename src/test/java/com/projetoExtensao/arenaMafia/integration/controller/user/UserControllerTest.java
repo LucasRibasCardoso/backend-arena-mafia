@@ -7,12 +7,20 @@ import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.security.port.gateway.PasswordEncoderPort;
 import com.projetoExtensao.arenaMafia.application.user.port.gateway.PendingPhoneChangePort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
+import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpCode;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
+import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.FieldErrorResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.*;
+import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.response.UserProfileResponseDto;
 import com.projetoExtensao.arenaMafia.integration.config.WebIntegrationTestConfig;
+import com.projetoExtensao.arenaMafia.integration.config.util.*;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.specification.RequestSpecification;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -45,6 +53,36 @@ public class UserControllerTest extends WebIntegrationTestConfig {
   }
 
   @Nested
+  @DisplayName("Teste para o endpoint /api/users/me")
+  class GetMyProfileTest {
+
+    @Test
+    @DisplayName("Deve retornar 200 OK com os detalhes do perfil do usuário")
+    void getMyProfile_shouldReturn200_withUserProfileDetails() {
+      // Arrange
+      User mockUser = mockPersistUser();
+      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+
+      // Act & Assert
+      var response =
+          given()
+              .spec(specification)
+              .header("Authorization", "Bearer " + tokens.accessToken())
+              .when()
+              .get()
+              .then()
+              .statusCode(200)
+              .extract()
+              .as(UserProfileResponseDto.class);
+
+      assertThat(response.username()).isEqualTo(mockUser.getUsername());
+      assertThat(response.fullName()).isEqualTo(mockUser.getFullName());
+      assertThat(response.phone()).isEqualTo(mockUser.getPhone());
+      assertThat(response.role()).isEqualTo(mockUser.getRole().name());
+    }
+  }
+
+  @Nested
   @DisplayName("Testes para o endpoint /api/users/me/profile")
   class UpdateProfileTest {
 
@@ -54,7 +92,7 @@ public class UserControllerTest extends WebIntegrationTestConfig {
       // Arrange
       User mockUser = mockPersistUser();
       AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      var request = new UpdateProfileRequestDTO("Novo Nome Completo");
+      var request = new UpdateProfileRequestDto("Novo Nome Completo");
 
       // Act & Assert
       given()
@@ -70,34 +108,48 @@ public class UserControllerTest extends WebIntegrationTestConfig {
       assertThat(updatedUser.getFullName()).isEqualTo(request.fullName());
     }
 
-    @Test
-    @DisplayName("Deve retornar 400 Bad Request quando o nome completo for vazio")
-    void updateProfile_shouldReturn400_whenFullNameIsEmptyOrNull() {
-      // Arrange
-      User mockUser = mockPersistUser();
-      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      var request = new UpdateProfileRequestDTO("  ");
+    @Nested
+    @DisplayName("Deve retornar 400 Bad Request quando os dados de entrada forem inválidos")
+    class InvalidInputTests {
 
-      // Act & Assert
-      var response =
-          given()
-              .spec(specification)
-              .header("Authorization", "Bearer " + tokens.accessToken())
-              .body(request)
-              .when()
-              .patch("/profile")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
+      @InvalidFullNameProvider
+      @DisplayName("Deve retornar 400 Bad Request quando o nome completo for inválido no DTO")
+      void updateProfile_shouldReturn400_whenFullNameIsEmptyOrNull(
+          String fullName, String expectedErrorCode) {
+        // Arrange
+        mockPersistUser();
+        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+        var request = new UpdateProfileRequestDto(fullName);
 
-      assertThat(response.message())
-          .isEqualTo("Erro de validação. Verifique os campos informados.");
-      assertThat(response.fieldErrors()).hasSize(1);
-      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("fullName");
+        // Act & Assert
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .header("Authorization", "Bearer " + tokens.accessToken())
+                .body(request)
+                .when()
+                .patch("/profile")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
 
-      User unchangedUser = userRepository.findById(mockUser.getId()).orElseThrow();
-      assertThat(unchangedUser.getFullName()).isEqualTo(defaultFullName);
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/users/me/profile");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("fullName")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
     }
   }
 
@@ -106,12 +158,12 @@ public class UserControllerTest extends WebIntegrationTestConfig {
   class ChangeUsernameTest {
 
     @Test
-    @DisplayName("Deve retornar 200 OK quando a alteração de nome de usuário for bem-sucedida")
+    @DisplayName("Deve retornar 200 OK quando o nome de usuário for alterado com sucesso")
     void changeUsername_shouldReturn200_whenSuccessful() {
       // Arrange
       User mockUser = mockPersistUser();
       AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      var request = new ChangeUsernameRequestDTO("new_username");
+      var request = new ChangeUsernameRequestDto("new_username");
 
       // Act & Assert
       given()
@@ -127,50 +179,63 @@ public class UserControllerTest extends WebIntegrationTestConfig {
       assertThat(updatedUser.getUsername()).isEqualTo(request.username());
     }
 
-    @ParameterizedTest
-    @NullAndEmptySource
-    @DisplayName("Deve retornar 400 Bad Request quando o nome de usuário for vazio ou nulo")
-    void changeUsername_shouldReturn400_whenUsernameIsEmptyOrNull(String invalidUsername) {
-      // Arrange
-      User mockUser = mockPersistUser();
-      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      var request = new ChangeUsernameRequestDTO(invalidUsername);
+    @Nested
+    @DisplayName("Deve retornar 400 Bad Request quando os dados de entrada forem inválidos")
+    class InvalidInputTests {
 
-      // Act & Assert
-      var response =
-          given()
-              .spec(specification)
-              .header("Authorization", "Bearer " + tokens.accessToken())
-              .body(request)
-              .when()
-              .patch("/username")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
+      @InvalidUsernameProvider
+      @DisplayName("Deve retornar 400 Bad Request quando o nome de usuário for inválido no DTO")
+      void changeUsername_shouldReturn400_whenUsernameIsEmptyOrNull(
+          String username, String expectedErrorCode) {
+        // Arrange
+        mockPersistUser();
+        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+        var request = new ChangeUsernameRequestDto(username);
 
-      assertThat(response.message())
-          .isEqualTo("Erro de validação. Verifique os campos informados.");
-      assertThat(response.fieldErrors()).hasSize(1);
-      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("username");
+        // Act & Assert
+        var response =
+            given()
+                .spec(specification)
+                .header("Authorization", "Bearer " + tokens.accessToken())
+                .body(request)
+                .when()
+                .patch("/username")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
 
-      User unchangedUser = userRepository.findById(mockUser.getId()).orElseThrow();
-      assertThat(unchangedUser.getUsername()).isEqualTo(defaultUsername);
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/users/me/username");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("username")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
     }
 
     @Test
     @DisplayName("Deve retornar 409 Conflict quando o nome de usuário já estiver em uso")
     void changeUsername_shouldReturn409_whenUsernameAlreadyExists() {
       // Arrange
-      User mockUser = mockPersistUser();
+      mockPersistUser();
       AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
       User mockExistingUser =
           mockPersistUser("existing_user", "Existing User", "+5521921340987", "123456");
 
-      var request = new ChangeUsernameRequestDTO(mockExistingUser.getUsername());
+      var request = new ChangeUsernameRequestDto(mockExistingUser.getUsername());
 
       // Act & Assert
-      var response =
+      ErrorResponseDto response =
           given()
               .spec(specification)
               .header("Authorization", "Bearer " + tokens.accessToken())
@@ -182,9 +247,12 @@ public class UserControllerTest extends WebIntegrationTestConfig {
               .extract()
               .as(ErrorResponseDto.class);
 
-      User unchangedUser = userRepository.findById(mockUser.getId()).orElseThrow();
-      assertThat(unchangedUser.getUsername()).isEqualTo(defaultUsername);
-      assertThat(response.message()).isEqualTo("Esse nome de usuário já está em uso.");
+      ErrorCode errorCode = ErrorCode.USERNAME_ALREADY_EXISTS;
+
+      assertThat(response.status()).isEqualTo(409);
+      assertThat(response.path()).isEqualTo("/api/users/me/username");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
   }
 
@@ -197,7 +265,7 @@ public class UserControllerTest extends WebIntegrationTestConfig {
       // Arrange
       User mockUser = mockPersistUser();
       AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      var request = new ChangePasswordRequestDTO(defaultPassword, "new_password", "new_password");
+      var request = new ChangePasswordRequestDto(defaultPassword, "new_password", "new_password");
 
       // Act & Assert
       given()
@@ -213,46 +281,174 @@ public class UserControllerTest extends WebIntegrationTestConfig {
       assertThat(passwordEncoder.matches("new_password", updatedUser.getPasswordHash())).isTrue();
     }
 
-    @Test
-    @DisplayName(
-        "Deve retornar 400 Bad Request quando a nova senha e a confirmação não corresponderem")
-    void changePassword_shouldReturn400_whenNewPasswordAndConfirmationDoNotMatch() {
-      // Arrange
-      User mockUser = mockPersistUser();
-      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      var request =
-          new ChangePasswordRequestDTO(defaultPassword, "new_password", "different_password");
+    @Nested
+    @DisplayName("Deve retornar 400 Bad Request quando os dados de entrada forem inválidos")
+    class InvalidInputTests {
 
-      // Act & Assert
-      var response =
-          given()
-              .spec(specification)
-              .header("Authorization", "Bearer " + tokens.accessToken())
-              .body(request)
-              .when()
-              .post("/password")
-              .then()
-              .statusCode(400)
-              .extract()
-              .as(ErrorResponseDto.class);
+      @Test
+      @DisplayName("Deve retornar 400 Bad Request quando às senhas não se corresponderem")
+      void changePassword_shouldReturn400_whenNewPasswordAndConfirmationDoNotMatch() {
+        // Arrange
+        mockPersistUser();
+        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+        var request = new ChangePasswordRequestDto(defaultPassword, "new_password", "password");
 
-      assertThat(response.message())
-          .isEqualTo("Erro de validação. Verifique os campos informados.");
-      assertThat(response.fieldErrors()).hasSize(1);
-      assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("confirmPassword");
+        // Act & Assert
+        var response =
+            given()
+                .spec(specification)
+                .header("Authorization", "Bearer " + tokens.accessToken())
+                .body(request)
+                .when()
+                .post("/password")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
 
-      User unchangedUser = userRepository.findById(mockUser.getId()).orElseThrow();
-      assertThat(passwordEncoder.matches(defaultPassword, unchangedUser.getPasswordHash()))
-          .isTrue();
+        ErrorCode errorCode = ErrorCode.PASSWORDS_DO_NOT_MATCH;
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/users/me/password");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("confirmPassword")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+
+      @InvalidPasswordProvider
+      @DisplayName("Deve retornar 400 Bad Request quando a senha atual for inválida")
+      void changePassword_shouldReturn400_whenCurrentPasswordIsInvalid(
+          String currentPassword, String expectedErrorCode) {
+        // Arrange
+        mockPersistUser();
+        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+        var request = new ChangePasswordRequestDto(currentPassword, "new_password", "new_password");
+
+        // Act & Assert
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .header("Authorization", "Bearer " + tokens.accessToken())
+                .body(request)
+                .when()
+                .post("/password")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/users/me/password");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("currentPassword")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+
+      @InvalidPasswordProvider
+      @DisplayName("Deve retornar 400 Bad Request quando a nova senha for inválida")
+      void changePassword_shouldReturn400_whenNewPasswordIsInvalid(
+          String newPassword, String expectedErrorCode) {
+        // Arrange
+        mockPersistUser();
+        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+        var request = new ChangePasswordRequestDto(defaultPassword, newPassword, newPassword);
+
+        // Act & Assert
+        var response =
+            given()
+                .spec(specification)
+                .header("Authorization", "Bearer " + tokens.accessToken())
+                .body(request)
+                .when()
+                .post("/password")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/users/me/password");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("newPassword")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
+
+      @ParameterizedTest
+      @NullAndEmptySource
+      @DisplayName("Deve retornar 400 Bad Request quando a senha de confirmação for nula ou vazia")
+      void changePassword_shouldReturn400_whenConfirmPasswordIsInvalid(String confirmPassword) {
+        // Arrange
+        mockPersistUser();
+        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+        var request =
+            new ChangePasswordRequestDto(defaultPassword, "new_password", confirmPassword);
+
+        // Act & Assert
+        ErrorResponseDto response =
+            given()
+                .spec(specification)
+                .header("Authorization", "Bearer " + tokens.accessToken())
+                .body(request)
+                .when()
+                .post("/password")
+                .then()
+                .statusCode(400)
+                .extract()
+                .as(ErrorResponseDto.class);
+
+        ErrorCode errorCode = ErrorCode.CONFIRM_PASSWORD_REQUIRED;
+        List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/users/me/password");
+        assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+        assertThat(response.developerMessage()).isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+        assertThat(fieldErrors).isNotEmpty();
+        assertThat(fieldErrors)
+            .anyMatch(
+                fieldError ->
+                    fieldError.fieldName().equals("confirmPassword")
+                        && fieldError.errorCode().equals(errorCode.name())
+                        && fieldError.developerMessage().equals(errorCode.getMessage()));
+      }
     }
 
     @Test
     @DisplayName("Deve retornar 400 Bad Request quando a senha atual estiver incorreta")
     void changePassword_shouldReturn400_whenCurrentPasswordIsIncorrect() {
       // Arrange
-      User mockUser = mockPersistUser();
+      mockPersistUser();
       AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-      var request = new ChangePasswordRequestDTO("wrong_password", "new_password", "new_password");
+      var request = new ChangePasswordRequestDto("wrong_password", "new_password", "new_password");
 
       // Act & Assert
       var response =
@@ -267,11 +463,12 @@ public class UserControllerTest extends WebIntegrationTestConfig {
               .extract()
               .as(ErrorResponseDto.class);
 
-      assertThat(response.message()).isEqualTo("A Senha atual está incorreta");
+      ErrorCode errorCode = ErrorCode.PASSWORD_CURRENT_INCORRECT;
 
-      User unchangedUser = userRepository.findById(mockUser.getId()).orElseThrow();
-      assertThat(passwordEncoder.matches(defaultPassword, unchangedUser.getPasswordHash()))
-          .isTrue();
+      assertThat(response.status()).isEqualTo(400);
+      assertThat(response.path()).isEqualTo("/api/users/me/password");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
     }
   }
 
@@ -283,13 +480,12 @@ public class UserControllerTest extends WebIntegrationTestConfig {
     @DisplayName("Etapa 1: Iniciar alteração de telefone")
     class InitiateChangePhoneTest {
       @Test
-      @DisplayName(
-          "Deve retornar 202 Accepted quando a solicitação de alteração de telefone for iniciada com sucesso")
+      @DisplayName("Deve retornar 202 Accepted quando a alteração de telefone iniciar com sucesso")
       void initiateChangePhone_shouldReturn202_whenSuccessful() {
         // Arrange
         mockPersistUser();
         AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-        var request = new InitiateChangePhoneRequestDTO("+5547992044567");
+        var request = new InitiateChangePhoneRequestDto("+5547992044567");
 
         // Act & Assert
         given()
@@ -302,32 +498,49 @@ public class UserControllerTest extends WebIntegrationTestConfig {
             .statusCode(202);
       }
 
-      @ParameterizedTest
-      @NullAndEmptySource
-      @DisplayName("Deve retornar 400 Bad Request quando o número de telefone for vazio ou nulo")
-      void initiateChangePhone_shouldReturn400_whenPhoneIsEmptyOrNull(String invalidPhone) {
-        // Arrange
-        mockPersistUser();
-        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-        var request = new InitiateChangePhoneRequestDTO(invalidPhone);
+      @Nested
+      @DisplayName("Deve retornar 400 Bad Request quando os dados de entrada forem inválidos")
+      class InvalidInputTests {
 
-        // Act & Assert
-        var response =
-            given()
-                .spec(specification)
-                .header("Authorization", "Bearer " + tokens.accessToken())
-                .body(request)
-                .when()
-                .post("/phone/verification")
-                .then()
-                .statusCode(400)
-                .extract()
-                .as(ErrorResponseDto.class);
+        @InvalidPhoneProvider
+        @DisplayName("Deve retornar 400 Bad Request quando o número de telefone for inválido")
+        void initiateChangePhone_shouldReturn400_whenPhoneIsEmptyOrNull(
+            String invalidPhone, String expectedErrorCode) {
+          // Arrange
+          mockPersistUser();
+          AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+          var request = new InitiateChangePhoneRequestDto(invalidPhone);
 
-        assertThat(response.message())
-            .isEqualTo("Erro de validação. Verifique os campos informados.");
-        assertThat(response.fieldErrors()).hasSize(1);
-        assertThat(response.fieldErrors().getFirst().fieldName()).isEqualTo("newPhone");
+          // Act & Assert
+          var response =
+              given()
+                  .spec(specification)
+                  .header("Authorization", "Bearer " + tokens.accessToken())
+                  .body(request)
+                  .when()
+                  .post("/phone/verification")
+                  .then()
+                  .statusCode(400)
+                  .extract()
+                  .as(ErrorResponseDto.class);
+
+          ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+          List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+          assertThat(response.status()).isEqualTo(400);
+          assertThat(response.path()).isEqualTo("/api/users/me/phone/verification");
+          assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+          assertThat(response.developerMessage())
+              .isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+          assertThat(fieldErrors).isNotEmpty();
+          assertThat(fieldErrors)
+              .anyMatch(
+                  fieldError ->
+                      fieldError.fieldName().equals("newPhone")
+                          && fieldError.errorCode().equals(errorCode.name())
+                          && fieldError.developerMessage().equals(errorCode.getMessage()));
+        }
       }
 
       @Test
@@ -335,7 +548,7 @@ public class UserControllerTest extends WebIntegrationTestConfig {
       void initiateChangePhone_shouldReturn400_whenPhoneIsInvalid() {
         mockPersistUser();
         AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-        var request = new InitiateChangePhoneRequestDTO("+999999999999");
+        var request = new InitiateChangePhoneRequestDto("+999999999999");
 
         var response =
             given()
@@ -349,12 +562,16 @@ public class UserControllerTest extends WebIntegrationTestConfig {
                 .extract()
                 .as(ErrorResponseDto.class);
 
-        assertThat(response.message())
-            .isEqualTo("Número de telefone inválido. Verifique o DDD e a quantidade de dígitos.");
+        ErrorCode errorCode = ErrorCode.PHONE_INVALID;
+
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/users/me/phone/verification");
+        assertThat(response.errorCode()).isEqualTo(errorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
       }
 
       @Test
-      @DisplayName("Deve retornar 409 Conflict quando o número de telefone já estiver em uso")
+      @DisplayName("Deve retornar 409 Conflict quando o número de telefone já está em uso")
       void initiateChangePhone_shouldReturn409_whenPhoneAlreadyExists() {
         // Arrange
         mockPersistUser();
@@ -362,7 +579,7 @@ public class UserControllerTest extends WebIntegrationTestConfig {
 
         User mockExistingUser =
             mockPersistUser("existing_user", "Existing User", "+5521921340987", "123456");
-        var request = new InitiateChangePhoneRequestDTO(mockExistingUser.getPhone());
+        var request = new InitiateChangePhoneRequestDto(mockExistingUser.getPhone());
 
         // Act & Assert
         var response =
@@ -377,7 +594,12 @@ public class UserControllerTest extends WebIntegrationTestConfig {
                 .extract()
                 .as(ErrorResponseDto.class);
 
-        assertThat(response.message()).isEqualTo("Esse número de telefone já está em uso.");
+        ErrorCode errorCode = ErrorCode.PHONE_ALREADY_EXISTS;
+
+        assertThat(response.status()).isEqualTo(409);
+        assertThat(response.path()).isEqualTo("/api/users/me/phone/verification");
+        assertThat(response.errorCode()).isEqualTo(errorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
       }
     }
 
@@ -386,8 +608,7 @@ public class UserControllerTest extends WebIntegrationTestConfig {
     class CompleteChangePhoneTest {
 
       @Test
-      @DisplayName(
-          "Deve retornar 200 OK quando a verificação de telefone for concluída com sucesso")
+      @DisplayName("Deve retornar 200 OK quando a verificação de telefone for um sucesso")
       void completeChangePhone_shouldReturn200_whenSuccessful() {
         // Arrange
         User mockUser = mockPersistUser();
@@ -395,8 +616,8 @@ public class UserControllerTest extends WebIntegrationTestConfig {
 
         String newPhone = "+5547992044567";
         pendingPhoneChangePort.save(mockUser.getId(), newPhone);
-        String verificationCode = otpPort.generateCodeOTP(mockUser.getId());
-        var request = new CompletePhoneChangeRequestDTO(verificationCode);
+        OtpCode verificationCode = otpPort.generateOtpCode(mockUser.getId());
+        var request = new CompletePhoneChangeRequestDto(verificationCode);
 
         // Act & Assert
         given()
@@ -412,34 +633,53 @@ public class UserControllerTest extends WebIntegrationTestConfig {
         assertThat(updatedUser.getPhone()).isEqualTo(newPhone);
       }
 
-      @Test
-      @DisplayName(
-          "Deve retornar 400 Bad Request quando o código de verificação for inválido no DTO")
-      void completeChangePhone_shouldReturn400_whenCodeIsInvalid() {
-        // Arrange
-        mockPersistUser();
-        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+      @Nested
+      @DisplayName("Deve retornar 400 Bad Request quando os dados de entrada forem inválidos")
+      class InvalidInputTests {
 
-        var request = new CompletePhoneChangeRequestDTO("aaabbb");
+        @InvalidOtpCodeProvider
+        @DisplayName("Deve retornar 400 Bad Request quando o código OTP for inválido no DTO")
+        void completeChangePhone_shouldReturn400_whenOtpCodeIsNullOrEmpty(
+            String invalidOtp, String expectedErrorCode) {
+          // Arrange
+          User mockUser = mockPersistUser();
+          AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+          String newPhone = "+5547992044567";
+          pendingPhoneChangePort.save(mockUser.getId(), newPhone);
 
-        // Act & Assert
-        var response =
-            given()
-                .spec(specification)
-                .header("Authorization", "Bearer " + tokens.accessToken())
-                .body(request)
-                .when()
-                .patch("/phone/verification/confirm")
-                .then()
-                .statusCode(400)
-                .extract()
-                .as(ErrorResponseDto.class);
+          Map<String, String> requestBody = new HashMap<>();
+          requestBody.put("otpCode", invalidOtp);
 
-        assertThat(response.message())
-            .isEqualTo("Erro de validação. Verifique os campos informados.");
-        assertThat(response.fieldErrors()).hasSize(1);
-        assertThat(response.fieldErrors().getFirst().message())
-            .isEqualTo("O código de verificação deve conter exatamente 6 dígitos numéricos.");
+          // Act & Assert
+          ErrorResponseDto response =
+              given()
+                  .spec(specification)
+                  .header("Authorization", "Bearer " + tokens.accessToken())
+                  .body(requestBody)
+                  .when()
+                  .patch("/phone/verification/confirm")
+                  .then()
+                  .statusCode(400)
+                  .extract()
+                  .as(ErrorResponseDto.class);
+
+          ErrorCode errorCode = ErrorCode.valueOf(expectedErrorCode);
+          List<FieldErrorResponseDto> fieldErrors = response.fieldErrors();
+
+          assertThat(response.status()).isEqualTo(400);
+          assertThat(response.path()).isEqualTo("/api/users/me/phone/verification/confirm");
+          assertThat(response.errorCode()).isEqualTo(ErrorCode.VALIDATION_FAILED.name());
+          assertThat(response.developerMessage())
+              .isEqualTo(ErrorCode.VALIDATION_FAILED.getMessage());
+
+          assertThat(fieldErrors).isNotEmpty();
+          assertThat(fieldErrors)
+              .anyMatch(
+                  fieldError ->
+                      fieldError.fieldName().equals("otpCode")
+                          && fieldError.errorCode().equals(errorCode.name())
+                          && fieldError.developerMessage().equals(errorCode.getMessage()));
+        }
       }
 
       @Test
@@ -451,7 +691,9 @@ public class UserControllerTest extends WebIntegrationTestConfig {
 
         String newPhone = "+5547992044567";
         pendingPhoneChangePort.save(mockUser.getId(), newPhone);
-        var request = new CompletePhoneChangeRequestDTO("123456");
+
+        OtpCode otpCode = OtpCode.generate();
+        var request = new CompletePhoneChangeRequestDto(otpCode);
 
         // Act & Assert
         var response =
@@ -466,20 +708,24 @@ public class UserControllerTest extends WebIntegrationTestConfig {
                 .extract()
                 .as(ErrorResponseDto.class);
 
-        assertThat(response.message()).isEqualTo("Código de verificação inválido ou expirado.");
+        ErrorCode errorCode = ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED;
 
-        User unchangedUser = userRepository.findById(mockUser.getId()).orElseThrow();
-        assertThat(unchangedUser.getPhone()).isEqualTo(defaultPhone);
+        assertThat(response.status()).isEqualTo(400);
+        assertThat(response.path()).isEqualTo("/api/users/me/phone/verification/confirm");
+        assertThat(response.errorCode()).isEqualTo(errorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
       }
 
       @Test
-      @DisplayName("Deve retornar 400 Bad Request quando a solicitação de alteração expirar")
-      void completeChangePhone_shouldReturn400_whenRequestHasExpired() {
+      @DisplayName(
+          "Deve retornar 404 Not Found quando a solicitação de alteração de telefone expirar")
+      void completeChangePhone_shouldReturn404_whenRequestHasExpired() {
         // Arrange
         mockPersistUser();
         AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
 
-        var request = new CompletePhoneChangeRequestDTO("123456");
+        OtpCode otpCode = OtpCode.generate();
+        var request = new CompletePhoneChangeRequestDto(otpCode);
 
         // Act & Assert
         var response =
@@ -490,13 +736,93 @@ public class UserControllerTest extends WebIntegrationTestConfig {
                 .when()
                 .patch("/phone/verification/confirm")
                 .then()
-                .statusCode(400)
+                .statusCode(404)
                 .extract()
                 .as(ErrorResponseDto.class);
 
-        assertThat(response.message())
-            .isEqualTo("Sua solicitação de alteração de telefone já expirou. Tente novamente.");
+        ErrorCode errorCode = ErrorCode.PHONE_CHANGE_NOT_INITIATED;
+
+        assertThat(response.status()).isEqualTo(404);
+        assertThat(response.path()).isEqualTo("/api/users/me/phone/verification/confirm");
+        assertThat(response.errorCode()).isEqualTo(errorCode.name());
+        assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
       }
+    }
+  }
+
+  @Nested
+  @DisplayName("Testes para o endpoint /api/users/me/phone/verification/resend")
+  class ResendChangePhoneOtpTest {
+
+    @Test
+    @DisplayName("Deve retornar 204 No Content quando o código OTP for reenviado com sucesso")
+    void resendChangePhoneOtp_shouldReturn204_whenSuccessful() {
+      // Arrange
+      User mockUser = mockPersistUser();
+      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+
+      String newPhone = "+5547992044567";
+      pendingPhoneChangePort.save(mockUser.getId(), newPhone);
+
+      given()
+          .spec(specification)
+          .header("Authorization", "Bearer " + tokens.accessToken())
+          .when()
+          .post("/phone/verification/resend-otp")
+          .then()
+          .statusCode(204);
+    }
+
+    @Test
+    @DisplayName("Deve retornar 404 Not Found quando não houver alteração de telefone pendente")
+    void resendChangePhoneOtp_shouldReturn404_whenNoPendingPhoneChange() {
+      // Arrange
+      mockPersistUser();
+      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+
+      var response =
+          given()
+              .spec(specification)
+              .header("Authorization", "Bearer " + tokens.accessToken())
+              .when()
+              .post("/phone/verification/resend-otp")
+              .then()
+              .statusCode(404)
+              .extract()
+              .as(ErrorResponseDto.class);
+
+      // Assert
+      ErrorCode errorCode = ErrorCode.PHONE_CHANGE_NOT_INITIATED;
+
+      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.path()).isEqualTo("/api/users/me/phone/verification/resend-otp");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
+    }
+  }
+
+  @Nested
+  @DisplayName("Teste para o endpoint /api/users/me/disable")
+  class DisableMyAccountTest {
+
+    @Test
+    @DisplayName("Deve retornar 204 No Content quando a conta for desativada com sucesso")
+    void disableMyAccount_shouldReturn204_whenSuccessful() {
+      // Arrange
+      User mockUser = mockPersistUser();
+      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+
+      // Act & Assert
+      given()
+          .spec(specification)
+          .header("Authorization", "Bearer " + tokens.accessToken())
+          .when()
+          .post("/disable")
+          .then()
+          .statusCode(204);
+
+      User updatedUser = userRepository.findById(mockUser.getId()).orElseThrow();
+      assertThat(updatedUser.isEnabled()).isFalse();
     }
   }
 }

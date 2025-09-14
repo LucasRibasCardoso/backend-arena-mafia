@@ -1,0 +1,11 @@
+type: object
+description: Corpo da requisição para atualização do nome do perfil do usuário.
+required:
+  - fullName
+properties:
+  fullName:
+    type: string
+    description: "Nome completo do usuário."
+    minLength: 3
+    maxLength: 100
+    example: "João da Silva"

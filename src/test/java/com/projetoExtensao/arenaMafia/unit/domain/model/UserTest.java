@@ -64,7 +64,11 @@ public class UserTest {
         assertThatThrownBy(
                 () -> User.create(invalidUsername, defaultFullName, defaultPhone, defaultPassword))
             .isInstanceOf(InvalidUsernameFormatException.class)
-            .hasMessage(errorCode.getMessage());
+            .satisfies(
+                ex -> {
+                  InvalidUsernameFormatException exception = (InvalidUsernameFormatException) ex;
+                  assertThat(exception.getErrorCode()).isEqualTo(errorCode);
+                });
       }
 
       @ParameterizedTest
@@ -77,7 +81,11 @@ public class UserTest {
         assertThatThrownBy(
                 () -> User.create(defaultUsername, invalidFullName, defaultPhone, defaultPassword))
             .isInstanceOf(InvalidFormatFullNameException.class)
-            .hasMessage(errorCode.getMessage());
+            .satisfies(
+                ex -> {
+                  InvalidFormatFullNameException exception = (InvalidFormatFullNameException) ex;
+                  assertThat(exception.getErrorCode()).isEqualTo(errorCode);
+                });
       }
 
       @ParameterizedTest
@@ -90,7 +98,11 @@ public class UserTest {
         assertThatThrownBy(
                 () -> User.create(defaultUsername, defaultFullName, invalidPhone, defaultPassword))
             .isInstanceOf(InvalidFormatPhoneException.class)
-            .hasMessage(errorCode.getMessage());
+            .satisfies(
+                ex -> {
+                  InvalidFormatPhoneException exception = (InvalidFormatPhoneException) ex;
+                  assertThat(exception.getErrorCode()).isEqualTo(errorCode);
+                });
       }
 
       @ParameterizedTest
@@ -103,7 +115,11 @@ public class UserTest {
                     User.create(
                         defaultUsername, defaultFullName, defaultPhone, invalidPasswordHash))
             .isInstanceOf(InvalidPasswordHashException.class)
-            .hasMessage(ErrorCode.PASSWORD_HASH_REQUIRED.getMessage());
+            .satisfies(
+                ex -> {
+                  InvalidPasswordHashException exception = (InvalidPasswordHashException) ex;
+                  assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PASSWORD_HASH_REQUIRED);
+                });
       }
     }
   }
@@ -209,7 +225,12 @@ public class UserTest {
       // Act & Assert
       assertThatThrownBy(user::confirmVerification)
           .isInstanceOf(AccountStatusForbiddenException.class)
-          .hasMessage(ErrorCode.ACCOUNT_NOT_PENDING_VERIFICATION.getMessage());
+          .satisfies(
+              ex -> {
+                AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
+                assertThat(exception.getErrorCode())
+                    .isEqualTo(ErrorCode.ACCOUNT_NOT_PENDING_VERIFICATION);
+              });
     }
 
     @Test
@@ -239,7 +260,11 @@ public class UserTest {
       // Act & Assert
       assertThatThrownBy(user::disableAccount)
           .isInstanceOf(AccountStatusForbiddenException.class)
-          .hasMessage(ErrorCode.ACCOUNT_NOT_ACTIVE.getMessage());
+          .satisfies(
+              ex -> {
+                AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
+                assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_NOT_ACTIVE);
+              });
     }
 
     @Test
@@ -269,7 +294,11 @@ public class UserTest {
       // Act & Assert
       assertThatThrownBy(user::enableAccount)
           .isInstanceOf(AccountStatusForbiddenException.class)
-          .hasMessage(ErrorCode.ACCOUNT_NOT_DISABLED.getMessage());
+          .satisfies(
+              ex -> {
+                AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
+                assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_NOT_DISABLED);
+              });
     }
 
     @Test
@@ -297,7 +326,11 @@ public class UserTest {
       // Act & Assert
       assertThatThrownBy(user::lockAccount)
           .isInstanceOf(AccountStatusForbiddenException.class)
-          .hasMessage(ErrorCode.ACCOUNT_NOT_ACTIVE.getMessage());
+          .satisfies(
+              ex -> {
+                AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
+                assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_NOT_ACTIVE);
+              });
     }
 
     @Test
@@ -327,7 +360,11 @@ public class UserTest {
       // Act & Assert
       assertThatThrownBy(user::unlockAccount)
           .isInstanceOf(AccountStatusForbiddenException.class)
-          .hasMessage(ErrorCode.ACCOUNT_NOT_LOCKED.getMessage());
+          .satisfies(
+              ex -> {
+                AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
+                assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_NOT_LOCKED);
+              });
     }
 
     @Nested
@@ -347,7 +384,11 @@ public class UserTest {
         // Act & Assert
         assertThatThrownBy(user::ensureAccountEnabled)
             .isInstanceOf(AccountStatusForbiddenException.class)
-            .hasMessage(errorCode.getMessage());
+            .satisfies(
+                ex -> {
+                  AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
+                  assertThat(exception.getErrorCode()).isEqualTo(errorCode);
+                });
       }
 
       @ParameterizedTest
@@ -364,7 +405,11 @@ public class UserTest {
         // Act & Assert
         assertThatThrownBy(user::ensureCanRequestOtp)
             .isInstanceOf(AccountStatusForbiddenException.class)
-            .hasMessage(errorCode.getMessage());
+            .satisfies(
+                ex -> {
+                  AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
+                  assertThat(exception.getErrorCode()).isEqualTo(errorCode);
+                });
       }
     }
   }

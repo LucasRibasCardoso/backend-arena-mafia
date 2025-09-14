@@ -1,0 +1,24 @@
+post:
+  operationId: resendPhoneChangeOtp
+  tags: [ 'Usuário - Minha Conta - Alteração de Telefone' ]
+  summary: Reenviar o código OTP para o novo número de telefone
+  description: Reenvia o código OTP para o novo número de telefone fornecido na etapa anterior.
+  responses:
+    204:
+      description: Código OTP reenviado com sucesso para o novo número de telefone.
+    401:
+      $ref: '../../../components/responses/UnauthorizedError.yml'
+    404:
+      description: Erro lançado quando não há uma solicitação de alteração de telefone em andamento para o usuário autenticado.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../components/schemas/error/ErrorResponseDto.yml'
+          example:
+            timestamp: "2024-06-15T14:30:00Z"
+            status: 404
+            errorCode: "PHONE_CHANGE_NOT_INITIATED"
+            developerMessage: "Sua solicitação de alteração de telefone não foi encontrada ou já expirou. Por favor, inicie o processo novamente."
+            path: "/api/users/me/phone/verification/resend-otp"
+    500:
+      $ref: '../../../components/responses/InternalServerError.yml'

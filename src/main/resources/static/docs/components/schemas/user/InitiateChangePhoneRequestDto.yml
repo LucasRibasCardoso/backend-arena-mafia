@@ -1,0 +1,10 @@
+type: object
+description: Corpo da requisição para iniciar a alteração do número de telefone do usuário.
+required:
+  - newPhone
+properties:
+  newPhone:
+    type: string
+    description: "Número de telefone do usuário no formato internacional E.164."
+    pattern: '^\\+[1-9]\\d{1,14}$'
+    example: "+5547991234567"

@@ -1,8 +1,5 @@
 package com.projetoExtensao.arenaMafia.unit.domain.model;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountStatusForbiddenException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
@@ -10,6 +7,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.assertj.core.api.Assertions.*;
 
 public class AccountStatusTest {
 
@@ -27,6 +26,12 @@ public class AccountStatusTest {
     // Act & Assert
     assertThatThrownBy(status::validateEnabled)
         .isInstanceOf(AccountStatusForbiddenException.class)
-        .hasMessage(expectedErrorCode.getMessage());
+        .satisfies(
+            ex -> {
+              AccountStatusForbiddenException exception =
+                  (AccountStatusForbiddenException) ex;
+              assertThat(exception.getErrorCode()).isEqualTo(expectedErrorCode);
+            }
+        );
   }
 }

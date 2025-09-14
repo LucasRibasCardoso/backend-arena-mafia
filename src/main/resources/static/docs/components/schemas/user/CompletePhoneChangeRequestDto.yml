@@ -1,0 +1,12 @@
+type: object
+description: Corpo da requisição para completar a mudança de número de telefone do usuário.
+required:
+  - otpCode
+properties:
+  otpCode:
+    type: string
+    description: O código de 6 dígitos enviado ao usuário.
+    pattern: '\d{6}'
+    minLength: 6
+    maxLength: 6
+    example: "123456"

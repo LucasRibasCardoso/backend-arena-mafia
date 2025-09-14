@@ -1,6 +1,10 @@
 description: |
-  Erro lançado quando o token de autenticação está ausente, inválido ou expirado. Também é 
-  lançado quando a conta do usuário não está mais ativa.
+  Erro de autenticação. 
+  
+  Lançado quando:
+  - O token de acesso (Bearer Token) não foi fornecido.
+  - O token de acesso é inválido ou expirou.
+  - A conta do usuário associada ao token não está em um estado ativo.
 content:
   application/json:
     schema:

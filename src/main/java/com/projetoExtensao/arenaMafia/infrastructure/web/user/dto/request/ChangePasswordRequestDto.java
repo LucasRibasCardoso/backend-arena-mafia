@@ -16,7 +16,10 @@ public record ChangePasswordRequestDto(
         @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
         @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
         String newPassword,
-    @NotBlank(message = "CONFIRM_PASSWORD_REQUIRED") String confirmPassword)
+    @NotBlank(message = "CONFIRM_PASSWORD_REQUIRED")
+    @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
+        @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
+        String confirmPassword)
     implements PasswordConfirmationProvider {
 
   @Override

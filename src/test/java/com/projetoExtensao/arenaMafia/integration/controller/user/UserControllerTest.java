@@ -748,81 +748,81 @@ public class UserControllerTest extends WebIntegrationTestConfig {
         assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
       }
     }
+  }
 
-    @Nested
-    @DisplayName("Reenviar código OTP caso não recebido")
-    class ResendChangePhoneOtpTest {
+  @Nested
+  @DisplayName("Testes para o endpoint /api/users/me/phone/verification/resend")
+  class ResendChangePhoneOtpTest {
 
-      @Test
-      @DisplayName("Deve retornar 204 No Content quando o código OTP for reenviado com sucesso")
-      void resendChangePhoneOtp_shouldReturn204_whenSuccessful() {
-        // Arrange
-        User mockUser = mockPersistUser();
-        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+    @Test
+    @DisplayName("Deve retornar 204 No Content quando o código OTP for reenviado com sucesso")
+    void resendChangePhoneOtp_shouldReturn204_whenSuccessful() {
+      // Arrange
+      User mockUser = mockPersistUser();
+      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
 
-        String newPhone = "+5547992044567";
-        pendingPhoneChangePort.save(mockUser.getId(), newPhone);
+      String newPhone = "+5547992044567";
+      pendingPhoneChangePort.save(mockUser.getId(), newPhone);
 
-        given()
-            .spec(specification)
-            .header("Authorization", "Bearer " + tokens.accessToken())
-            .when()
-            .post("/phone/verification/resend")
-            .then()
-            .statusCode(204);
-      }
-
-      @Test
-      @DisplayName("Deve retornar 404 Not Found quando não houver alteração de telefone pendente")
-      void resendChangePhoneOtp_shouldReturn404_whenNoPendingPhoneChange() {
-        // Arrange
-        mockPersistUser();
-        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
-
-        var response =
-            given()
-                .spec(specification)
-                .header("Authorization", "Bearer " + tokens.accessToken())
-                .when()
-                .post("/phone/verification/resend")
-                .then()
-                .statusCode(404)
-                .extract()
-                .as(ErrorResponseDto.class);
-
-        // Assert
-        ErrorCode errorCode = ErrorCode.PHONE_CHANGE_NOT_INITIATED;
-
-        assertThat(response.status()).isEqualTo(404);
-        assertThat(response.path()).isEqualTo("/api/users/me/phone/verification/resend");
-        assertThat(response.errorCode()).isEqualTo(errorCode.name());
-        assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
-      }
+      given()
+          .spec(specification)
+          .header("Authorization", "Bearer " + tokens.accessToken())
+          .when()
+          .post("/phone/verification/resend-otp")
+          .then()
+          .statusCode(204);
     }
 
-    @Nested
-    @DisplayName("Teste para o endpoint /api/users/me/disable")
-    class DisableMyAccountTest {
+    @Test
+    @DisplayName("Deve retornar 404 Not Found quando não houver alteração de telefone pendente")
+    void resendChangePhoneOtp_shouldReturn404_whenNoPendingPhoneChange() {
+      // Arrange
+      mockPersistUser();
+      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
 
-      @Test
-      @DisplayName("Deve retornar 204 No Content quando a conta for desativada com sucesso")
-      void disableMyAccount_shouldReturn204_whenSuccessful() {
-        // Arrange
-        User mockUser = mockPersistUser();
-        AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+      var response =
+          given()
+              .spec(specification)
+              .header("Authorization", "Bearer " + tokens.accessToken())
+              .when()
+              .post("/phone/verification/resend-otp")
+              .then()
+              .statusCode(404)
+              .extract()
+              .as(ErrorResponseDto.class);
 
-        // Act & Assert
-        given()
-            .spec(specification)
-            .header("Authorization", "Bearer " + tokens.accessToken())
-            .when()
-            .post("/disable")
-            .then()
-            .statusCode(204);
+      // Assert
+      ErrorCode errorCode = ErrorCode.PHONE_CHANGE_NOT_INITIATED;
 
-        User updatedUser = userRepository.findById(mockUser.getId()).orElseThrow();
-        assertThat(updatedUser.isEnabled()).isFalse();
-      }
+      assertThat(response.status()).isEqualTo(404);
+      assertThat(response.path()).isEqualTo("/api/users/me/phone/verification/resend-otp");
+      assertThat(response.errorCode()).isEqualTo(errorCode.name());
+      assertThat(response.developerMessage()).isEqualTo(errorCode.getMessage());
+    }
+  }
+
+  @Nested
+  @DisplayName("Teste para o endpoint /api/users/me/disable")
+  class DisableMyAccountTest {
+
+    @Test
+    @DisplayName("Deve retornar 204 No Content quando a conta for desativada com sucesso")
+    void disableMyAccount_shouldReturn204_whenSuccessful() {
+      // Arrange
+      User mockUser = mockPersistUser();
+      AuthTokensTest tokens = mockLogin(defaultUsername, defaultPassword);
+
+      // Act & Assert
+      given()
+          .spec(specification)
+          .header("Authorization", "Bearer " + tokens.accessToken())
+          .when()
+          .post("/disable")
+          .then()
+          .statusCode(204);
+
+      User updatedUser = userRepository.findById(mockUser.getId()).orElseThrow();
+      assertThat(updatedUser.isEnabled()).isFalse();
     }
   }
 }

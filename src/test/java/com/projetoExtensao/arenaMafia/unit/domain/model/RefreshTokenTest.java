@@ -87,7 +87,12 @@ public class RefreshTokenTest {
       // Act & Assert
       assertThatThrownBy(expiredToken::verifyIfNotExpired)
           .isInstanceOf(RefreshTokenExpiredException.class)
-          .hasMessage(ErrorCode.REFRESH_TOKEN_INVALID_OR_EXPIRED.getMessage());
+          .satisfies(
+              ex -> {
+                RefreshTokenExpiredException exception = (RefreshTokenExpiredException) ex;
+                assertThat(exception.getErrorCode())
+                    .isEqualTo(ErrorCode.REFRESH_TOKEN_INVALID_OR_EXPIRED);
+              });
     }
 
     @Test
@@ -100,7 +105,12 @@ public class RefreshTokenTest {
       // Act & Assert
       assertThatThrownBy(expiredToken::verifyIfNotExpired)
           .isInstanceOf(RefreshTokenExpiredException.class)
-          .hasMessage(ErrorCode.REFRESH_TOKEN_INVALID_OR_EXPIRED.getMessage());
+          .satisfies(
+              ex -> {
+                RefreshTokenExpiredException exception = (RefreshTokenExpiredException) ex;
+                assertThat(exception.getErrorCode())
+                    .isEqualTo(ErrorCode.REFRESH_TOKEN_INVALID_OR_EXPIRED);
+              });
     }
   }
 }

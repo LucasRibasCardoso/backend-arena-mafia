@@ -104,7 +104,7 @@ public class UserController {
     return ResponseEntity.ok(buildUserProfileResponseDto(updatedUser));
   }
 
-  @PostMapping("/phone/verification/resend")
+  @PostMapping("/phone/verification/resend-otp")
   public ResponseEntity<Void> resendPhoneVerificationCode(
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser) {
     resendChangePhoneOtpUseCase.execute(authenticatedUser.getUser().getId());

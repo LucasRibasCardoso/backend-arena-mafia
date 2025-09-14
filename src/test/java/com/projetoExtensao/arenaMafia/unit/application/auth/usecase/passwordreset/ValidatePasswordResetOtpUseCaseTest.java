@@ -11,8 +11,8 @@ import com.projetoExtensao.arenaMafia.application.notification.gateway.OtpPort;
 import com.projetoExtensao.arenaMafia.application.user.port.repository.UserRepositoryPort;
 import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpException;
-import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountStatusForbiddenException;
 import com.projetoExtensao.arenaMafia.domain.exception.badRequest.InvalidOtpSessionException;
+import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountStatusForbiddenException;
 import com.projetoExtensao.arenaMafia.domain.exception.notFound.UserNotFoundException;
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
@@ -137,7 +137,8 @@ public class ValidatePasswordResetOtpUseCaseTest {
         .satisfies(
             ex -> {
               InvalidOtpException exception = (InvalidOtpException) ex;
-              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED);
+              assertThat(exception.getErrorCode())
+                  .isEqualTo(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED);
             });
 
     verify(passwordResetTokenPort, never()).generateToken(any(UUID.class));

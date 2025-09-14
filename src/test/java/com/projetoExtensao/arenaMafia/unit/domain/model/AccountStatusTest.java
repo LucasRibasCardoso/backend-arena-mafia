@@ -1,5 +1,7 @@
 package com.projetoExtensao.arenaMafia.unit.domain.model;
 
+import static org.assertj.core.api.Assertions.*;
+
 import com.projetoExtensao.arenaMafia.domain.exception.ErrorCode;
 import com.projetoExtensao.arenaMafia.domain.exception.forbidden.AccountStatusForbiddenException;
 import com.projetoExtensao.arenaMafia.domain.model.enums.AccountStatus;
@@ -7,8 +9,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import static org.assertj.core.api.Assertions.*;
 
 public class AccountStatusTest {
 
@@ -28,10 +28,8 @@ public class AccountStatusTest {
         .isInstanceOf(AccountStatusForbiddenException.class)
         .satisfies(
             ex -> {
-              AccountStatusForbiddenException exception =
-                  (AccountStatusForbiddenException) ex;
+              AccountStatusForbiddenException exception = (AccountStatusForbiddenException) ex;
               assertThat(exception.getErrorCode()).isEqualTo(expectedErrorCode);
-            }
-        );
+            });
   }
 }

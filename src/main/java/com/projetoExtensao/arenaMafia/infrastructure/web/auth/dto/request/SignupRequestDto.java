@@ -18,17 +18,15 @@ public record SignupRequestDto(
     @NotBlank(message = "PHONE_REQUIRED")
         @Pattern(regexp = "^\\+[1-9]\\d{1,14}$", message = "PHONE_INVALID_FORMAT")
         String phone,
-
     @NotBlank(message = "PASSWORD_REQUIRED")
-    @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
-    @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
-    String password,
-
+        @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
+        @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
+        String password,
     @NotBlank(message = "CONFIRM_PASSWORD_REQUIRED")
-    @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
-    @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
-    String confirmPassword)
-implements PasswordConfirmationProvider {
+        @Size(min = 6, max = 20, message = "PASSWORD_INVALID_LENGTH")
+        @Pattern(regexp = "^\\S+$", message = "PASSWORD_NO_WHITESPACE")
+        String confirmPassword)
+    implements PasswordConfirmationProvider {
 
   @Override
   public String getPassword() {

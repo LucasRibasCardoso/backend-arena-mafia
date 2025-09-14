@@ -128,7 +128,8 @@ public class CompleteChangePhoneUseCaseTest {
         .satisfies(
             ex -> {
               InvalidOtpException exception = (InvalidOtpException) ex;
-              assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED);
+              assertThat(exception.getErrorCode())
+                  .isEqualTo(ErrorCode.OTP_CODE_INCORRECT_OR_EXPIRED);
             });
 
     verify(userRepository, never()).save(user);

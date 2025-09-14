@@ -47,7 +47,6 @@ patch:
                     errorCode: "USERNAME_INVALID_LENGTH"
                     developerMessage: "O nome de usuário deve ter entre 3 e 50 caracteres."
     401:
-      description: Erro lançado quando o usuário não estiver autenticado.
       $ref: '../../components/responses/UnauthorizedError.yml'
     409:
       description: Erro lançado quando o novo nome de usuário já estiver em uso por outro usuário.

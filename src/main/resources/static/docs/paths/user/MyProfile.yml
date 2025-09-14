@@ -13,7 +13,6 @@ get:
           schema:
             $ref: '../../components/schemas/user/UserProfileResponseDto.yml'
     401:
-      description: Erro lançado quando o usuário não estiver autenticado.
       $ref: '../../components/responses/UnauthorizedError.yml'
     500:
       $ref: '../../components/responses/InternalServerError.yml'

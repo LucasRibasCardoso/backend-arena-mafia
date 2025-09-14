@@ -52,12 +52,15 @@ patch:
         application/json:
           schema:
             $ref: '../../../components/schemas/error/ErrorResponseDto.yml'
-          example:
-            timestamp: "2024-06-15T14:30:00Z"
-            status: 404
-            errorCode: "PHONE_CHANGE_NOT_INITIATED"
-            developerMessage: "Sua solicitação de alteração de telefone não foi encontrada ou já expirou. Por favor, inicie o processo novamente."
-            path: "/api/users/me/phone/verification/confirm"
+          examples:
+            PhoneChangeNotInitiated:
+              summary: Solicitação de alteração de telefone não encontrada
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 404
+                errorCode: "PHONE_CHANGE_NOT_INITIATED"
+                developerMessage: "Sua solicitação de alteração de telefone não foi encontrada ou já expirou. Por favor, inicie o processo novamente."
+                path: "/api/users/me/phone/verification/confirm"
     401:
       $ref: '../../../components/responses/UnauthorizedError.yml'
     500:

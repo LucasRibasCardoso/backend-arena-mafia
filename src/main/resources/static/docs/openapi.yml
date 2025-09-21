@@ -17,6 +17,7 @@ info:
     | `VALIDATION_FAILED` | A validação falhou. Verifique os campos. | A resposta incluí detalhes adicionais no campo `fieldErrors`.
     | `MALFORMED_JSON_REQUEST` | Requisição JSON malformada. | A resposta incluí detalhes adicionais no campo `fieldErrors`.
     | `INVALID_REQUEST_PARAMETER`| Um parâmetro da requisição é inválido ou está malformado. | A resposta incluí detalhes adicionais no campo `fieldErrors`. 
+    | `TOO_MANY_REQUESTS` | Limite de requisições excedido. Por favor, tente novamente mais tarde. | Erro lançado quando o limite de requisições foi excedido.
 
 
 tags:

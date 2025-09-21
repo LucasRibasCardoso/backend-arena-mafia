@@ -110,5 +110,20 @@ post:
                 errorCode: "ACCOUNT_PENDING_VERIFICATION"
                 developerMessage: "Você precisa ativar sua conta. Conclua o processo de cadastro."
                 path: "/api/auth/login"
+    429:
+      description: Erro lançado quando o limite de 5 tentativas de login é excedido.
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error/ErrorResponseDto.yml'
+          examples:
+            TooManyRequests:
+              summary: Muitas Requisições
+              value:
+                timestamp: "2024-06-15T14:30:00Z"
+                status: 429
+                errorCode: "TOO_MANY_LOGIN_ATTEMPTS"
+                developerMessage: "Você realizou muitas tentativas de login. Por favor, aguarde um minuto antes de tentar novamente."
+                path: "/api/auth/login"
     500:
       $ref: '../../components/responses/InternalServerError.yml'

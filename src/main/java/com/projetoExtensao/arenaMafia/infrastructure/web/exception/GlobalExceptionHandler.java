@@ -9,6 +9,7 @@ import com.projetoExtensao.arenaMafia.domain.exception.notFound.NotFoundExceptio
 import com.projetoExtensao.arenaMafia.domain.exception.unauthorized.UnauthorizedException;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.ErrorResponseDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.exception.dto.FieldErrorResponseDto;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.*;
 import org.slf4j.Logger;
@@ -34,6 +35,17 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorResponseDto> handleApplicationException(
       ApplicationException e, HttpServletRequest request) {
     return buildErrorResponseEntity(mapExceptionToStatus(e), e.getErrorCode(), request);
+  }
+
+  @ExceptionHandler(RequestNotPermitted.class)
+  public ResponseEntity<ErrorResponseDto> handleRateLimitException(HttpServletRequest request) {
+
+    final HttpStatus httpStatus = HttpStatus.TOO_MANY_REQUESTS;
+
+    if (request.getRequestURI().equals("/api/auth/login")) {
+      return buildErrorResponseEntity(httpStatus, ErrorCode.TOO_MANY_LOGIN_ATTEMPTS, request);
+    }
+    return buildErrorResponseEntity(httpStatus, ErrorCode.TOO_MANY_REQUESTS, request);
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)

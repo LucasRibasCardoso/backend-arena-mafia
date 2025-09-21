@@ -10,6 +10,10 @@ public enum ErrorCode {
   VALIDATION_FAILED("A validação falhou. Verifique os detalhes dos campos para mais informações."),
   SESSION_EXPIRED("Sua sessão expirou. Por favor, faça login novamente."),
 
+  TOO_MANY_REQUESTS("Limite de requisições excedido. Por favor, tente novamente mais tarde."),
+  TOO_MANY_LOGIN_ATTEMPTS(
+      "Você realizou muitas tentativas de login. Por favor, aguarde um minuto antes de tentar novamente."),
+
   JWT_TOKEN_INVALID_OR_EXPIRED("Token JWT expirado ou inválido."),
   INVALID_CREDENTIALS("Credenciais inválidas. Por favor, verifique seu usuário e senha."),
 

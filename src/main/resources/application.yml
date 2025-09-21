@@ -23,3 +23,24 @@ spring:
 logging:
   level:
     root: info
+
+resilience4j:
+  ratelimiter:
+    instances:
+      # Regra restrita para operações sensíveis
+      sensitiveOperationLimiter:
+        limitForPeriod: 10
+        limitRefreshPeriod: 1m
+        timeoutDuration: 0
+
+      # Regra para o login
+      loginRateLimiter:
+        limitForPeriod: 5
+        limitRefreshPeriod: 1m
+        timeoutDuration: 0
+
+      # Limite geral para tráfego
+      globalLimiter:
+        limitForPeriod: 100
+        limitRefreshPeriod: 1m
+        timeoutDuration: 0

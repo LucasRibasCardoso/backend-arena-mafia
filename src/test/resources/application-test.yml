@@ -14,3 +14,7 @@ spring:
       expirationMs: 3600000 # 1 hour
       refresh-token-expiration-days: 7 # 7 days
       issuer: "arena-mafia-api"
+
+resilience4j:
+  ratelimiter:
+    enabled: false

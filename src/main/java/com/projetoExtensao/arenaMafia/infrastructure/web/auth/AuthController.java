@@ -13,6 +13,7 @@ import com.projetoExtensao.arenaMafia.application.auth.usecase.passwordreset.Val
 import com.projetoExtensao.arenaMafia.domain.model.User;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.OtpSessionId;
 import com.projetoExtensao.arenaMafia.domain.valueobjects.RefreshTokenVO;
+import com.projetoExtensao.arenaMafia.infrastructure.security.rateLimit.CustomRateLimiter;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ForgotPasswordRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.LoginRequestDto;
 import com.projetoExtensao.arenaMafia.infrastructure.web.auth.dto.request.ResendOtpRequestDto;
@@ -69,6 +70,7 @@ public class AuthController {
   }
 
   @PostMapping("/signup")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<SignupResponseDto> signup(@Valid @RequestBody SignupRequestDto request) {
     OtpSessionId otpSessionId = signUpUseCase.execute(request);
 
@@ -81,6 +83,7 @@ public class AuthController {
   }
 
   @PostMapping("/verify-account")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<AuthResponseDto> verifyAccount(
       @Valid @RequestBody ValidateOtpRequestDto request) {
     AuthResult authResult = verifyAccountUseCase.execute(request);
@@ -88,18 +91,21 @@ public class AuthController {
   }
 
   @PostMapping("/resend-otp")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<Void> resendOtp(@Valid @RequestBody ResendOtpRequestDto request) {
     resendOtpUseCase.execute(request.otpSessionId());
     return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/login")
+  @CustomRateLimiter(limiterName = "loginRateLimiter")
   public ResponseEntity<AuthResponseDto> login(@RequestBody @Valid LoginRequestDto request) {
     AuthResult authResult = loginUseCase.execute(request);
     return buildAuthResponse(authResult);
   }
 
   @PostMapping("/logout")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<Void> logout(
       @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
@@ -112,6 +118,7 @@ public class AuthController {
   }
 
   @PostMapping("/refresh-token")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<AuthResponseDto> refreshToken(
       @CookieValue(name = "refreshToken", required = false) String refreshToken) {
 
@@ -121,6 +128,7 @@ public class AuthController {
   }
 
   @PostMapping("/forgot-password")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<ForgotPasswordResponseDto> forgotPassword(
       @Valid @RequestBody ForgotPasswordRequestDto request) {
     ForgotPasswordResponseDto response = forgotPasswordUseCase.execute(request);
@@ -128,6 +136,7 @@ public class AuthController {
   }
 
   @PostMapping("/reset-password-token")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<PasswordResetTokenResponseDto> forgotPasswordVerify(
       @Valid @RequestBody ValidateOtpRequestDto request) {
     PasswordResetTokenResponseDto response = ValidatePasswordResetOtpUseCase.execute(request);
@@ -135,6 +144,7 @@ public class AuthController {
   }
 
   @PostMapping("/reset-password")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequestDto request) {
     resetPasswordUseCase.execute(request);
     ResponseCookie expiredCookie = cookieUtils.createRefreshTokenExpiredCookie();

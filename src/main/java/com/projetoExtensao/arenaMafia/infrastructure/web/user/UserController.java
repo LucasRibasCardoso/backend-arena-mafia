@@ -9,6 +9,7 @@ import com.projetoExtensao.arenaMafia.application.user.usecase.profile.GetUserPr
 import com.projetoExtensao.arenaMafia.application.user.usecase.profile.UpdateProfileUseCase;
 import com.projetoExtensao.arenaMafia.application.user.usecase.username.ChangeUsernameUseCase;
 import com.projetoExtensao.arenaMafia.domain.model.User;
+import com.projetoExtensao.arenaMafia.infrastructure.security.rateLimit.CustomRateLimiter;
 import com.projetoExtensao.arenaMafia.infrastructure.security.userDetails.UserDetailsAdapter;
 import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.request.*;
 import com.projetoExtensao.arenaMafia.infrastructure.web.user.dto.response.UserProfileResponseDto;
@@ -50,6 +51,7 @@ public class UserController {
   }
 
   @GetMapping
+  @CustomRateLimiter(limiterName = "globalLimiter")
   public ResponseEntity<UserProfileResponseDto> getMyProfile(
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser) {
 
@@ -58,6 +60,7 @@ public class UserController {
   }
 
   @PatchMapping("/profile")
+  @CustomRateLimiter(limiterName = "globalLimiter")
   public ResponseEntity<UserProfileResponseDto> updateProfile(
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser,
       @Valid @RequestBody UpdateProfileRequestDto requestDTO) {
@@ -68,6 +71,7 @@ public class UserController {
   }
 
   @PatchMapping("/username")
+  @CustomRateLimiter(limiterName = "globalLimiter")
   public ResponseEntity<UserProfileResponseDto> changeUsername(
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser,
       @Valid @RequestBody ChangeUsernameRequestDto request) {
@@ -77,6 +81,7 @@ public class UserController {
   }
 
   @PostMapping("/password")
+  @CustomRateLimiter(limiterName = "globalLimiter")
   public ResponseEntity<Void> changePassword(
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser,
       @Valid @RequestBody ChangePasswordRequestDto request) {
@@ -86,6 +91,7 @@ public class UserController {
   }
 
   @PostMapping("/phone/verification")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<Void> initiatePhoneVerification(
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser,
       @Valid @RequestBody InitiateChangePhoneRequestDto request) {
@@ -95,6 +101,7 @@ public class UserController {
   }
 
   @PatchMapping("/phone/verification/confirm")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<UserProfileResponseDto> completePhoneVerification(
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser,
       @Valid @RequestBody CompletePhoneChangeRequestDto request) {
@@ -105,6 +112,7 @@ public class UserController {
   }
 
   @PostMapping("/phone/verification/resend-otp")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<Void> resendPhoneVerificationCode(
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser) {
     resendChangePhoneOtpUseCase.execute(authenticatedUser.getUser().getId());
@@ -112,6 +120,7 @@ public class UserController {
   }
 
   @PostMapping("/disable")
+  @CustomRateLimiter(limiterName = "sensitiveOperationLimiter")
   public ResponseEntity<Void> deactivateAccount(
       @AuthenticationPrincipal UserDetailsAdapter authenticatedUser) {
     disableMyAccountUseCase.execute(authenticatedUser.getUser().getId());
